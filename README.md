@@ -22,11 +22,11 @@ An MCP server and web dashboard for the [Copland Virtual Machine (CVM)](https://
    cargo build --release
    ```
 
-3. **Python dependencies**:
+3. **Python dependencies** (Python 3.10+ required):
    ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt
-   # Also needed for the dashboard:
-   pip install flask
    ```
 
 ## Configuration
