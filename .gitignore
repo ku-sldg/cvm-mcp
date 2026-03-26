@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Golden evidence binaries (generated locally via provisioning)
+examples/*.bin
+
+# Scratch / session exports
+examples/dashboard.html
