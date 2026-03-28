@@ -31,7 +31,7 @@ DASHBOARD_URL = "http://localhost:5050"
 
 ASP_BIN_DEFAULT = os.environ.get(
     "CVM_ASP_BIN",
-    str(Path.home() / "asp-libs/target/release"),
+    str(Path(__file__).parent.parent / "asp-libs" / "target" / "release"),
 )
 
 mcp = FastMCP(

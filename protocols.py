@@ -80,10 +80,12 @@ def build_single_hashfile_appr():
 # ── Provisioning helpers ──────────────────────────────────────────────────────
 
 def _write_golden(path, data):
-    """Hash data with SHA-256 and write raw digest bytes to path."""
+    """Hash data with SHA-256, write raw digest to path, and save source data to path.src."""
     digest = hashlib.sha256(data).digest()
     with open(path, 'wb') as f:
         f.write(digest)
+    with open(path + '.src', 'wb') as f:
+        f.write(data)
     return digest.hex()
 
 
@@ -110,7 +112,8 @@ def golden_state_single_hashfile_appr():
     g  = _read_golden(G1)
     return [{'target': 'file1.txt', 'golden': 'golden_file1.bin',
              'sha256': g['sha256'] if g else None,
-             'timestamp': g['timestamp'] if g else None}]
+             'timestamp': g['timestamp'] if g else None,
+             'tamper_id': 'file1'}]
 
 
 def provision_hsh_sig_appr():
@@ -125,7 +128,8 @@ def golden_state_hsh_sig_appr():
     g = _read_golden(GOLDEN)
     return [{'target': '(empty evidence)', 'golden': 'hsh_golden.bin',
              'sha256': g['sha256'] if g else None,
-             'timestamp': g['timestamp'] if g else None}]
+             'timestamp': g['timestamp'] if g else None,
+             'tamper_id': 'hsh_golden'}]
 
 
 def provision_dual_hashfile_sig_appr():
@@ -143,13 +147,177 @@ def golden_state_dual_hashfile_sig_appr():
     G1 = f'{EXAMPLES}/golden_file1.bin'
     G2 = f'{EXAMPLES}/golden_file2.bin'
     results = []
-    for target, golden, path in [('file1.txt', 'golden_file1.bin', G1),
-                                  ('file2.txt', 'golden_file2.bin', G2)]:
+    for target, golden, path, tamper_id in [
+        ('file1.txt', 'golden_file1.bin', G1, 'file1'),
+        ('file2.txt', 'golden_file2.bin', G2, 'file2'),
+    ]:
         g = _read_golden(path)
         results.append({'target': target, 'golden': golden,
                         'sha256': g['sha256'] if g else None,
-                        'timestamp': g['timestamp'] if g else None})
+                        'timestamp': g['timestamp'] if g else None,
+                        'tamper_id': tamper_id})
     return results
+
+
+# ── Tamper / Repair helpers ───────────────────────────────────────────────────
+
+_BAD_FILE1  = b"[TAMPERED] file ONE - modified to fail appraisal."
+_BAD_FILE2  = b"[TAMPERED] file TWO - modified to fail appraisal.\n"
+
+_ORIG_HSH_GOLDEN = hashlib.sha256(b'').digest()
+_BAD_HSH_GOLDEN  = bytes([0xff] * 32)
+
+
+def _file_compliant(file_path, golden_path):
+    """Return True if SHA256(current file) matches the golden (appraisal will pass)."""
+    try:
+        current_hash = hashlib.sha256(open(file_path, 'rb').read()).digest()
+        golden       = open(golden_path, 'rb').read()
+        return current_hash == golden
+    except FileNotFoundError:
+        return False
+
+
+def _tamper_file(file_path, golden_path, bad_bytes):
+    """
+    Write bad_bytes to file_path, guaranteed to mismatch the current golden.
+    If the golden already equals SHA256(bad_bytes) (e.g. re-provisioned from a
+    prior tamper), append nonce bytes until the hash differs.
+    """
+    try:
+        golden = open(golden_path, 'rb').read()
+    except FileNotFoundError:
+        golden = b''
+    content, nonce = bad_bytes, 0
+    while hashlib.sha256(content).digest() == golden:
+        nonce += 1
+        content = bad_bytes + f'\n[TAMPER-NONCE-{nonce}]'.encode()
+    open(file_path, 'wb').write(content)
+
+
+def tamper_file1():
+    _tamper_file(f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin', _BAD_FILE1)
+
+def repair_file1():
+    src = f'{EXAMPLES}/golden_file1.bin.src'
+    fallback = f'{EXAMPLES}/file1.txt.default'
+    content = open(src, 'rb').read() if os.path.exists(src) else open(fallback, 'rb').read()
+    open(f'{EXAMPLES}/file1.txt', 'wb').write(content)
+
+def reset_file1():
+    """Restore default file content and recompute golden — guaranteed compliant state."""
+    content = open(f'{EXAMPLES}/file1.txt.default', 'rb').read()
+    open(f'{EXAMPLES}/file1.txt', 'wb').write(content)
+    _write_golden(f'{EXAMPLES}/golden_file1.bin', content)
+
+def get_state_file1():
+    return {'compliant': _file_compliant(f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin')}
+
+
+def tamper_file2():
+    _tamper_file(f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin', _BAD_FILE2)
+
+def repair_file2():
+    src = f'{EXAMPLES}/golden_file2.bin.src'
+    fallback = f'{EXAMPLES}/file2.txt.default'
+    content = open(src, 'rb').read() if os.path.exists(src) else open(fallback, 'rb').read()
+    open(f'{EXAMPLES}/file2.txt', 'wb').write(content)
+
+def reset_file2():
+    """Restore default file content and recompute golden — guaranteed compliant state."""
+    content = open(f'{EXAMPLES}/file2.txt.default', 'rb').read()
+    open(f'{EXAMPLES}/file2.txt', 'wb').write(content)
+    _write_golden(f'{EXAMPLES}/golden_file2.bin', content)
+
+def get_state_file2():
+    return {'compliant': _file_compliant(f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin')}
+
+
+def tamper_hsh_golden():
+    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_BAD_HSH_GOLDEN)
+
+def repair_hsh_golden():
+    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_ORIG_HSH_GOLDEN)
+
+def reset_hsh_golden():
+    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_ORIG_HSH_GOLDEN)
+
+def get_state_hsh_golden():
+    try:
+        return {'compliant': open(f'{EXAMPLES}/hsh_golden.bin', 'rb').read() == _ORIG_HSH_GOLDEN}
+    except FileNotFoundError:
+        return {'compliant': False}
+
+
+def _inspect_file(file_path, golden_path, src_path):
+    """Return inspection data for a file-based measurement target."""
+    try:
+        current = open(file_path, 'rb').read()
+    except FileNotFoundError:
+        return {'error': f'Target file not found: {os.path.basename(file_path)}'}
+    try:
+        golden = open(golden_path, 'rb').read()
+    except FileNotFoundError:
+        return {'error': 'Golden file not found — run Provision first'}
+    compliant = hashlib.sha256(current).digest() == golden
+    provisioned = open(src_path, 'rb').read() if os.path.exists(src_path) else None
+    return {
+        'type':              'file',
+        'compliant':         compliant,
+        'current':           current.decode('utf-8', errors='replace'),
+        'current_sha256':    hashlib.sha256(current).hexdigest(),
+        'golden_sha256':     golden.hex(),
+        'provisioned':       provisioned.decode('utf-8', errors='replace') if provisioned else None,
+    }
+
+
+def inspect_file1():
+    return _inspect_file(f'{EXAMPLES}/file1.txt',
+                         f'{EXAMPLES}/golden_file1.bin',
+                         f'{EXAMPLES}/golden_file1.bin.src')
+
+def inspect_file2():
+    return _inspect_file(f'{EXAMPLES}/file2.txt',
+                         f'{EXAMPLES}/golden_file2.bin',
+                         f'{EXAMPLES}/golden_file2.bin.src')
+
+def inspect_hsh_golden():
+    try:
+        golden = open(f'{EXAMPLES}/hsh_golden.bin', 'rb').read()
+    except FileNotFoundError:
+        return {'error': 'Golden file not found — run Provision first'}
+    return {
+        'type':            'hsh',
+        'compliant':       golden == _ORIG_HSH_GOLDEN,
+        'expected_sha256': _ORIG_HSH_GOLDEN.hex(),
+        'actual_sha256':   golden.hex(),
+    }
+
+
+_TAMPER_TARGET_FILE1 = {
+    'label':     'file1.txt',
+    'tamper':    tamper_file1,
+    'repair':    repair_file1,
+    'reset':     reset_file1,
+    'get_state': get_state_file1,
+    'inspect':   inspect_file1,
+}
+_TAMPER_TARGET_FILE2 = {
+    'label':     'file2.txt',
+    'tamper':    tamper_file2,
+    'repair':    repair_file2,
+    'reset':     reset_file2,
+    'get_state': get_state_file2,
+    'inspect':   inspect_file2,
+}
+_TAMPER_TARGET_HSH = {
+    'label':     'hsh golden',
+    'tamper':    tamper_hsh_golden,
+    'repair':    repair_hsh_golden,
+    'reset':     reset_hsh_golden,
+    'get_state': get_state_hsh_golden,
+    'inspect':   inspect_hsh_golden,
+}
 
 
 # ── Registry ──────────────────────────────────────────────────────────────────
@@ -169,9 +337,10 @@ REGISTRY = {
             {'type': 'arrow'},
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
-        'build':        build_single_hashfile_appr,
-        'provision':    provision_single_hashfile_appr,
-        'golden_state': golden_state_single_hashfile_appr,
+        'build':          build_single_hashfile_appr,
+        'provision':      provision_single_hashfile_appr,
+        'golden_state':   golden_state_single_hashfile_appr,
+        'tamper_targets': {'file1': _TAMPER_TARGET_FILE1},
     },
     'hsh_sig_appr': {
         'id':          'hsh_sig_appr',
@@ -185,9 +354,10 @@ REGISTRY = {
             {'type': 'arrow'},
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
-        'build':        build_hsh_sig_appr,
-        'provision':    provision_hsh_sig_appr,
-        'golden_state': golden_state_hsh_sig_appr,
+        'build':          build_hsh_sig_appr,
+        'provision':      provision_hsh_sig_appr,
+        'golden_state':   golden_state_hsh_sig_appr,
+        'tamper_targets': {'hsh_golden': _TAMPER_TARGET_HSH},
     },
     'dual_hashfile_sig_appr': {
         'id':          'dual_hashfile_sig_appr',
@@ -202,8 +372,9 @@ REGISTRY = {
             {'type': 'arrow'},
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
-        'build':        build_dual_hashfile_sig_appr,
-        'provision':    provision_dual_hashfile_sig_appr,
-        'golden_state': golden_state_dual_hashfile_sig_appr,
+        'build':          build_dual_hashfile_sig_appr,
+        'provision':      provision_dual_hashfile_sig_appr,
+        'golden_state':   golden_state_dual_hashfile_sig_appr,
+        'tamper_targets': {'file1': _TAMPER_TARGET_FILE1, 'file2': _TAMPER_TARGET_FILE2},
     },
 }
