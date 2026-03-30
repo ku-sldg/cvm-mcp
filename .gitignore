@@ -6,8 +6,12 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Golden evidence binaries (generated locally via provisioning)
+# Golden evidence binaries and provisioning artifacts (generated locally)
 examples/*.bin
+examples/*.bin.src
+
+# MCP server config (contains machine-specific venv paths — copy from .mcp.json.example)
+.mcp.json
 
 # Scratch / session exports
 examples/dashboard.html

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cvm": {
+      "command": "/path/to/cvm-mcp/.venv/bin/python3",
+      "args": ["/path/to/cvm-mcp/server.py"]
+    }
+  }
+}
