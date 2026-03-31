@@ -51,11 +51,11 @@ def walk_et(node, raw_ev, idx):
     return results
 
 
-def run_protocol(protocol_id):
+def run_protocol(protocol_id, log_level='Info'):
     """Run a protocol by ID and return parsed appraisal results."""
     proto = REGISTRY[protocol_id]
     manifest, req = proto['build']()
-    raw = cvm_server.run_attestation(manifest, req)
+    raw = cvm_server.run_attestation(manifest, req, log_level=log_level)
     response = json.loads(raw) if isinstance(raw, str) else raw
     cvm_success = response.get('SUCCESS', False)
     error = None
@@ -375,7 +375,7 @@ async function loadProtocol() {
     });
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Load failed'; errEl.style.display = ''; return; }
-    input.value = '';
+    localStorage.setItem('cvm_fp_load-path-input', path);
     location.reload();
   } catch(e) {
     errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
@@ -418,6 +418,11 @@ async function poll() {
   } catch(e) {}
 }
 setInterval(poll, 3000);
+
+(function() {
+  const saved = localStorage.getItem('cvm_fp_load-path-input');
+  if (saved) { const el = document.getElementById('load-path-input'); if (el) el.value = saved; }
+})();
 </script>
 </body></html>
 """
@@ -938,7 +943,10 @@ async function loadFromFile(pathInputId, textareaId, btnId, errId) {
     const res  = await fetch('/api/read_file?path=' + encodeURIComponent(path));
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Read failed'; }
-    else { document.getElementById(textareaId).value = data.content; }
+    else {
+      document.getElementById(textareaId).value = data.content;
+      localStorage.setItem('cvm_fp_' + pathInputId, path);
+    }
   } catch(e) { errEl.textContent = e.message; }
   btn.disabled = false; btn.textContent = '↓ Load file';
 }
@@ -1056,7 +1064,11 @@ function setupPathComplete(inputId) {
 }
 
 // Wire up the three path inputs
-['term-file', 'manifest-file', 'session-file'].forEach(id => setupPathComplete(id));
+['term-file', 'manifest-file', 'session-file'].forEach(id => {
+  setupPathComplete(id);
+  const saved = localStorage.getItem('cvm_fp_' + id);
+  if (saved) document.getElementById(id).value = saved;
+});
 
 // Enter key in path inputs triggers the load button
 const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
@@ -1083,10 +1095,15 @@ async function deriveFromTerm() {
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Derivation failed'; errEl.style.display = ''; }
     else {
-      document.getElementById('manifest-json').value = JSON.stringify(data.manifest, null, 2);
-      document.getElementById('session-json').value  = JSON.stringify(data.attestation_session, null, 2);
+      // Always update the visual previews (they are derived from the term)
       document.getElementById('flow-preview').innerHTML    = renderFlow(data.flow);
       document.getElementById('targets-preview').innerHTML = renderTargets(data.targets);
+      // Only fill manifest / session when those fields are empty — never overwrite
+      // content the user loaded or hand-crafted.
+      const mEl = document.getElementById('manifest-json');
+      if (!mEl.value.trim()) mEl.value = JSON.stringify(data.manifest, null, 2);
+      const sEl = document.getElementById('session-json');
+      if (!sEl.value.trim()) sEl.value = JSON.stringify(data.attestation_session, null, 2);
     }
   } catch(e) {
     errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
@@ -1120,12 +1137,9 @@ async function maybeLoadEdit() {
     document.getElementById('meta-copland').value = spec.copland     || '';
 
     const term = spec.request && spec.request.TERM;
-    if (term) {
+    if (term)
       document.getElementById('term-json').value = JSON.stringify(term, null, 2);
-      await deriveFromTerm();   // auto-populate flow + targets preview
-    }
 
-    // Manifest and session may have been hand-edited — use saved values directly
     if (spec.manifest)
       document.getElementById('manifest-json').value =
         JSON.stringify(spec.manifest, null, 2);
@@ -1139,6 +1153,13 @@ async function maybeLoadEdit() {
     if (evidence)
       document.getElementById('evidence-json').value =
         JSON.stringify(evidence, null, 2);
+
+    // Populate previews from saved spec — no auto-derive so nothing gets overwritten.
+    // User can click ▶ Derive explicitly to re-derive from the current term.
+    if (spec.flow)
+      document.getElementById('flow-preview').innerHTML = renderFlow(spec.flow);
+    if (spec.targets)
+      document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
 
   } catch(e) {
     banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
