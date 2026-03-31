@@ -781,9 +781,10 @@ BUILD_TMPL = """
               padding:10px 14px;color:#3fb950;font-size:0.78rem;margin-bottom:12px; }
 .path-dropdown { position:fixed;background:#161b22;border:1px solid #388bfd;border-radius:6px;
                  max-height:220px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.6);
-                 z-index:9999;font-family:'SF Mono','Fira Code',monospace; }
+                 z-index:9999;font-family:'SF Mono','Fira Code',monospace;
+                 max-width:90vw;overflow-x:hidden; }
 .path-dropdown-item { padding:5px 11px;font-size:0.72rem;color:#8b949e;cursor:pointer;
-                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+                      white-space:pre-wrap;word-break:break-all;line-height:1.4; }
 .path-dropdown-item.active { background:#21262d;color:#e6edf3; }
 </style>
 </head><body>
@@ -960,9 +961,9 @@ function setupPathComplete(inputId) {
   function reposition() {
     if (!dropdown) return;
     const r = input.getBoundingClientRect();
-    dropdown.style.top   = (r.bottom + window.scrollY) + 'px';
-    dropdown.style.left  = (r.left   + window.scrollX) + 'px';
-    dropdown.style.width = r.width + 'px';
+    dropdown.style.top      = (r.bottom + window.scrollY) + 'px';
+    dropdown.style.left     = (r.left   + window.scrollX) + 'px';
+    dropdown.style.minWidth = r.width + 'px';
   }
 
   function show(list) {
@@ -1001,7 +1002,10 @@ function setupPathComplete(inputId) {
   }
 
   function select(i) {
-    if (i >= 0 && i < items.length) input.value = items[i];
+    if (i >= 0 && i < items.length) {
+      input.value = items[i];
+      input.scrollLeft = input.scrollWidth;  // show end of path, not beginning
+    }
     hide();
     input.focus();
   }
@@ -1027,7 +1031,7 @@ function setupPathComplete(inputId) {
       if (dropdown && items.length)  { select(0);      return; }
       // No dropdown yet — fetch and either fill or show
       const list = await fetchItems(input.value);
-      if (list.length === 1) { input.value = list[0]; hide(); }
+      if (list.length === 1) { input.value = list[0]; input.scrollLeft = input.scrollWidth; hide(); }
       else if (list.length > 1) { show(list); highlight(0); }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
