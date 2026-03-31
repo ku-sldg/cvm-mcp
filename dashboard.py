@@ -249,12 +249,6 @@ tr:hover td { background:#1c2128; }
 .diff-ctx  { color:#6e7681;display:block; }
 .badge-custom { background:#1a2340;color:#79c0ff;border:1px solid #1f4080;
                 padding:2px 7px;border-radius:20px;font-size:0.65rem;font-weight:600;letter-spacing:.04em; }
-.load-panel { background:#161b22;border:1px solid #21262d;border-radius:10px;
-              padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
-.load-panel label { color:#8b949e;font-size:0.75rem;white-space:nowrap; }
-.load-input { flex:1;min-width:260px;background:#0d1117;border:1px solid #30363d;border-radius:6px;
-              color:#e6edf3;font-size:0.8rem;padding:5px 10px;outline:none; }
-.load-input:focus { border-color:#388bfd; }
 .load-btn   { background:#1f4080;color:#79c0ff;border:1px solid #1f4080;border-radius:6px;
               padding:5px 14px;font-size:0.78rem;cursor:pointer;white-space:nowrap; }
 .load-btn:hover { background:#2d5ba8; }
@@ -325,13 +319,6 @@ HOME_TMPL = """
 {% endfor %}
 </div>
 
-<div class="load-panel">
-  <label>Load protocol from JSON file:</label>
-  <input class="load-input" id="load-path-input" type="text"
-         placeholder="/path/to/protocol.json" spellcheck="false">
-  <button class="load-btn" onclick="loadProtocol()">⊕ Load</button>
-  <span class="load-error" id="load-error" style="display:none;"></span>
-</div>
 
 <script>
 async function runProtocol(id) {
@@ -361,27 +348,6 @@ async function provisionProtocol(id) {
 }
 // (Provision on home page updates golden files; visit detail page to see new hashes)
 
-async function loadProtocol() {
-  const input = document.getElementById('load-path-input');
-  const errEl = document.getElementById('load-error');
-  const path  = input.value.trim();
-  if (!path) return;
-  errEl.style.display = 'none';
-  try {
-    const res  = await fetch('/api/load_protocol', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({path}),
-    });
-    const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'Load failed'; errEl.style.display = ''; return; }
-    localStorage.setItem('cvm_fp_load-path-input', path);
-    location.reload();
-  } catch(e) {
-    errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
-  }
-}
-
 async function removeProtocol(id) {
   const btn = document.getElementById('rmbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
@@ -393,10 +359,6 @@ async function removeProtocol(id) {
   } catch(e) { alert('Error: ' + e.message); }
   if (btn) { btn.disabled = false; btn.textContent = '× Remove'; }
 }
-
-document.getElementById('load-path-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') loadProtocol();
-});
 
 // Poll for live updates (from MCP pushes) every 3 seconds
 async function poll() {
@@ -419,10 +381,7 @@ async function poll() {
 }
 setInterval(poll, 3000);
 
-(function() {
-  const saved = localStorage.getItem('cvm_fp_load-path-input');
-  if (saved) { const el = document.getElementById('load-path-input'); if (el) el.value = saved; }
-})();
+
 </script>
 </body></html>
 """
@@ -1314,20 +1273,6 @@ def api_reset(protocol_id, target_id):
     tamper_targets[target_id]['reset']()
     return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id})
 
-
-@app.route('/api/load_protocol', methods=['POST'])
-def api_load_protocol():
-    data = flask_request.get_json(force=True)
-    path = (data or {}).get('path', '').strip()
-    if not path:
-        return jsonify({'error': 'Missing path'}), 400
-    try:
-        proto_id = protocol_loader.add_protocol_file(path)
-        return jsonify({'ok': True, 'id': proto_id, 'name': REGISTRY[proto_id]['name']})
-    except FileNotFoundError:
-        return jsonify({'error': f'File not found: {path}'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
 
 
 @app.route('/api/protocols/<protocol_id>', methods=['DELETE'])
