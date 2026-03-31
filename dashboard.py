@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import server as cvm_server
 from protocols import REGISTRY
 import protocol_loader
+import protocol_builder
 from flask import Flask, render_template_string, request as flask_request, jsonify
 
 app = Flask(__name__)
@@ -272,6 +273,7 @@ HOME_TMPL = """
   <span class="live-dot"></span>
   <div><h1>CVM Attestation Dashboard</h1>
        <div class="sub">{{ protocols|length }} protocol{{ 's' if protocols|length != 1 }} registered</div></div>
+  <a href="/build" class="run-btn" style="margin-left:auto;">⊕ Build Protocol</a>
 </div>
 
 <div class="proto-grid" id="proto-grid">
@@ -439,6 +441,9 @@ DETAIL_TMPL = """
             onclick="provisionProtocol('{{ proto.id }}')">⚙ Provision</button>
     <button class="run-btn run-btn-lg" id="run-btn"
             onclick="runProtocol('{{ proto.id }}')">▶ Run</button>
+    {% if proto.custom_source %}
+    <a href="/build?edit={{ proto.id }}" class="run-btn run-btn-lg">✎ Edit</a>
+    {% endif %}
     <a href="/" class="back-link" style="margin-left:4px;">← All protocols</a>
   </div>
 </div>
@@ -728,6 +733,454 @@ async function toggleInspect(protocolId, targetId) {
 """
 
 
+BUILD_TMPL = """
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><title>Build Protocol — CVM Dashboard</title>
+<style>{{ style }}
+.build-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:700px){ .build-grid { grid-template-columns:1fr; } }
+.build-ta { width:100%;background:#0d1117;color:#e6edf3;border:1px solid #30363d;
+            border-radius:6px;padding:10px;font-family:'SF Mono','Fira Code',monospace;
+            font-size:0.75rem;resize:vertical;outline:none;min-height:140px; }
+.build-ta:focus { border-color:#388bfd; }
+.build-input { width:100%;background:#0d1117;color:#e6edf3;border:1px solid #30363d;
+               border-radius:6px;padding:7px 10px;font-family:inherit;font-size:0.8rem;
+               outline:none; }
+.build-input:focus { border-color:#388bfd; }
+.build-label { font-size:0.68rem;text-transform:uppercase;letter-spacing:.06em;
+               color:#8b949e;margin-bottom:6px;display:block; }
+.file-row { display:flex;gap:6px;align-items:center;margin-bottom:8px; }
+.file-path { flex:1;background:#0d1117;color:#8b949e;border:1px solid #21262d;
+             border-radius:6px;padding:5px 9px;font-family:'SF Mono','Fira Code',monospace;
+             font-size:0.72rem;outline:none; }
+.file-path:focus { border-color:#30363d;color:#e6edf3; }
+.file-load-btn { background:#1c2128;border:1px solid #30363d;color:#8b949e;border-radius:6px;
+                 padding:4px 11px;font-size:0.72rem;font-family:inherit;cursor:pointer;
+                 white-space:nowrap;transition:border-color .15s,color .15s; }
+.file-load-btn:hover { border-color:#8b949e;color:#e6edf3; }
+.file-load-btn:disabled { opacity:.45;cursor:not-allowed; }
+.file-err { color:#f85149;font-size:0.7rem;margin-left:4px; }
+.derive-btn { background:#1f3a1f;border:1px solid #238636;color:#3fb950;border-radius:6px;
+              padding:6px 16px;font-size:0.78rem;font-family:inherit;cursor:pointer;
+              transition:background .15s; white-space:nowrap; }
+.derive-btn:hover { background:#1a4731; }
+.derive-btn:disabled { opacity:.5;cursor:not-allowed; }
+.register-btn { background:#0d2340;border:1px solid #1f6feb;color:#58a6ff;border-radius:6px;
+                padding:8px 22px;font-size:0.85rem;font-family:inherit;cursor:pointer;
+                transition:background .15s; }
+.register-btn:hover:not(:disabled) { background:#1f4080; }
+.register-btn:disabled { opacity:.5;cursor:not-allowed; }
+.target-row { display:flex;gap:10px;align-items:baseline;font-size:0.75rem;
+              padding:5px 0;border-bottom:1px solid #21262d;flex-wrap:wrap; }
+.target-row:last-child { border-bottom:none; }
+.target-id  { color:#79c0ff;min-width:100px; }
+.target-fp  { color:#6e7681;font-size:0.7rem;flex:1;min-width:0;word-break:break-all; }
+.err-banner { background:#2a0000;border:1px solid #da3633;border-radius:8px;
+              padding:10px 14px;color:#f85149;font-size:0.78rem;margin-bottom:12px; }
+.ok-banner  { background:#001a00;border:1px solid #238636;border-radius:8px;
+              padding:10px 14px;color:#3fb950;font-size:0.78rem;margin-bottom:12px; }
+.path-dropdown { position:fixed;background:#161b22;border:1px solid #388bfd;border-radius:6px;
+                 max-height:220px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.6);
+                 z-index:9999;font-family:'SF Mono','Fira Code',monospace; }
+.path-dropdown-item { padding:5px 11px;font-size:0.72rem;color:#8b949e;cursor:pointer;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.path-dropdown-item.active { background:#21262d;color:#e6edf3; }
+</style>
+</head><body>
+<div class="header">
+  <div>
+    <h1>Build Protocol</h1>
+    <div class="sub">Derive session context, manifest &amp; targets from a Copland term</div>
+  </div>
+  <a href="/" class="back-link" style="margin-left:auto;">← All protocols</a>
+</div>
+
+<div id="banner"></div>
+
+<!-- Metadata -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="card-title">Protocol Metadata</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+    <div>
+      <label class="build-label">Protocol ID <span style="color:#6e7681;text-transform:none;font-size:0.65rem;">(no spaces)</span></label>
+      <input class="build-input" id="meta-id" placeholder="my_protocol" spellcheck="false">
+    </div>
+    <div>
+      <label class="build-label">Name</label>
+      <input class="build-input" id="meta-name" placeholder="My Protocol">
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div>
+      <label class="build-label">Description</label>
+      <input class="build-input" id="meta-desc" placeholder="What this protocol does">
+    </div>
+    <div>
+      <label class="build-label">Copland Expression <span style="color:#6e7681;text-transform:none;font-size:0.65rem;">(human-readable)</span></label>
+      <input class="build-input" id="meta-copland" placeholder="lseq( hashfile(f), APPR )">
+    </div>
+  </div>
+</div>
+
+<!-- Term JSON -->
+<div class="card" style="margin-bottom:14px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div class="card-title" style="margin-bottom:0;">Copland Term JSON</div>
+    <button class="derive-btn" id="derive-btn" onclick="deriveFromTerm()">▶ Derive</button>
+  </div>
+  <div class="file-row">
+    <input class="file-path" id="term-file" placeholder="/path/to/term.json" spellcheck="false">
+    <button class="file-load-btn" id="term-load-btn"
+            onclick="loadFromFile('term-file','term-json','term-load-btn','term-file-err')">↓ Load file</button>
+    <span class="file-err" id="term-file-err"></span>
+  </div>
+  <textarea class="build-ta" id="term-json" rows="10"
+            placeholder='{"TERM_CONSTRUCTOR":"lseq","TERM_BODY":[...]}' spellcheck="false"></textarea>
+  <div id="derive-error" style="display:none;margin-top:8px;" class="err-banner"></div>
+</div>
+
+<!-- Flow preview -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="card-title">Protocol Flow <span style="color:#6e7681;font-size:0.65rem;text-transform:none;">(auto-derived)</span></div>
+  <div class="flow" id="flow-preview">
+    <span style="color:#6e7681;font-size:0.78rem;font-style:italic;">Load a term and click Derive.</span>
+  </div>
+</div>
+
+<!-- Manifest + Session Context -->
+<div class="build-grid" style="margin-bottom:14px;">
+  <div class="card">
+    <div class="card-title">Manifest</div>
+    <div class="file-row">
+      <input class="file-path" id="manifest-file" placeholder="/path/to/manifest.json" spellcheck="false">
+      <button class="file-load-btn" id="manifest-load-btn"
+              onclick="loadFromFile('manifest-file','manifest-json','manifest-load-btn','manifest-file-err')">↓ Load file</button>
+      <span class="file-err" id="manifest-file-err"></span>
+    </div>
+    <textarea class="build-ta" id="manifest-json" rows="8" spellcheck="false"
+              placeholder='{"ASPS":[],"ASP_FS_MAP":{},"POLICY":[]}'></textarea>
+  </div>
+  <div class="card">
+    <div class="card-title">Attestation Session</div>
+    <div class="file-row">
+      <input class="file-path" id="session-file" placeholder="/path/to/attestation_session.json" spellcheck="false">
+      <button class="file-load-btn" id="session-load-btn"
+              onclick="loadFromFile('session-file','session-json','session-load-btn','session-file-err')">↓ Load file</button>
+      <span class="file-err" id="session-file-err"></span>
+    </div>
+    <textarea class="build-ta" id="session-json" rows="8" spellcheck="false"
+              placeholder='{"Session_Plc":"P0","Plc_Mapping":{},"PubKey_Mapping":{},"Session_Context":{"ASP_Types":{},"ASP_Comps":{}}}'></textarea>
+  </div>
+</div>
+
+<!-- Initial Evidence -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="card-title">Initial Evidence</div>
+  <textarea class="build-ta" id="evidence-json" rows="3" spellcheck="false"
+>[{"RawEv":[]},{"EvidenceT_CONSTRUCTOR":"mt_evt"}]</textarea>
+</div>
+
+<!-- Targets preview -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-title">Targets <span style="color:#6e7681;font-size:0.65rem;text-transform:none;">(auto-derived from file paths in term)</span></div>
+  <div id="targets-preview">
+    <span style="color:#6e7681;font-size:0.78rem;font-style:italic;">None detected yet.</span>
+  </div>
+</div>
+
+<!-- Register -->
+<div style="text-align:right;margin-bottom:30px;">
+  <button class="register-btn" id="register-btn" onclick="registerProtocol()">⊕ Register Protocol</button>
+</div>
+
+<script>
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderFlow(flow) {
+  if (!flow || !flow.length)
+    return '<span style="color:#6e7681;font-size:0.78rem;font-style:italic;">No flow derived.</span>';
+  return flow.map(node => {
+    if (node.type === 'arrow') return '<span class="flow-arrow">→</span>';
+    if (node.type === 'bseq') {
+      const children = (node.children || []).map(c =>
+        `<div class="flow-node fn-file">${escHtml(c)}</div>`).join('');
+      return `<div class="flow-node fn-bseq">
+        <div class="bseq-label">${escHtml(node.label)}</div>
+        <div class="flow-sub">${children}</div>
+      </div>`;
+    }
+    return `<div class="flow-node fn-${escHtml(node.style||'default')}">${escHtml(node.label)}</div>`;
+  }).join('');
+}
+
+function renderTargets(targets) {
+  if (!targets || !targets.length)
+    return '<span style="color:#6e7681;font-size:0.78rem;font-style:italic;">No file targets detected in term.</span>';
+  return targets.map(t => `
+    <div class="target-row">
+      <span class="target-id">${escHtml(t.id)}</span>
+      <span class="target-fp" title="${escHtml(t.file)}">${escHtml(t.label)}</span>
+      <span class="target-fp" style="color:#9e6a03;" title="${escHtml(t.golden)}">golden: ${escHtml(t.golden.split('/').pop())}</span>
+    </div>`).join('');
+}
+
+async function loadFromFile(pathInputId, textareaId, btnId, errId) {
+  const path  = document.getElementById(pathInputId).value.trim();
+  const errEl = document.getElementById(errId);
+  const btn   = document.getElementById(btnId);
+  errEl.textContent = '';
+  if (!path) { errEl.textContent = 'Enter a file path first.'; return; }
+  btn.disabled = true; btn.textContent = '⟳';
+  try {
+    const res  = await fetch('/api/read_file?path=' + encodeURIComponent(path));
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Read failed'; }
+    else { document.getElementById(textareaId).value = data.content; }
+  } catch(e) { errEl.textContent = e.message; }
+  btn.disabled = false; btn.textContent = '↓ Load file';
+}
+
+// ── Path tab-completion ───────────────────────────────────────────────────────
+function setupPathComplete(inputId) {
+  const input = document.getElementById(inputId);
+  let dropdown = null;
+  let items    = [];
+  let selIdx   = -1;
+  let debounce = null;
+
+  async function fetchItems(path) {
+    try {
+      const res = await fetch('/api/complete_path?path=' + encodeURIComponent(path));
+      return (await res.json()).completions || [];
+    } catch { return []; }
+  }
+
+  function reposition() {
+    if (!dropdown) return;
+    const r = input.getBoundingClientRect();
+    dropdown.style.top   = (r.bottom + window.scrollY) + 'px';
+    dropdown.style.left  = (r.left   + window.scrollX) + 'px';
+    dropdown.style.width = r.width + 'px';
+  }
+
+  function show(list) {
+    hide();
+    if (!list.length) return;
+    items  = list;
+    selIdx = -1;
+    dropdown = document.createElement('div');
+    dropdown.className = 'path-dropdown';
+    // use absolute positioning anchored to document origin
+    dropdown.style.position = 'absolute';
+    reposition();
+    list.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'path-dropdown-item';
+      el.textContent = item;
+      el.addEventListener('mousemove', () => highlight(i));
+      el.addEventListener('mousedown', ev => { ev.preventDefault(); select(i); });
+      dropdown.appendChild(el);
+    });
+    document.body.appendChild(dropdown);
+  }
+
+  function hide() {
+    if (dropdown) { dropdown.remove(); dropdown = null; }
+    items = []; selIdx = -1;
+  }
+
+  function highlight(i) {
+    if (!dropdown) return;
+    selIdx = i;
+    Array.from(dropdown.children).forEach((el, j) => el.classList.toggle('active', j === i));
+    // scroll item into view within dropdown
+    const el = dropdown.children[i];
+    if (el) el.scrollIntoView({block: 'nearest'});
+  }
+
+  function select(i) {
+    if (i >= 0 && i < items.length) input.value = items[i];
+    hide();
+    input.focus();
+  }
+
+  // Trigger completions as the user types (debounced)
+  input.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(async () => {
+      const list = await fetchItems(input.value);
+      // Only pop up automatically when there's more than one match, or the
+      // single match differs from what's already typed (i.e. it added a /)
+      if (list.length > 1 || (list.length === 1 && list[0] !== input.value))
+        show(list);
+      else
+        hide();
+    }, 180);
+  });
+
+  input.addEventListener('keydown', async e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (dropdown && selIdx >= 0) { select(selIdx); return; }
+      if (dropdown && items.length)  { select(0);      return; }
+      // No dropdown yet — fetch and either fill or show
+      const list = await fetchItems(input.value);
+      if (list.length === 1) { input.value = list[0]; hide(); }
+      else if (list.length > 1) { show(list); highlight(0); }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (dropdown) highlight(Math.min(selIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (dropdown) highlight(Math.max(selIdx - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (dropdown && selIdx >= 0) { e.preventDefault(); select(selIdx); }
+      // otherwise fall through to load-button Enter handler below
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  });
+
+  // Close on blur (delay so mousedown on item fires first)
+  input.addEventListener('blur', () => setTimeout(hide, 160));
+
+  // Reposition if window scrolls or resizes while open
+  window.addEventListener('scroll', reposition, true);
+  window.addEventListener('resize', reposition);
+}
+
+// Wire up the three path inputs
+['term-file', 'manifest-file', 'session-file'].forEach(id => setupPathComplete(id));
+
+// Enter key in path inputs triggers the load button
+const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
+['term-file','manifest-file','session-file'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.querySelector('.path-dropdown'))
+      document.getElementById(_loadBtnMap[id]).click();
+  });
+});
+
+async function deriveFromTerm() {
+  const btn     = document.getElementById('derive-btn');
+  const errEl   = document.getElementById('derive-error');
+  const termStr = document.getElementById('term-json').value.trim();
+  errEl.style.display = 'none';
+  if (!termStr) { errEl.textContent = 'Load or paste a term JSON first.'; errEl.style.display = ''; return; }
+  btn.textContent = '⟳ Deriving…'; btn.disabled = true;
+  try {
+    const res  = await fetch('/api/derive_term', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({term_json: termStr}),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Derivation failed'; errEl.style.display = ''; }
+    else {
+      document.getElementById('manifest-json').value = JSON.stringify(data.manifest, null, 2);
+      document.getElementById('session-json').value  = JSON.stringify(data.attestation_session, null, 2);
+      document.getElementById('flow-preview').innerHTML    = renderFlow(data.flow);
+      document.getElementById('targets-preview').innerHTML = renderTargets(data.targets);
+    }
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
+  }
+  btn.textContent = '▶ Derive'; btn.disabled = false;
+}
+
+// ── Edit mode: pre-populate from existing protocol spec ──────────────────────
+async function maybeLoadEdit() {
+  const editId = new URLSearchParams(window.location.search).get('edit');
+  if (!editId) return;
+
+  document.querySelector('h1').textContent        = 'Edit Protocol';
+  document.querySelector('.sub').textContent      = 'Update the fields below and click Update Protocol';
+  document.getElementById('register-btn').textContent = '✎ Update Protocol';
+  document.getElementById('meta-id').readOnly     = true;
+  document.getElementById('meta-id').style.opacity = '0.6';
+
+  const banner = document.getElementById('banner');
+  try {
+    const res  = await fetch('/api/protocol_spec/' + encodeURIComponent(editId));
+    const spec = await res.json();
+    if (!res.ok) {
+      banner.innerHTML = `<div class="err-banner">${escHtml(spec.error || 'Could not load protocol spec')}</div>`;
+      return;
+    }
+
+    document.getElementById('meta-id').value      = spec.id          || editId;
+    document.getElementById('meta-name').value    = spec.name        || '';
+    document.getElementById('meta-desc').value    = spec.description || '';
+    document.getElementById('meta-copland').value = spec.copland     || '';
+
+    const term = spec.request && spec.request.TERM;
+    if (term) {
+      document.getElementById('term-json').value = JSON.stringify(term, null, 2);
+      await deriveFromTerm();   // auto-populate flow + targets preview
+    }
+
+    // Manifest and session may have been hand-edited — use saved values directly
+    if (spec.manifest)
+      document.getElementById('manifest-json').value =
+        JSON.stringify(spec.manifest, null, 2);
+
+    const attest = spec.request && spec.request.ATTESTATION_SESSION;
+    if (attest)
+      document.getElementById('session-json').value =
+        JSON.stringify(attest, null, 2);
+
+    const evidence = spec.request && spec.request.EVIDENCE;
+    if (evidence)
+      document.getElementById('evidence-json').value =
+        JSON.stringify(evidence, null, 2);
+
+  } catch(e) {
+    banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
+  }
+}
+document.addEventListener('DOMContentLoaded', maybeLoadEdit);
+
+async function registerProtocol() {
+  const banner = document.getElementById('banner');
+  const btn    = document.getElementById('register-btn');
+  banner.innerHTML = '';
+  const id = document.getElementById('meta-id').value.trim();
+  if (!id) { banner.innerHTML = '<div class="err-banner">Protocol ID is required.</div>'; return; }
+  btn.disabled = true; btn.textContent = '⟳ Registering…';
+  try {
+    const res  = await fetch('/api/register_builder', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        id:           id,
+        name:         document.getElementById('meta-name').value.trim() || id,
+        description:  document.getElementById('meta-desc').value.trim(),
+        copland:      document.getElementById('meta-copland').value.trim(),
+        term_json:    document.getElementById('term-json').value.trim(),
+        manifest_json:  document.getElementById('manifest-json').value.trim(),
+        session_json:   document.getElementById('session-json').value.trim(),
+        evidence_json:  document.getElementById('evidence-json').value.trim(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      banner.innerHTML = `<div class="err-banner">${escHtml(data.error || 'Registration failed')}</div>`;
+    } else {
+      banner.innerHTML = `<div class="ok-banner">✓ Protocol <strong>${escHtml(data.name)}</strong> registered. <a href="/protocol/${escHtml(data.id)}" style="color:#3fb950;">View →</a></div>`;
+    }
+  } catch(e) {
+    banner.innerHTML = `<div class="err-banner">Error: ${escHtml(e.message)}</div>`;
+  }
+  btn.disabled = false; btn.textContent = '⊕ Register Protocol';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+</script>
+</body></html>
+"""
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def home():
@@ -876,6 +1329,185 @@ def api_results():
     with store_lock:
         snap = dict(results_store)
     return jsonify(snap)
+
+
+@app.route('/build')
+def build_page():
+    return render_template_string(BUILD_TMPL, style=BASE_STYLE)
+
+
+@app.route('/api/complete_path')
+def api_complete_path():
+    partial = flask_request.args.get('path', '')
+    partial = os.path.expanduser(partial)
+    if not partial:
+        return jsonify({'completions': []})
+    # Split into directory + prefix-to-match
+    if partial.endswith(os.sep):
+        directory, prefix = partial, ''
+    else:
+        directory, prefix = os.path.dirname(partial) or os.sep, os.path.basename(partial)
+    try:
+        entries = os.listdir(directory)
+    except OSError:
+        return jsonify({'completions': []})
+    matches = []
+    hidden  = []
+    for entry in sorted(entries, key=str.lower):
+        if not entry.startswith(prefix):
+            continue
+        full    = os.path.join(directory, entry)
+        display = full + (os.sep if os.path.isdir(full) else '')
+        (hidden if entry.startswith('.') else matches).append(display)
+    return jsonify({'completions': (matches + hidden)[:30]})
+
+
+@app.route('/api/read_file')
+def api_read_file():
+    path = flask_request.args.get('path', '').strip()
+    if not path:
+        return jsonify({'error': 'Missing path parameter'}), 400
+    path = os.path.abspath(os.path.expanduser(path))
+    try:
+        content = open(path).read()
+    except FileNotFoundError:
+        return jsonify({'error': f'File not found: {path}'}), 404
+    except OSError as e:
+        return jsonify({'error': str(e)}), 400
+    # Validate that it's parseable JSON before sending back
+    try:
+        json.loads(content)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Not valid JSON: {e}'}), 400
+    return jsonify({'content': content})
+
+
+@app.route('/api/derive_term', methods=['POST'])
+def api_derive_term():
+    data = flask_request.get_json(force=True) or {}
+    term_json = data.get('term_json', '').strip()
+    if not term_json:
+        return jsonify({'error': 'Missing term_json'}), 400
+    try:
+        term_dict = json.loads(term_json)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid JSON: {e}'}), 400
+    derived = protocol_builder.derive_from_term(term_dict)
+    manifest = {
+        'ASPS':       derived['asps'],
+        'ASP_FS_MAP': {},
+        'POLICY':     [],
+    }
+    attestation_session = {
+        'Session_Plc':    'P0',
+        'Plc_Mapping':    {},
+        'PubKey_Mapping': {},
+        'Session_Context': {
+            'ASP_Types': derived['asp_types'],
+            'ASP_Comps': derived['asp_comps'],
+        },
+    }
+    return jsonify({
+        'asps':                derived['asps'],
+        'targets':             derived['targets'],
+        'flow':                derived['flow'],
+        'manifest':            manifest,
+        'attestation_session': attestation_session,
+    })
+
+
+@app.route('/api/protocol_spec/<protocol_id>')
+def api_protocol_spec(protocol_id):
+    """Return the raw spec JSON for a custom protocol (used by the edit page)."""
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    entry = REGISTRY[protocol_id]
+    source = entry.get('custom_source')
+    if not source:
+        return jsonify({'error': 'Built-in protocols cannot be edited here'}), 400
+    try:
+        spec = json.load(open(source))
+    except FileNotFoundError:
+        return jsonify({'error': f'Source file not found: {source}'}), 404
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Malformed source file: {e}'}), 400
+    return jsonify(spec)
+
+
+@app.route('/api/register_builder', methods=['POST'])
+def api_register_builder():
+    data = flask_request.get_json(force=True) or {}
+
+    proto_id         = data.get('id', '').strip()
+    name             = data.get('name', '').strip() or proto_id
+    description      = data.get('description', '').strip()
+    copland          = data.get('copland', '').strip()
+    term_json        = data.get('term_json', '').strip()
+    manifest_json    = data.get('manifest_json', '').strip()
+    attestation_json = data.get('session_json', '').strip()
+    evidence_json    = data.get('evidence_json', '').strip()
+
+    if not proto_id:
+        return jsonify({'error': 'Protocol ID is required'}), 400
+    if not term_json:
+        return jsonify({'error': 'Term JSON is required'}), 400
+
+    try:
+        term_dict = json.loads(term_json)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid term JSON: {e}'}), 400
+
+    try:
+        manifest_obj = json.loads(manifest_json) if manifest_json else None
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid manifest JSON: {e}'}), 400
+
+    try:
+        attestation_obj = json.loads(attestation_json) if attestation_json else None
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid attestation session JSON: {e}'}), 400
+
+    try:
+        evidence_obj = json.loads(evidence_json) if evidence_json else \
+                       [{"RawEv": []}, {"EvidenceT_CONSTRUCTOR": "mt_evt"}]
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid evidence JSON: {e}'}), 400
+
+    # Always re-derive targets and flow from the term
+    derived = protocol_builder.derive_from_term(term_dict)
+
+    # Fall back to derived values if user left sections blank
+    if manifest_obj is None:
+        manifest_obj = {'ASPS': derived['asps'], 'ASP_FS_MAP': {}, 'POLICY': []}
+    if attestation_obj is None:
+        attestation_obj = {
+            'Session_Plc':    'P0',
+            'Plc_Mapping':    {},
+            'PubKey_Mapping': {},
+            'Session_Context': {
+                'ASP_Types': derived['asp_types'],
+                'ASP_Comps': derived['asp_comps'],
+            },
+        }
+
+    if not copland:
+        copland = term_json[:80] + ('…' if len(term_json) > 80 else '')
+
+    # If overwriting an existing custom protocol, deregister the old entry first
+    # so the config file doesn't accumulate stale paths.
+    if proto_id in REGISTRY and REGISTRY[proto_id].get('custom_source'):
+        protocol_loader.remove_protocol(proto_id)
+
+    try:
+        protocol_builder.save_and_register(
+            proto_id, name, description, copland,
+            term_dict, manifest_obj, attestation_obj,
+            evidence_obj, derived['targets'], derived['flow'],
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'ok': True, 'id': proto_id, 'name': name})
 
 
 if __name__ == '__main__':
