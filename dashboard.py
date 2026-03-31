@@ -1451,12 +1451,16 @@ def api_protocol_spec(protocol_id):
     if not source:
         return jsonify({'error': 'Built-in protocols cannot be edited here'}), 400
     try:
-        spec = json.load(open(source))
+        raw = open(source).read()
+        json.loads(raw)   # validate; raises JSONDecodeError if malformed
     except FileNotFoundError:
         return jsonify({'error': f'Source file not found: {source}'}), 404
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Malformed source file: {e}'}), 400
-    return jsonify(spec)
+    # Return the raw bytes so key order is preserved exactly as saved —
+    # jsonify() would re-encode and sort keys, corrupting the displayed term.
+    from flask import Response
+    return Response(raw, mimetype='application/json')
 
 
 @app.route('/api/register_builder', methods=['POST'])
