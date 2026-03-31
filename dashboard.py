@@ -5,6 +5,7 @@ import json, sys, os, base64, datetime, threading
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import server as cvm_server
 from protocols import REGISTRY
+import protocol_loader
 from flask import Flask, render_template_string, request as flask_request, jsonify
 
 app = Flask(__name__)
@@ -245,6 +246,21 @@ tr:hover td { background:#1c2128; }
 .diff-hdr  { color:#79c0ff;display:block; }
 .diff-meta { color:#6e7681;display:block; }
 .diff-ctx  { color:#6e7681;display:block; }
+.badge-custom { background:#1a2340;color:#79c0ff;border:1px solid #1f4080;
+                padding:2px 7px;border-radius:20px;font-size:0.65rem;font-weight:600;letter-spacing:.04em; }
+.load-panel { background:#161b22;border:1px solid #21262d;border-radius:10px;
+              padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
+.load-panel label { color:#8b949e;font-size:0.75rem;white-space:nowrap; }
+.load-input { flex:1;min-width:260px;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+              color:#e6edf3;font-size:0.8rem;padding:5px 10px;outline:none; }
+.load-input:focus { border-color:#388bfd; }
+.load-btn   { background:#1f4080;color:#79c0ff;border:1px solid #1f4080;border-radius:6px;
+              padding:5px 14px;font-size:0.78rem;cursor:pointer;white-space:nowrap; }
+.load-btn:hover { background:#2d5ba8; }
+.remove-btn { background:transparent;color:#6e7681;border:1px solid #30363d;border-radius:6px;
+              padding:3px 9px;font-size:0.72rem;cursor:pointer; }
+.remove-btn:hover { color:#f85149;border-color:#f85149; }
+.load-error { color:#f85149;font-size:0.75rem; }
 """
 
 HOME_TMPL = """
@@ -270,8 +286,13 @@ HOME_TMPL = """
           {% else %}<span class="dot-r"></span>{% endif %}
         {% else %}<span class="dot-d"></span>{% endif %}
         <span class="proto-name">{{ p.name }}</span>
-        {% if any_tampered %}
+        {% if p.custom_source %}
+          <span class="badge-custom" style="margin-left:auto;">⊕ custom</span>
+        {% elif any_tampered %}
           <span class="badge-tampered" style="margin-left:auto;">⚠ TAMPERED</span>
+        {% endif %}
+        {% if any_tampered and p.custom_source %}
+          <span class="badge-tampered">⚠ TAMPERED</span>
         {% endif %}
       </div>
       <div class="proto-desc">{{ p.description }}</div>
@@ -292,10 +313,22 @@ HOME_TMPL = """
                 onclick="provisionProtocol('{{ p.id }}')">⚙ Provision</button>
         <button class="run-btn" id="runbtn-{{ p.id }}"
                 onclick="runProtocol('{{ p.id }}')">▶ Run</button>
+        {% if p.custom_source %}
+          <button class="remove-btn" id="rmbtn-{{ p.id }}"
+                  onclick="removeProtocol('{{ p.id }}')">× Remove</button>
+        {% endif %}
       </div>
     </div>
   </div>
 {% endfor %}
+</div>
+
+<div class="load-panel">
+  <label>Load protocol from JSON file:</label>
+  <input class="load-input" id="load-path-input" type="text"
+         placeholder="/path/to/protocol.json" spellcheck="false">
+  <button class="load-btn" onclick="loadProtocol()">⊕ Load</button>
+  <span class="load-error" id="load-error" style="display:none;"></span>
 </div>
 
 <script>
@@ -325,6 +358,43 @@ async function provisionProtocol(id) {
   if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
 }
 // (Provision on home page updates golden files; visit detail page to see new hashes)
+
+async function loadProtocol() {
+  const input = document.getElementById('load-path-input');
+  const errEl = document.getElementById('load-error');
+  const path  = input.value.trim();
+  if (!path) return;
+  errEl.style.display = 'none';
+  try {
+    const res  = await fetch('/api/load_protocol', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path}),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Load failed'; errEl.style.display = ''; return; }
+    input.value = '';
+    location.reload();
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
+  }
+}
+
+async function removeProtocol(id) {
+  const btn = document.getElementById('rmbtn-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
+  try {
+    const res = await fetch('/api/protocols/' + id, {method: 'DELETE'});
+    if (res.ok) { location.reload(); return; }
+    const data = await res.json();
+    alert(data.error || 'Remove failed');
+  } catch(e) { alert('Error: ' + e.message); }
+  if (btn) { btn.disabled = false; btn.textContent = '× Remove'; }
+}
+
+document.getElementById('load-path-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadProtocol();
+});
 
 // Poll for live updates (from MCP pushes) every 3 seconds
 async function poll() {
@@ -765,6 +835,30 @@ def api_reset(protocol_id, target_id):
         return jsonify({'error': f'Unknown target: {target_id}'}), 404
     tamper_targets[target_id]['reset']()
     return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id})
+
+
+@app.route('/api/load_protocol', methods=['POST'])
+def api_load_protocol():
+    data = flask_request.get_json(force=True)
+    path = (data or {}).get('path', '').strip()
+    if not path:
+        return jsonify({'error': 'Missing path'}), 400
+    try:
+        proto_id = protocol_loader.add_protocol_file(path)
+        return jsonify({'ok': True, 'id': proto_id, 'name': REGISTRY[proto_id]['name']})
+    except FileNotFoundError:
+        return jsonify({'error': f'File not found: {path}'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/protocols/<protocol_id>', methods=['DELETE'])
+def api_remove_protocol(protocol_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    if not protocol_loader.remove_protocol(protocol_id):
+        return jsonify({'error': 'Cannot remove built-in protocol'}), 400
+    return jsonify({'ok': True, 'id': protocol_id})
 
 
 @app.route('/api/push', methods=['POST'])

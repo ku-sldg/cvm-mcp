@@ -378,3 +378,9 @@ REGISTRY = {
         'tamper_targets': {'file1': _TAMPER_TARGET_FILE1, 'file2': _TAMPER_TARGET_FILE2},
     },
 }
+
+# Load any protocol JSON files that were previously added via the dashboard
+from protocol_loader import load_saved_protocols as _load_saved
+for _path, _err in _load_saved():
+    import sys
+    print(f"[protocols] warning: could not load '{_path}': {_err}", file=sys.stderr)
