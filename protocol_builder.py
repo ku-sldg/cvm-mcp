@@ -29,6 +29,60 @@ import os
 import json
 import datetime
 
+# ── Measurement-only term construction ───────────────────────────────────────
+
+def _make_measurement_term(term):
+    """
+    Return a copy of term with every APPR ASP removed.
+
+    Used during provisioning so the CVM run always succeeds (no appraisal
+    can fail because there is no existing golden to compare against).
+
+    Removal rules:
+    - asp(APPR) → None  (caller drops it)
+    - lseq([..., APPR, ...]) → APPR children filtered out; if one child
+      remains the lseq wrapper is also dropped so the measurement evidence
+      IS the final output (not discarded by a trailing NULL step).
+    - bseq/bpar([split, t1, t2]): APPR children replaced by NULL so the
+      split structure is preserved.
+    - att([place, sub]) where sub collapses to None → None.
+    """
+    if not isinstance(term, dict):
+        return term
+    ctor = term.get('TERM_CONSTRUCTOR', '')
+    body = term.get('TERM_BODY')
+
+    _null = {'TERM_CONSTRUCTOR': 'asp', 'TERM_BODY': {'ASP_CONSTRUCTOR': 'NULL'}}
+
+    if ctor == 'asp':
+        if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'APPR':
+            return None   # signal parent to remove this node
+        return term
+
+    elif ctor == 'lseq' and isinstance(body, list):
+        children = [c for c in (_make_measurement_term(x) for x in body)
+                    if c is not None]
+        if not children:
+            return _null
+        if len(children) == 1:
+            return children[0]   # unwrap single-child lseq
+        return {'TERM_CONSTRUCTOR': 'lseq', 'TERM_BODY': children}
+
+    elif ctor in ('bseq', 'bpar') and isinstance(body, list) and len(body) >= 3:
+        split = body[0]
+        c1    = _make_measurement_term(body[1]) or _null
+        c2    = _make_measurement_term(body[2]) or _null
+        return {'TERM_CONSTRUCTOR': ctor, 'TERM_BODY': [split, c1, c2]}
+
+    elif ctor == 'att' and isinstance(body, list) and len(body) == 2:
+        inner = _make_measurement_term(body[1])
+        if inner is None:
+            return None
+        return {'TERM_CONSTRUCTOR': 'att', 'TERM_BODY': [body[0], inner]}
+
+    return term
+
+
 # ── ASP type templates ────────────────────────────────────────────────────────
 _ASP_REPLACE = {'FWD': {'FWD': 'REPLACE', '_BODY': 1}, 'ATTRS': []}
 _ASP_EXTEND  = {'FWD': {'FWD': 'EXTEND',  '_BODY': 1, 'EvInSig': 'ALL'}, 'ATTRS': []}
@@ -76,12 +130,18 @@ def _flow_label(items):
     return '?'
 
 
-def _walk(term, ctx):
+def _walk(term, ctx, path=None):
     """
     Recursively walk a term dict.
     Returns list of flow items for this subtree.
     Populates ctx (asps, asp_types, asp_comps, targets) as side-effect.
+
+    path: list of keys/indices from the root term to the current node.
+          ASPC flow items include a 'term_path' field (path to their ASP_BODY)
+          so the dashboard can locate and edit ASP_ARGS directly.
     """
+    if path is None:
+        path = []
     if not isinstance(term, dict):
         return []
 
@@ -94,7 +154,7 @@ def _walk(term, ctx):
             return []
         items = []
         for i, child in enumerate(body):
-            child_flow = _walk(child, ctx)
+            child_flow = _walk(child, ctx, path + ['TERM_BODY', i])
             if i > 0 and items and child_flow:
                 items.append({'type': 'arrow'})
             items.extend(child_flow)
@@ -105,22 +165,24 @@ def _walk(term, ctx):
         if not isinstance(body, list) or len(body) < 3:
             return [{'type': 'asp', 'label': 'bseq(?)', 'style': 'default'}]
         split, t1, t2 = body[0], body[1], body[2]
-        c1 = _walk(t1, ctx)
-        c2 = _walk(t2, ctx)
+        c1 = _walk(t1, ctx, path + ['TERM_BODY', 1])
+        c2 = _walk(t2, ctx, path + ['TERM_BODY', 2])
         return [{'type': 'bseq',
                  'label': f'bseq / {split}',
-                 'children': [_flow_label(c1), _flow_label(c2)]}]
+                 'children': [_flow_label(c1), _flow_label(c2)],
+                 'children_flow': [c1, c2]}]
 
     # ── bpar: branching parallel (same structure as bseq) ────────────────────
     elif ctor == 'bpar':
         if not isinstance(body, list) or len(body) < 3:
             return [{'type': 'asp', 'label': 'bpar(?)', 'style': 'default'}]
         split, t1, t2 = body[0], body[1], body[2]
-        c1 = _walk(t1, ctx)
-        c2 = _walk(t2, ctx)
+        c1 = _walk(t1, ctx, path + ['TERM_BODY', 1])
+        c2 = _walk(t2, ctx, path + ['TERM_BODY', 2])
         return [{'type': 'bseq',
                  'label': f'bpar / {split}',
-                 'children': [_flow_label(c1), _flow_label(c2)]}]
+                 'children': [_flow_label(c1), _flow_label(c2)],
+                 'children_flow': [c1, c2]}]
 
     # ── asp: single ASP node ──────────────────────────────────────────────────
     elif ctor == 'asp':
@@ -163,6 +225,9 @@ def _walk(term, ctx):
                 ctx['asp_types'][appr_id] = _ASP_REPLACE
                 ctx['asp_comps'].setdefault(asp_id, appr_id)
 
+            # path to this ASPC's ASP_BODY from the root term
+            term_path = path + ['TERM_BODY', 'ASP_BODY']
+
             filepath = asp_args.get('filepath', '')
             golden   = asp_args.get('filepath_golden', '')
             if filepath and golden:
@@ -171,23 +236,68 @@ def _walk(term, ctx):
                 target_id = asp_id if count == 0 else f'{asp_id}_{count}'
                 label = os.path.basename(filepath)
                 ctx['targets'].append({
-                    'id':     target_id,
-                    'label':  label,
-                    'file':   os.path.abspath(os.path.expanduser(filepath)),
-                    'golden': os.path.abspath(os.path.expanduser(golden)),
+                    'id':      target_id,
+                    'label':   label,
+                    'file':    os.path.abspath(os.path.expanduser(filepath)),
+                    'golden':  os.path.abspath(os.path.expanduser(golden)),
+                    'asp_id':  asp_id,
+                    'asp_args': asp_args,
                 })
-                return [{'type': 'asp', 'label': f'{asp_id}({label})', 'style': 'file'}]
+                return [{'type': 'asp', 'label': f'{asp_id}({label})',
+                         'style': 'file', 'term_path': term_path}]
 
-            return [{'type': 'asp', 'label': asp_id, 'style': 'default'}]
+            return [{'type': 'asp', 'label': asp_id,
+                     'style': 'default', 'term_path': term_path}]
 
     # ── att: remote attestation ───────────────────────────────────────────────
     elif ctor == 'att':
         if isinstance(body, list) and len(body) == 2:
             place = body[0]
-            _walk(body[1], ctx)   # still collect ASPs from sub-term
+            _walk(body[1], ctx, path + ['TERM_BODY', 1])   # still collect ASPs from sub-term
             return [{'type': 'asp', 'label': f'att@{place}', 'style': 'default'}]
 
     return []
+
+
+# ── Golden injection ─────────────────────────────────────────────────────────
+
+def inject_golden_b64(term):
+    """
+    Walk a Copland term and inject golden_b64 into every ASPC that has an
+    asp_id_appr, looking up the golden from the shared target golden store.
+
+    Returns a new term dict (original is not mutated).
+    """
+    from evidence_slice import load_target_golden
+
+    if not isinstance(term, dict):
+        return term
+    ctor = term.get('TERM_CONSTRUCTOR', '')
+    body = term.get('TERM_BODY')
+
+    if ctor == 'asp' and isinstance(body, dict):
+        if body.get('ASP_CONSTRUCTOR') == 'ASPC':
+            asp_body = body.get('ASP_BODY', {})
+            asp_id   = asp_body.get('ASP_ID', '')
+            asp_args = asp_body.get('ASP_ARGS', {})
+            if asp_args.get('asp_id_appr'):
+                entry = load_target_golden(asp_id, asp_args)
+                if entry:
+                    new_args = {**asp_args, 'golden_b64': entry['golden_b64']}
+                    return {'TERM_CONSTRUCTOR': 'asp',
+                            'TERM_BODY': {**body,
+                                          'ASP_BODY': {**asp_body, 'ASP_ARGS': new_args}}}
+        return term
+
+    elif ctor in ('lseq', 'bseq', 'bpar') and isinstance(body, list):
+        return {'TERM_CONSTRUCTOR': ctor,
+                'TERM_BODY': [inject_golden_b64(c) for c in body]}
+
+    elif ctor == 'att' and isinstance(body, list) and len(body) == 2:
+        return {'TERM_CONSTRUCTOR': 'att',
+                'TERM_BODY': [body[0], inject_golden_b64(body[1])]}
+
+    return term
 
 
 # ── Protocol persistence + registration ───────────────────────────────────────

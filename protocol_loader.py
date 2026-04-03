@@ -73,34 +73,88 @@ def _tamper_file(file_path, golden_path, bad_bytes):
     return _tf(file_path, golden_path, bad_bytes)
 
 
-def _make_file_tamper_target(target_id, label, file_path, golden_path):
-    """Create a generic file-based tamper_targets entry for a loaded protocol."""
+def _make_file_tamper_target(target_id, label, file_path, golden_path,
+                              golden_evidence_path=None, asp_id=None,
+                              asp_args=None, asp_types=None):
+    """
+    Create a generic file-based tamper_targets entry for a loaded protocol.
+
+    asp_id / asp_args: the measurement ASP and its exact args for this target,
+                       used to look up the golden from the shared target store.
+    golden_evidence_path / asp_types: kept for API compatibility, not used.
+    """
     bad_bytes = f"[TAMPERED] {label} - modified to fail appraisal.".encode()
 
+    def _get_golden_hash():
+        if asp_id and asp_args is not None:
+            from evidence_slice import load_target_golden
+            import base64
+            entry = load_target_golden(asp_id, asp_args)
+            if entry:
+                try:
+                    return base64.b64decode(entry['golden_b64'])
+                except Exception:
+                    pass
+        return None
+
     def tamper():
-        _tamper_file(file_path, golden_path, bad_bytes)
+        golden_hash = _get_golden_hash()
+        content, nonce = bad_bytes, 0
+        while golden_hash and hashlib.sha256(content).digest() == golden_hash:
+            nonce += 1
+            content = bad_bytes + f'\n[TAMPER-NONCE-{nonce}]'.encode()
+        open(file_path, 'wb').write(content)
 
     def repair():
-        src     = golden_path + '.src'
-        default = golden_path + '.default'
+        src     = file_path + '.src'
+        default = file_path + '.default'
         if os.path.exists(src):
             content = open(src, 'rb').read()
         elif os.path.exists(default):
             content = open(default, 'rb').read()
         else:
-            content = open(file_path, 'rb').read()
+            return   # no restore point — provision first
         open(file_path, 'wb').write(content)
 
     def reset():
-        default = golden_path + '.default'
-        if os.path.exists(default):
+        orig    = file_path + '.original'
+        default = file_path + '.default'
+        if os.path.exists(orig):
+            content = open(orig, 'rb').read()
+        elif os.path.exists(default):
             content = open(default, 'rb').read()
         else:
-            content = open(file_path, 'rb').read()
+            return   # no restore point — provision first
         open(file_path, 'wb').write(content)
-        _write_golden(golden_path, content)
+        # Restore original golden so compliance check passes after reset
+        orig_golden = file_path + '.original_golden.json'
+        if os.path.exists(orig_golden) and asp_id and asp_args is not None:
+            from evidence_slice import store_target_golden
+            try:
+                entry = json.loads(open(orig_golden).read())
+                store_target_golden(
+                    asp_id, asp_args,
+                    entry['golden_b64'],
+                    entry.get('protocol_id', ''),
+                    entry.get('evidence_bundle', ''),
+                    entry.get('timestamp', ''),
+                )
+            except Exception:
+                pass
 
     def get_state():
+        if asp_id and asp_args is not None:
+            from evidence_slice import load_target_golden
+            import base64
+            entry = load_target_golden(asp_id, asp_args)
+            if entry is None:
+                return {'compliant': None}   # not yet provisioned
+            try:
+                current  = hashlib.sha256(open(file_path, 'rb').read()).digest()
+                expected = base64.b64decode(entry['golden_b64'])
+                return {'compliant': current == expected}
+            except Exception:
+                return {'compliant': None}
         return {'compliant': _file_compliant(file_path, golden_path)}
 
     def inspect():
@@ -108,23 +162,39 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path):
             current_bytes = open(file_path, 'rb').read()
         except FileNotFoundError:
             return {'error': f'Target file not found: {os.path.basename(file_path)}'}
-        try:
-            golden_bytes = open(golden_path, 'rb').read()
-        except FileNotFoundError:
-            return {'error': 'Golden file not found — run Provision first'}
-        compliant    = hashlib.sha256(current_bytes).digest() == golden_bytes
-        src          = golden_path + '.src'
-        provisioned  = None
-        if os.path.exists(src):
-            provisioned = open(src, 'rb').read().decode('utf-8', errors='replace')
-        return {
+
+        result = {
             'type':           'file',
-            'compliant':      compliant,
             'current':        current_bytes.decode('utf-8', errors='replace'),
             'current_sha256': hashlib.sha256(current_bytes).hexdigest(),
-            'golden_sha256':  golden_bytes.hex(),
-            'provisioned':    provisioned,
         }
+
+        if asp_id and asp_args is not None:
+            from evidence_slice import load_target_golden
+            import base64
+            entry = load_target_golden(asp_id, asp_args)
+            src = file_path + '.src'
+            if os.path.exists(src):
+                result['provisioned'] = open(src, 'rb').read().decode('utf-8', errors='replace')
+            if entry is None:
+                return {**result, 'error': 'No golden evidence — run Provision first'}
+            result['evidence_timestamp'] = entry.get('timestamp', '')
+            result['golden_protocol']    = entry.get('protocol_id', '')
+            result['evidence_bundle']    = entry.get('evidence_bundle', '')
+            try:
+                expected = base64.b64decode(entry['golden_b64'])
+                result['golden_sha256'] = expected.hex()
+                result['compliant']     = (
+                    hashlib.sha256(current_bytes).digest() == expected
+                )
+            except Exception as e:
+                result['evidence_slice_error'] = str(e)
+            return result
+
+        src = file_path + '.src'
+        if os.path.exists(src):
+            result['provisioned'] = open(src, 'rb').read().decode('utf-8', errors='replace')
+        return {**result, 'error': 'No golden evidence — run Provision first'}
 
     return {
         'label':     label,
@@ -154,12 +224,24 @@ def load_protocol_from_file(path):
     request_obj  = spec['request']
     targets_spec = spec.get('targets', [])
 
+    # Evidence bundle stored alongside the spec file: <proto_id>_evidence.json
+    golden_evidence_path = os.path.splitext(path)[0] + '_evidence.json'
+
+    # ASP_Types from the session context — needed by do_evidence_slice
+    asp_types = (
+        request_obj.get('ATTESTATION_SESSION', {})
+                   .get('Session_Context', {})
+                   .get('ASP_Types', {})
+    )
+
     resolved_targets = [
         {
-            'id':     t['id'],
-            'label':  t['label'],
-            'file':   os.path.abspath(os.path.expanduser(t['file'])),
-            'golden': os.path.abspath(os.path.expanduser(t['golden'])),
+            'id':      t['id'],
+            'label':   t['label'],
+            'file':    os.path.abspath(os.path.expanduser(t['file'])),
+            'golden':  os.path.abspath(os.path.expanduser(t['golden'])),
+            'asp_id':  t.get('asp_id'),
+            'asp_args': t.get('asp_args'),
         }
         for t in targets_spec
     ]
@@ -168,40 +250,113 @@ def load_protocol_from_file(path):
         return json.dumps(manifest_obj), json.dumps(request_obj)
 
     def provision():
-        ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        result = []
+        from cvm_client import run_cvm
+        from evidence_slice import store_golden_evidence
+        from protocol_builder import _make_measurement_term
+
+        ts      = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        asp_bin = os.environ.get(
+            'CVM_ASP_BIN',
+            os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
+        )
+
+        # Save per-file original snapshots (for repair/reset) before running CVM
         for t in resolved_targets:
-            h = _write_golden(t['golden'], open(t['file'], 'rb').read())
-            result.append({
+            orig = t['file'] + '.original'
+            if not os.path.exists(orig):
+                try:
+                    open(orig, 'wb').write(open(t['file'], 'rb').read())
+                except FileNotFoundError:
+                    pass
+
+        # Run CVM with a measurement-only term (APPR → NULL) so it always succeeds
+        meas_term    = _make_measurement_term(request_obj.get('TERM', {}))
+        meas_request = {**request_obj, 'TERM': meas_term}
+
+        response = run_cvm(manifest_obj, meas_request, asp_bin)
+        if not response.get('SUCCESS'):
+            raise RuntimeError(
+                f"CVM provision run failed: {response.get('PAYLOAD', 'unknown error')}"
+            )
+
+        payload = response['PAYLOAD']
+        store_golden_evidence(golden_evidence_path, payload)
+
+        # Populate shared target golden store
+        from evidence_slice import do_evidence_slice, store_target_golden
+        raw_ev_list = payload[0].get('RawEv', [])
+        et          = payload[1]
+        for t in resolved_targets:
+            if t.get('asp_id') and t.get('asp_args') is not None:
+                ev_slice = do_evidence_slice(et, raw_ev_list, asp_types,
+                                             t['asp_id'], t['asp_args'])
+                if ev_slice:
+                    store_target_golden(t['asp_id'], t['asp_args'], ev_slice[0],
+                                        proto_id, golden_evidence_path, ts)
+                    # Save original-golden sidecar for reset semantics (never overwritten)
+                    orig_golden = t['file'] + '.original_golden.json'
+                    if not os.path.exists(orig_golden):
+                        with open(orig_golden, 'w') as _f:
+                            json.dump({
+                                'golden_b64':      ev_slice[0],
+                                'timestamp':       ts,
+                                'asp_id':          t['asp_id'],
+                                'asp_args':        t['asp_args'],
+                                'protocol_id':     proto_id,
+                                'evidence_bundle': os.path.basename(golden_evidence_path),
+                            }, _f)
+
+        # Also write per-file .src snapshots (for repair)
+        for t in resolved_targets:
+            try:
+                content = open(t['file'], 'rb').read()
+                open(t['file'] + '.src', 'wb').write(content)
+            except FileNotFoundError:
+                pass
+
+        return [
+            {
                 'target':    t['label'],
-                'golden':    os.path.basename(t['golden']),
-                'sha256':    h,
+                'golden':    os.path.basename(golden_evidence_path),
                 'timestamp': ts,
                 'tamper_id': t['id'],
-            })
-        return result
+            }
+            for t in resolved_targets
+        ]
 
     def golden_state():
-        result = []
-        for t in resolved_targets:
-            g = _read_golden(t['golden'])
-            result.append({
+        from evidence_slice import load_golden_evidence
+        _, _, ts = load_golden_evidence(golden_evidence_path)
+        return [
+            {
                 'target':    t['label'],
-                'golden':    os.path.basename(t['golden']),
-                'sha256':    g['sha256'] if g else None,
-                'timestamp': g['timestamp'] if g else None,
+                'golden':    os.path.basename(golden_evidence_path),
+                'sha256':    None,   # evidence bundle replaces per-file hashes
+                'timestamp': ts,
                 'tamper_id': t['id'],
-            })
-        return result
+            }
+            for t in resolved_targets
+        ]
 
     tamper_targets = {
-        t['id']: _make_file_tamper_target(t['id'], t['label'], t['file'], t['golden'])
+        t['id']: _make_file_tamper_target(
+            t['id'], t['label'], t['file'], t['golden'],
+            golden_evidence_path=golden_evidence_path,
+            asp_id=t.get('asp_id'),
+            asp_args=t.get('asp_args'),
+            asp_types=asp_types,
+        )
         for t in resolved_targets
     }
 
     flow = spec.get('flow') or [
         {'type': 'asp', 'label': spec.get('copland', proto_id), 'style': 'default'}
     ]
+
+    def prepare(req):
+        """Inject golden_b64 into ASPC ASP_ARGS from the shared target golden store."""
+        from protocol_builder import inject_golden_b64
+        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}))}
 
     return proto_id, {
         'id':             proto_id,
@@ -212,6 +367,7 @@ def load_protocol_from_file(path):
         'build':          build,
         'provision':      provision,
         'golden_state':   golden_state,
+        'prepare':        prepare,
         'tamper_targets': tamper_targets,
         'custom_source':  path,          # marks this as a dynamically-loaded protocol
     }

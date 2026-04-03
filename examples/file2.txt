@@ -1,1 +1,1 @@
-This is BADDDD target file TWO for CVM attestation testing.
+This is target file TWO for CVM attestation testing.

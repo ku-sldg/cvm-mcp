@@ -55,7 +55,14 @@ def run_protocol(protocol_id, log_level='Info'):
     """Run a protocol by ID and return parsed appraisal results."""
     proto = REGISTRY[protocol_id]
     manifest, req = proto['build']()
-    raw = cvm_server.run_attestation(manifest, req, log_level=log_level)
+    req = json.loads(req) if isinstance(req, str) else req
+    if 'prepare' in proto:
+        req = proto['prepare'](req) or req   # inject golden_b64 from evidence bundle
+    raw = cvm_server.run_attestation(
+        manifest if isinstance(manifest, str) else json.dumps(manifest),
+        json.dumps(req),
+        log_level=log_level,
+    )
     response = json.loads(raw) if isinstance(raw, str) else raw
     cvm_success = response.get('SUCCESS', False)
     error = None
@@ -170,6 +177,17 @@ tr:hover td { background:#1c2128; }
 .flow-arrow { color:#30363d;font-size:1.1rem;padding:0 6px;flex-shrink:0; }
 .flow-sub { display:flex;flex-direction:column;gap:4px;padding:4px 0; }
 .bseq-label { font-size:0.65rem;color:#8b949e;margin-bottom:4px; }
+.clickable-asp { cursor:pointer;transition:border-color .15s,background .15s; }
+.clickable-asp:hover { border-color:#58a6ff !important;background:#0d2030 !important; }
+.clickable-asp.asp-selected { border-color:#58a6ff !important;background:#0d2030 !important;box-shadow:0 0 0 2px rgba(88,166,255,.25); }
+.asp-edit-hint { font-size:0.65rem;opacity:0;margin-left:5px;transition:opacity .15s; }
+.clickable-asp:hover .asp-edit-hint,.clickable-asp.asp-selected .asp-edit-hint { opacity:0.6; }
+.arg-editor-card { background:#161b22;border:1px solid #388bfd;border-radius:8px;padding:14px;margin-bottom:14px; }
+.arg-row { display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center;margin-bottom:8px; }
+.arg-key { font-size:0.78rem;color:#8b949e;font-family:monospace; }
+.arg-val { background:#0d1117;border:1px solid #30363d;color:#e6edf3;border-radius:4px;
+           padding:5px 8px;font-size:0.8rem;font-family:monospace;width:100%;box-sizing:border-box; }
+.arg-val:focus { outline:none;border-color:#58a6ff; }
 
 .proto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:16px; }
 .proto-card { background:#161b22;border:1px solid #21262d;border-radius:10px;
@@ -212,7 +230,7 @@ tr:hover td { background:#1c2128; }
 .prov-hash  { color:#6e7681;font-size:0.7rem;font-family:monospace;word-break:break-all;flex:1;min-width:0; }
 .proto-card-body { display:block;color:inherit;text-decoration:none; }
 .proto-card-footer { display:flex;align-items:center;justify-content:space-between;
-                     margin-top:10px; }
+                     margin-top:10px;flex-wrap:wrap;gap:6px;min-width:0; }
 
 .tamper-btn { background:#1a0000;border:1px solid #da3633;color:#f85149;border-radius:6px;
               padding:4px 10px;font-size:0.72rem;font-family:inherit;cursor:pointer;
@@ -255,6 +273,9 @@ tr:hover td { background:#1c2128; }
 .remove-btn { background:transparent;color:#6e7681;border:1px solid #30363d;border-radius:6px;
               padding:3px 9px;font-size:0.72rem;cursor:pointer; }
 .remove-btn:hover { color:#f85149;border-color:#f85149; }
+.copy-btn { background:transparent;color:#6e7681;border:1px solid #30363d;border-radius:6px;
+            padding:3px 9px;font-size:0.72rem;cursor:pointer; }
+.copy-btn:hover { color:#58a6ff;border-color:#388bfd; }
 .load-error { color:#f85149;font-size:0.75rem; }
 """
 
@@ -295,7 +316,7 @@ HOME_TMPL = """
       <div class="proto-copland">{{ p.copland }}</div>
     </a>
     <div class="proto-card-footer">
-      <div class="proto-stats" id="stats-{{ p.id }}">
+      <div class="proto-stats" id="stats-{{ p.id }}" style="min-width:0;">
         {% if r %}
           <span class="ps-pass">✓ {{ r.pass_count }} passed</span>
           {% if r.fail_count > 0 %}<span class="ps-fail">✗ {{ r.fail_count }} failed</span>{% endif %}
@@ -304,11 +325,13 @@ HOME_TMPL = """
           <span class="ps-idle">Not yet run</span>
         {% endif %}
       </div>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="prov-btn" id="provbtn-{{ p.id }}"
                 onclick="provisionProtocol('{{ p.id }}')">⚙ Provision</button>
         <button class="run-btn" id="runbtn-{{ p.id }}"
                 onclick="runProtocol('{{ p.id }}')">▶ Run</button>
+        <button class="copy-btn"
+                onclick="location.href='/build?copy={{ p.id }}'">⎘ Copy</button>
         {% if p.custom_source %}
           <button class="remove-btn" id="rmbtn-{{ p.id }}"
                   onclick="removeProtocol('{{ p.id }}')">× Remove</button>
@@ -343,10 +366,13 @@ async function runProtocol(id) {
 async function provisionProtocol(id) {
   const btn = document.getElementById('provbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
-  try { await fetch('/api/provision/' + id); } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
+  try {
+    await fetch('/api/provision/' + id);
+    location.reload();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
+  }
 }
-// (Provision on home page updates golden files; visit detail page to see new hashes)
 
 async function removeProtocol(id) {
   const btn = document.getElementById('rmbtn-' + id);
@@ -451,8 +477,7 @@ DETAIL_TMPL = """
       <div class="prov-row" id="prov-row-{{ e.tamper_id or loop.index }}">
         <span class="prov-label">{{ e.target }}</span>
         <span class="prov-file">{{ e.golden }}</span>
-        {% if e.sha256 %}
-          <span class="prov-hash" title="{{ e.sha256 }}">{{ e.sha256[:16] }}…</span>
+        {% if e.timestamp %}
           <span style="color:#6e7681;font-size:0.7rem;white-space:nowrap;">{{ e.timestamp }}</span>
         {% else %}
           <span style="color:#8b949e;font-size:0.75rem;font-style:italic;">not provisioned</span>
@@ -812,6 +837,21 @@ BUILD_TMPL = """
   </div>
 </div>
 
+<!-- ASP Args Editor (shown when a flow node is clicked) -->
+<div id="arg-editor" style="display:none;margin-bottom:14px;">
+  <div class="arg-editor-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span id="arg-editor-title" style="font-size:0.85rem;font-weight:600;color:#58a6ff;"></span>
+      <button class="remove-btn" onclick="closeArgEditor()">✕ Close</button>
+    </div>
+    <div id="arg-editor-fields"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="run-btn" onclick="applyArgChanges()">✓ Apply to Term</button>
+      <button class="remove-btn" onclick="closeArgEditor()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Manifest + Session Context -->
 <div class="build-grid" style="margin-bottom:14px;">
   <div class="card">
@@ -863,21 +903,149 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+let _flowItems = [];   // only ASPC nodes (those with term_path), in render order
+let _argEditorIdx = null;
+
+// Render a single non-bseq flow node; registers it in _flowItems if clickable
+function _renderFlowNode(node) {
+  if (node.term_path) {
+    const idx = _flowItems.length;
+    _flowItems.push(node);
+    return `<div class="flow-node fn-${escHtml(node.style||'default')} clickable-asp"
+                 onclick="openArgEditor(this,${idx})" title="Click to edit ASP_ARGS"
+            >${escHtml(node.label)}<span class="asp-edit-hint">✎</span></div>`;
+  }
+  return `<div class="flow-node fn-${escHtml(node.style||'default')}">${escHtml(node.label)}</div>`;
+}
+
 function renderFlow(flow) {
+  _flowItems = [];
   if (!flow || !flow.length)
     return '<span style="color:#6e7681;font-size:0.78rem;font-style:italic;">No flow derived.</span>';
   return flow.map(node => {
     if (node.type === 'arrow') return '<span class="flow-arrow">→</span>';
     if (node.type === 'bseq') {
-      const children = (node.children || []).map(c =>
-        `<div class="flow-node fn-file">${escHtml(c)}</div>`).join('');
+      // Use children_flow (full items with term_path) when available; fall back to strings
+      let childrenHtml;
+      if (node.children_flow) {
+        childrenHtml = node.children_flow.map(branch =>
+          branch.map(_renderFlowNode).join('')
+        ).join('');
+      } else {
+        childrenHtml = (node.children || []).map(c =>
+          `<div class="flow-node fn-file">${escHtml(c)}</div>`).join('');
+      }
       return `<div class="flow-node fn-bseq">
         <div class="bseq-label">${escHtml(node.label)}</div>
-        <div class="flow-sub">${children}</div>
+        <div class="flow-sub">${childrenHtml}</div>
       </div>`;
     }
-    return `<div class="flow-node fn-${escHtml(node.style||'default')}">${escHtml(node.label)}</div>`;
+    return _renderFlowNode(node);
   }).join('');
+}
+
+function addArgRow(container, key, val, focusKey) {
+  // Insert before the last child (the "+ Add arg" button), or append if none yet
+  const row = document.createElement('div');
+  row.className = 'arg-row';
+  row.dataset.newRow = '1';
+  row.innerHTML = `
+    <input class="arg-val" type="text" placeholder="key" data-role="arg-key"
+           style="font-size:0.78rem;" value="${escHtml(key)}">
+    <input class="arg-val" type="text" placeholder="value" data-role="arg-val"
+           value="${escHtml(val)}">`;
+  const addBtn = container.querySelector('button');
+  if (addBtn) container.insertBefore(row, addBtn);
+  else        container.appendChild(row);
+  if (focusKey) row.querySelector('[data-role="arg-key"]').focus();
+}
+
+function openArgEditor(el, idx) {
+  _argEditorIdx = idx;
+  const flowItem = _flowItems[idx];
+  const editorEl = document.getElementById('arg-editor');
+  const titleEl  = document.getElementById('arg-editor-title');
+  const fieldsEl = document.getElementById('arg-editor-fields');
+
+  const termStr = document.getElementById('term-json').value.trim();
+  if (!termStr) {
+    titleEl.textContent  = 'No term loaded';
+    fieldsEl.innerHTML   = '<span style="color:#f85149;font-size:0.8rem;">Load a term JSON first.</span>';
+    editorEl.style.display = '';
+    return;
+  }
+  let term;
+  try { term = JSON.parse(termStr); }
+  catch(e) {
+    titleEl.textContent  = 'Parse error';
+    fieldsEl.innerHTML   = `<span style="color:#f85149;font-size:0.8rem;">Invalid term JSON: ${escHtml(e.message)}</span>`;
+    editorEl.style.display = '';
+    return;
+  }
+
+  // Navigate to ASP_BODY using term_path
+  let aspBody = term;
+  for (const key of flowItem.term_path) {
+    if (aspBody == null) break;
+    aspBody = aspBody[key];
+  }
+  if (!aspBody || !aspBody.ASP_ID) {
+    titleEl.textContent  = 'Navigation error';
+    fieldsEl.innerHTML   = '<span style="color:#f85149;font-size:0.8rem;">Could not locate ASP node in term tree. Try clicking ▶ Derive to refresh the flow.</span>';
+    editorEl.style.display = '';
+    return;
+  }
+
+  titleEl.textContent = aspBody.ASP_ID + ' — ASP_ARGS';
+  const args = aspBody.ASP_ARGS || {};
+  fieldsEl.innerHTML = '';
+  Object.entries(args).forEach(([key, val]) => addArgRow(fieldsEl, key, String(val)));
+
+  // "+ Add arg" button always present
+  const addBtn = document.createElement('button');
+  addBtn.className   = 'copy-btn';
+  addBtn.textContent = '+ Add arg';
+  addBtn.style.marginTop = '6px';
+  addBtn.onclick = () => { addArgRow(fieldsEl, '', '', true); addBtn.scrollIntoView({block:'nearest'}); };
+  fieldsEl.appendChild(addBtn);
+
+  document.querySelectorAll('.clickable-asp.asp-selected').forEach(n => n.classList.remove('asp-selected'));
+  el.classList.add('asp-selected');
+  editorEl.style.display = '';
+  editorEl.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
+function closeArgEditor() {
+  document.getElementById('arg-editor').style.display = 'none';
+  document.querySelectorAll('.clickable-asp.asp-selected').forEach(n => n.classList.remove('asp-selected'));
+  _argEditorIdx = null;
+}
+
+function applyArgChanges() {
+  if (_argEditorIdx === null) return;
+  const flowItem = _flowItems[_argEditorIdx];
+  const termStr  = document.getElementById('term-json').value.trim();
+  let term;
+  try { term = JSON.parse(termStr); }
+  catch(e) { alert('Invalid term JSON: ' + e.message); return; }
+
+  let aspBody = term;
+  for (const key of flowItem.term_path) aspBody = aspBody[key];
+  if (!aspBody.ASP_ARGS) aspBody.ASP_ARGS = {};
+
+  // Existing args (key fixed, only value editable)
+  document.querySelectorAll('#arg-editor-fields input[data-arg-key]').forEach(inp => {
+    aspBody.ASP_ARGS[inp.dataset.argKey] = inp.value;
+  });
+  // New rows added via "+ Add arg" (both key and value are inputs)
+  document.querySelectorAll('#arg-editor-fields [data-new-row="1"]').forEach(row => {
+    const k = row.querySelector('[data-role="arg-key"]').value.trim();
+    const v = row.querySelector('[data-role="arg-val"]').value;
+    if (k) aspBody.ASP_ARGS[k] = v;
+  });
+
+  document.getElementById('term-json').value = JSON.stringify(term, null, 2);
+  closeArgEditor();
 }
 
 function renderTargets(targets) {
@@ -905,6 +1073,7 @@ async function loadFromFile(pathInputId, textareaId, btnId, errId) {
     else {
       document.getElementById(textareaId).value = data.content;
       localStorage.setItem('cvm_fp_' + pathInputId, path);
+      if (textareaId === 'term-json') deriveFromTerm(true);
     }
   } catch(e) { errEl.textContent = e.message; }
   btn.disabled = false; btn.textContent = '↓ Load file';
@@ -1029,6 +1198,13 @@ function setupPathComplete(inputId) {
   if (saved) document.getElementById(id).value = saved;
 });
 
+// Auto-derive flow when term textarea is edited (debounced 600ms)
+let _termDeriveTimer = null;
+document.getElementById('term-json').addEventListener('input', () => {
+  clearTimeout(_termDeriveTimer);
+  _termDeriveTimer = setTimeout(() => deriveFromTerm(true), 600);
+});
+
 // Enter key in path inputs triggers the load button
 const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
 ['term-file','manifest-file','session-file'].forEach(id => {
@@ -1038,13 +1214,18 @@ const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-
   });
 });
 
-async function deriveFromTerm() {
+// silent=true: update flow/targets only, no button state or error UI changes
+async function deriveFromTerm(silent) {
   const btn     = document.getElementById('derive-btn');
   const errEl   = document.getElementById('derive-error');
   const termStr = document.getElementById('term-json').value.trim();
-  errEl.style.display = 'none';
-  if (!termStr) { errEl.textContent = 'Load or paste a term JSON first.'; errEl.style.display = ''; return; }
-  btn.textContent = '⟳ Deriving…'; btn.disabled = true;
+  if (!silent) {
+    errEl.style.display = 'none';
+    if (!termStr) { errEl.textContent = 'Load or paste a term JSON first.'; errEl.style.display = ''; return; }
+    btn.textContent = '⟳ Deriving…'; btn.disabled = true;
+  } else {
+    if (!termStr) return;
+  }
   try {
     const res  = await fetch('/api/derive_term', {
       method: 'POST',
@@ -1052,8 +1233,9 @@ async function deriveFromTerm() {
       body: JSON.stringify({term_json: termStr}),
     });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'Derivation failed'; errEl.style.display = ''; }
-    else {
+    if (!res.ok) {
+      if (!silent) { errEl.textContent = data.error || 'Derivation failed'; errEl.style.display = ''; }
+    } else {
       // Always update the visual previews (they are derived from the term)
       document.getElementById('flow-preview').innerHTML    = renderFlow(data.flow);
       document.getElementById('targets-preview').innerHTML = renderTargets(data.targets);
@@ -1065,9 +1247,9 @@ async function deriveFromTerm() {
       if (!sEl.value.trim()) sEl.value = JSON.stringify(data.attestation_session, null, 2);
     }
   } catch(e) {
-    errEl.textContent = 'Error: ' + e.message; errEl.style.display = '';
+    if (!silent) { errEl.textContent = 'Error: ' + e.message; errEl.style.display = ''; }
   }
-  btn.textContent = '▶ Derive'; btn.disabled = false;
+  if (!silent) { btn.textContent = '▶ Derive'; btn.disabled = false; }
 }
 
 // ── Edit mode: pre-populate from existing protocol spec ──────────────────────
@@ -1114,17 +1296,74 @@ async function maybeLoadEdit() {
         JSON.stringify(evidence, null, 2);
 
     // Populate previews from saved spec — no auto-derive so nothing gets overwritten.
-    // User can click ▶ Derive explicitly to re-derive from the current term.
+    // Silently re-derive to get term_path data so flow nodes are clickable.
     if (spec.flow)
       document.getElementById('flow-preview').innerHTML = renderFlow(spec.flow);
     if (spec.targets)
       document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
+    deriveFromTerm(true);
 
   } catch(e) {
     banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
   }
 }
 document.addEventListener('DOMContentLoaded', maybeLoadEdit);
+
+// ── Copy mode: pre-populate from any protocol, leave ID editable ──────────────
+async function maybeLoadCopy() {
+  const copyId = new URLSearchParams(window.location.search).get('copy');
+  if (!copyId) return;
+
+  document.querySelector('h1').textContent   = 'Copy Protocol';
+  document.querySelector('.sub').textContent = 'Edit the fields below and click Register Protocol to save as a new protocol';
+
+  const banner = document.getElementById('banner');
+  try {
+    const res  = await fetch('/api/protocol_copy_spec/' + encodeURIComponent(copyId));
+    const spec = await res.json();
+    if (!res.ok) {
+      banner.innerHTML = `<div class="err-banner">${escHtml(spec.error || 'Could not load protocol spec')}</div>`;
+      return;
+    }
+
+    // Suggest a unique new ID and name — leave both editable
+    const suggestedId   = spec._suggested_copy_id || ('copy_of_' + (spec.id || copyId));
+    const baseCopyId    = 'copy_of_' + (spec.id || copyId);
+    const baseName      = 'Copy of ' + (spec.name || spec.id || copyId);
+    const numSuffix     = suggestedId !== baseCopyId
+                            ? suggestedId.slice(baseCopyId.length + 1)  // e.g. "2", "3"
+                            : null;
+    document.getElementById('meta-id').value   = suggestedId;
+    document.getElementById('meta-name').value = numSuffix ? `${baseName} (${numSuffix})` : baseName;
+    document.getElementById('meta-desc').value    = spec.description || '';
+    document.getElementById('meta-copland').value = spec.copland     || '';
+
+    const term = spec.request && spec.request.TERM;
+    if (term)
+      document.getElementById('term-json').value = JSON.stringify(term, null, 2);
+
+    if (spec.manifest)
+      document.getElementById('manifest-json').value = JSON.stringify(spec.manifest, null, 2);
+
+    const attest = spec.request && spec.request.ATTESTATION_SESSION;
+    if (attest)
+      document.getElementById('session-json').value = JSON.stringify(attest, null, 2);
+
+    const evidence = spec.request && spec.request.EVIDENCE;
+    if (evidence)
+      document.getElementById('evidence-json').value = JSON.stringify(evidence, null, 2);
+
+    if (spec.flow)
+      document.getElementById('flow-preview').innerHTML = renderFlow(spec.flow);
+    if (spec.targets && spec.targets.length)
+      document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
+    deriveFromTerm(true);
+
+  } catch(e) {
+    banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
+  }
+}
+document.addEventListener('DOMContentLoaded', maybeLoadCopy);
 
 async function registerProtocol() {
   const banner = document.getElementById('banner');
@@ -1406,6 +1645,55 @@ def api_protocol_spec(protocol_id):
     # jsonify() would re-encode and sort keys, corrupting the displayed term.
     from flask import Response
     return Response(raw, mimetype='application/json')
+
+
+def _unique_copy_id(base_id):
+    """Return 'copy_of_<base_id>' if unused, else 'copy_of_<base_id>_2', '_3', …"""
+    candidate = f'copy_of_{base_id}'
+    if candidate not in REGISTRY:
+        return candidate
+    n = 2
+    while f'{candidate}_{n}' in REGISTRY:
+        n += 1
+    return f'{candidate}_{n}'
+
+
+@app.route('/api/protocol_copy_spec/<protocol_id>')
+def api_protocol_copy_spec(protocol_id):
+    """Return a spec dict for any protocol (built-in or custom) for use by the copy page."""
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    entry = REGISTRY[protocol_id]
+    from flask import Response
+
+    # Custom protocol — return raw file bytes so key order is preserved exactly,
+    # but inject a unique suggested_copy_id field.
+    source = entry.get('custom_source')
+    if source:
+        try:
+            raw = open(source).read()
+            spec = json.loads(raw)
+        except FileNotFoundError:
+            return jsonify({'error': f'Source file not found: {source}'}), 404
+        except json.JSONDecodeError as e:
+            return jsonify({'error': f'Malformed source file: {e}'}), 400
+        spec['_suggested_copy_id'] = _unique_copy_id(spec.get('id', protocol_id))
+        return Response(json.dumps(spec), mimetype='application/json')
+
+    # Built-in protocol — reconstruct spec from registry + build()
+    manifest_str, request_str = entry['build']()
+    spec = {
+        'id':                  entry['id'],
+        'name':                entry.get('name', entry['id']),
+        'description':         entry.get('description', ''),
+        'copland':             entry.get('copland', ''),
+        'flow':                entry.get('flow', []),
+        'manifest':            json.loads(manifest_str),
+        'request':             json.loads(request_str),
+        'targets':             [],
+        '_suggested_copy_id':  _unique_copy_id(entry['id']),
+    }
+    return Response(json.dumps(spec), mimetype='application/json')
 
 
 @app.route('/api/register_builder', methods=['POST'])

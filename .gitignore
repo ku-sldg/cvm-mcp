@@ -9,6 +9,12 @@ venv/
 # Golden evidence binaries and provisioning artifacts (generated locally)
 examples/*.bin
 examples/*.bin.src
+examples/*.src
+examples/*.original
+examples/*.original_golden.json
+examples/target_goldens.json
+examples/*_evidence.json
+examples/*_evidence.json.ts
 
 # MCP server config (contains machine-specific venv paths — copy from .mcp.json.example)
 .mcp.json
@@ -16,3 +22,6 @@ examples/*.bin.src
 # Scratch / session exports
 examples/dashboard.html
 loaded_protocols.json
+
+# Protocols registered via the builder UI (machine-specific paths)
+built_protocols/
