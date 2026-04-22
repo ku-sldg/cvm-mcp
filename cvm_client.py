@@ -9,7 +9,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-CVM_BINARY = "cvm"
+CVM_BINARY = os.environ.get(
+    'CVM_BINARY',
+    '/Users/adampetz/Claude_workspace/cvm/_build/default/theories/cvm',
+)
 
 
 def _write_temp_json(data: Any, suffix: str) -> str:
@@ -64,12 +67,13 @@ def run_cvm(
             "--req_file", request_path,
             "--asp_bin", asp_bin,
             "--log_level", log_level,
+            "--cvm_binary", CVM_BINARY,
         ]
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=300,   # 5 min — accommodates long-running ASPs (logika, test)
         )
 
         # CVM writes the JSON response to stdout

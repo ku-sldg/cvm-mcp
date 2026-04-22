@@ -492,6 +492,14 @@ def run_protocol(
     proto = REGISTRY[protocol_id]
     manifest, req = proto['build']()
 
+    # Inject golden values (golden_b64) from the evidence bundle, just as the
+    # dashboard does.  Without this, ASPs that compare against a golden file
+    # will try to open the .bin path which may not exist on disk.
+    if 'prepare' in proto:
+        req_dict = req if isinstance(req, dict) else json.loads(req)
+        req_dict = proto['prepare'](req_dict) or req_dict
+        req = json.dumps(req_dict)
+
     raw = run_attestation(manifest, req)
     response = json.loads(raw) if isinstance(raw, str) else raw
 
