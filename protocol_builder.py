@@ -254,14 +254,14 @@ def _walk(term, ctx, path=None):
         if isinstance(body, list) and len(body) == 2:
             place = body[0]
             _walk(body[1], ctx, path + ['TERM_BODY', 1])   # still collect ASPs from sub-term
-            return [{'type': 'asp', 'label': f'att@{place}', 'style': 'default'}]
+            return [{'type': 'att', 'label': f'att({place}, …)', 'style': 'att', 'place': place}]
 
     return []
 
 
 # ── Golden injection ─────────────────────────────────────────────────────────
 
-def inject_golden_b64(term):
+def inject_golden_b64(term, proto_id=''):
     """
     Walk a Copland term and inject golden_b64 into every ASPC that has an
     asp_id_appr, looking up the golden from the shared target golden store.
@@ -281,7 +281,7 @@ def inject_golden_b64(term):
             asp_id   = asp_body.get('ASP_ID', '')
             asp_args = asp_body.get('ASP_ARGS', {})
             if asp_args.get('asp_id_appr'):
-                entry = load_target_golden(asp_id, asp_args)
+                entry = load_target_golden(asp_id, asp_args, proto_id)
                 if entry:
                     new_args = {**asp_args, 'golden_b64': entry['golden_b64']}
                     return {'TERM_CONSTRUCTOR': 'asp',
@@ -291,11 +291,11 @@ def inject_golden_b64(term):
 
     elif ctor in ('lseq', 'bseq', 'bpar') and isinstance(body, list):
         return {'TERM_CONSTRUCTOR': ctor,
-                'TERM_BODY': [inject_golden_b64(c) for c in body]}
+                'TERM_BODY': [inject_golden_b64(c, proto_id) for c in body]}
 
     elif ctor == 'att' and isinstance(body, list) and len(body) == 2:
         return {'TERM_CONSTRUCTOR': 'att',
-                'TERM_BODY': [body[0], inject_golden_b64(body[1])]}
+                'TERM_BODY': [body[0], inject_golden_b64(body[1], proto_id)]}
 
     return term
 
@@ -304,7 +304,7 @@ def inject_golden_b64(term):
 
 def save_and_register(proto_id, name, description, copland,
                       term_dict, manifest_obj, attestation_session,
-                      evidence_obj, targets_spec, flow):
+                      evidence_obj, targets_spec, flow, places=None, steps=None):
     """
     Assemble a complete protocol JSON spec, write it to built_protocols/,
     then register it via protocol_loader (which also persists it to
@@ -335,10 +335,32 @@ def save_and_register(proto_id, name, description, copland,
         },
         'targets': targets_spec,
     }
+    if places:
+        spec['places'] = places
+
+    # Serialize stepped-check definitions so copies retain the Check button.
+    # Each step stores its own manifest + request so the loader can reconstruct
+    # the (step_id, label, build_fn) tuples without any runtime dependencies.
+    if steps:
+        serialized_steps = []
+        for sid, label, build_fn in steps:
+            try:
+                mf, rq = build_fn()
+                serialized_steps.append({
+                    'id':       sid,
+                    'label':    label,
+                    'manifest': json.loads(mf),
+                    'request':  json.loads(rq),
+                })
+            except Exception:
+                pass   # skip un-serializable steps rather than failing
+        if serialized_steps:
+            spec['steps'] = serialized_steps
 
     os.makedirs(_BUILT_DIR, exist_ok=True)
     path = os.path.join(_BUILT_DIR, f'{proto_id}.json')
     with open(path, 'w') as f:
         json.dump(spec, f, indent=2)
 
-    return add_protocol_file(path)
+    add_protocol_file(path)
+    return proto_id, os.path.abspath(path)

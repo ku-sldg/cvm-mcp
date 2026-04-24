@@ -1,0 +1,26 @@
+[
+  {
+    "RawEv": [
+      "fWrHMHwBzx97g6cGXsqXnLq3ZuN/TYXNOragKIPvpdo="
+    ]
+  },
+  {
+    "EvidenceT_CONSTRUCTOR": "asp_evt",
+    "EvidenceT_BODY": [
+      "P0",
+      {
+        "ASP_ID": "hashfile",
+        "ASP_ARGS": {
+          "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file1.txt",
+          "env_var": "",
+          "filepath_golden": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/golden_file1.bin",
+          "env_var_golden": "",
+          "asp_id_appr": "hashfile_appr"
+        }
+      },
+      {
+        "EvidenceT_CONSTRUCTOR": "mt_evt"
+      }
+    ]
+  }
+]

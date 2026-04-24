@@ -73,7 +73,7 @@ def run_cvm(
             cmd,
             capture_output=True,
             text=True,
-            timeout=300,   # 5 min — accommodates long-running ASPs (logika, test)
+            timeout=1200,  # 20 min — sequential gumbo_validation runs 5 Sireum tools
         )
 
         # CVM writes the JSON response to stdout

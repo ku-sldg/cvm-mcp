@@ -1,0 +1,62 @@
+[
+  {
+    "RawEv": [
+      "EijP2WWDDMxc/npC7ZRiyBuPrgoNaKWtybaLgKJFE33I3pPBO7jbcTCLL4xelyF/T+Ov2nrKBykTbVrmIxDwZiGt0dVDO42i1dOFCviPfXVytLF+YBvCi86b6fGV3GAJtQ68AWE6fGGpwPaqC/QRWQwCeygoDCm6uJ6XcnfSGoq9xDDtXTNXd22Me8j9yaErFWB3yYMMpR2RWb5mYFN8m7IisW7Oji5ukMbQxH1uAYERII9fmJeySpr2mbFABJL4ypui0yRvNNu1egH4oNb/yKF2/Hnr/Pu/sQJddwbYf1HJTIelBE1whi57nJ+IUK40OoLU6DiubELygoffveq8GQ==",
+      "fWrHMHwBzx97g6cGXsqXnLq3ZuN/TYXNOragKIPvpdo=",
+      "hsufBxsrnmQOEHRzu1tJNEvLdL3zFCEwicwwSSN0JUA="
+    ]
+  },
+  {
+    "EvidenceT_CONSTRUCTOR": "asp_evt",
+    "EvidenceT_BODY": [
+      "P0",
+      {
+        "ASP_ID": "sig",
+        "ASP_ARGS": {}
+      },
+      {
+        "EvidenceT_CONSTRUCTOR": "split_evt",
+        "EvidenceT_BODY": [
+          {
+            "EvidenceT_CONSTRUCTOR": "asp_evt",
+            "EvidenceT_BODY": [
+              "P0",
+              {
+                "ASP_ID": "hashfile",
+                "ASP_ARGS": {
+                  "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file1.txt",
+                  "env_var": "",
+                  "filepath_golden": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/golden_file1.bin",
+                  "env_var_golden": "",
+                  "asp_id_appr": "hashfile_appr"
+                }
+              },
+              {
+                "EvidenceT_CONSTRUCTOR": "mt_evt"
+              }
+            ]
+          },
+          {
+            "EvidenceT_CONSTRUCTOR": "asp_evt",
+            "EvidenceT_BODY": [
+              "P0",
+              {
+                "ASP_ID": "hashfile",
+                "ASP_ARGS": {
+                  "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file2.txt",
+                  "env_var": "",
+                  "filepath_golden": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/golden_file2.bin",
+                  "env_var_golden": "",
+                  "asp_id_appr": "hashfile_appr"
+                }
+              },
+              {
+                "EvidenceT_CONSTRUCTOR": "mt_evt"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

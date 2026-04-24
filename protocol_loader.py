@@ -75,7 +75,7 @@ def _tamper_file(file_path, golden_path, bad_bytes):
 
 def _make_file_tamper_target(target_id, label, file_path, golden_path,
                               golden_evidence_path=None, asp_id=None,
-                              asp_args=None, asp_types=None):
+                              asp_args=None, asp_types=None, proto_id=None):
     """
     Create a generic file-based tamper_targets entry for a loaded protocol.
 
@@ -89,7 +89,7 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
         if asp_id and asp_args is not None:
             from evidence_slice import load_target_golden
             import base64
-            entry = load_target_golden(asp_id, asp_args)
+            entry = load_target_golden(asp_id, asp_args, proto_id)
             if entry:
                 try:
                     return base64.b64decode(entry['golden_b64'])
@@ -103,6 +103,10 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
         while golden_hash and hashlib.sha256(content).digest() == golden_hash:
             nonce += 1
             content = bad_bytes + f'\n[TAMPER-NONCE-{nonce}]'.encode()
+        try:
+            open(file_path + '.src', 'wb').write(open(file_path, 'rb').read())
+        except FileNotFoundError:
+            pass
         open(file_path, 'wb').write(content)
 
     def repair():
@@ -127,7 +131,7 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
             return   # no restore point — provision first
         open(file_path, 'wb').write(content)
         # Restore original golden so compliance check passes after reset
-        orig_golden = file_path + '.original_golden.json'
+        orig_golden = file_path + (f'.{proto_id}.original_golden.json' if proto_id else '.original_golden.json')
         if os.path.exists(orig_golden) and asp_id and asp_args is not None:
             from evidence_slice import store_target_golden
             try:
@@ -136,7 +140,7 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
                     asp_id, asp_args,
                     entry['golden_b64'],
                     entry.get('protocol_id', ''),
-                    entry.get('evidence_bundle', ''),
+                    entry.get('evidence_bundle_path', entry.get('evidence_bundle', '')),
                     entry.get('timestamp', ''),
                 )
             except Exception:
@@ -146,7 +150,7 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
         if asp_id and asp_args is not None:
             from evidence_slice import load_target_golden
             import base64
-            entry = load_target_golden(asp_id, asp_args)
+            entry = load_target_golden(asp_id, asp_args, proto_id)
             if entry is None:
                 return {'compliant': None}   # not yet provisioned
             try:
@@ -169,13 +173,17 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
             'current_sha256': hashlib.sha256(current_bytes).hexdigest(),
         }
 
+        src = file_path + '.src'
+        if os.path.exists(src):
+            result['pre_tamper'] = open(src, 'rb').read().decode('utf-8', errors='replace')
+        orig = file_path + '.original'
+        if os.path.exists(orig):
+            result['original'] = open(orig, 'rb').read().decode('utf-8', errors='replace')
+
         if asp_id and asp_args is not None:
             from evidence_slice import load_target_golden
             import base64
-            entry = load_target_golden(asp_id, asp_args)
-            src = file_path + '.src'
-            if os.path.exists(src):
-                result['provisioned'] = open(src, 'rb').read().decode('utf-8', errors='replace')
+            entry = load_target_golden(asp_id, asp_args, proto_id)
             if entry is None:
                 return {**result, 'error': 'No golden evidence — run Provision first'}
             result['evidence_timestamp'] = entry.get('timestamp', '')
@@ -191,9 +199,6 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
                 result['evidence_slice_error'] = str(e)
             return result
 
-        src = file_path + '.src'
-        if os.path.exists(src):
-            result['provisioned'] = open(src, 'rb').read().decode('utf-8', errors='replace')
         return {**result, 'error': 'No golden evidence — run Provision first'}
 
     return {
@@ -249,11 +254,21 @@ def load_protocol_from_file(path):
     def build():
         return json.dumps(manifest_obj), json.dumps(request_obj)
 
-    def provision():
+    def provision(golden_path=None):
         from cvm_client import run_cvm
-        from evidence_slice import store_golden_evidence
+        from evidence_slice import store_golden_evidence, load_golden_evidence
         from protocol_builder import _make_measurement_term
 
+        actual_ev_path = (os.path.abspath(os.path.expanduser(golden_path))
+                          if golden_path else golden_evidence_path)
+
+        # Conflict check: refuse to overwrite a bundle owned by a different protocol
+        _, _, _, owner = load_golden_evidence(actual_ev_path)
+        if owner and owner != proto_id:
+            raise RuntimeError(
+                f"Bundle '{os.path.basename(actual_ev_path)}' was provisioned by "
+                f"'{owner}', not '{proto_id}'. Choose a different path."
+            )
         ts      = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         asp_bin = os.environ.get(
             'CVM_ASP_BIN',
@@ -280,7 +295,7 @@ def load_protocol_from_file(path):
             )
 
         payload = response['PAYLOAD']
-        store_golden_evidence(golden_evidence_path, payload)
+        store_golden_evidence(actual_ev_path, payload, proto_id)
 
         # Populate shared target golden store
         from evidence_slice import do_evidence_slice, store_target_golden
@@ -292,32 +307,30 @@ def load_protocol_from_file(path):
                                              t['asp_id'], t['asp_args'])
                 if ev_slice:
                     store_target_golden(t['asp_id'], t['asp_args'], ev_slice[0],
-                                        proto_id, golden_evidence_path, ts)
+                                        proto_id, actual_ev_path, ts)
                     # Save original-golden sidecar for reset semantics (never overwritten)
-                    orig_golden = t['file'] + '.original_golden.json'
+                    orig_golden = t['file'] + f'.{proto_id}.original_golden.json'
                     if not os.path.exists(orig_golden):
                         with open(orig_golden, 'w') as _f:
+                            # Always use the default bundle path in the sidecar so reset()
+                            # shows the protocol's canonical bundle name, not a custom path.
                             json.dump({
-                                'golden_b64':      ev_slice[0],
-                                'timestamp':       ts,
-                                'asp_id':          t['asp_id'],
-                                'asp_args':        t['asp_args'],
-                                'protocol_id':     proto_id,
-                                'evidence_bundle': os.path.basename(golden_evidence_path),
+                                'golden_b64':           ev_slice[0],
+                                'timestamp':            ts,
+                                'asp_id':               t['asp_id'],
+                                'asp_args':             t['asp_args'],
+                                'protocol_id':          proto_id,
+                                'evidence_bundle':      os.path.basename(golden_evidence_path),
+                                'evidence_bundle_path': golden_evidence_path,
                             }, _f)
 
-        # Also write per-file .src snapshots (for repair)
-        for t in resolved_targets:
-            try:
-                content = open(t['file'], 'rb').read()
-                open(t['file'] + '.src', 'wb').write(content)
-            except FileNotFoundError:
-                pass
+        from evidence_slice import store_provision_path
+        store_provision_path(proto_id, actual_ev_path)
 
         return [
             {
                 'target':    t['label'],
-                'golden':    os.path.basename(golden_evidence_path),
+                'golden':    os.path.basename(actual_ev_path),
                 'timestamp': ts,
                 'tamper_id': t['id'],
             }
@@ -325,18 +338,31 @@ def load_protocol_from_file(path):
         ]
 
     def golden_state():
-        from evidence_slice import load_golden_evidence
-        _, _, ts = load_golden_evidence(golden_evidence_path)
-        return [
-            {
-                'target':    t['label'],
-                'golden':    os.path.basename(golden_evidence_path),
-                'sha256':    None,   # evidence bundle replaces per-file hashes
-                'timestamp': ts,
-                'tamper_id': t['id'],
-            }
-            for t in resolved_targets
-        ]
+        from evidence_slice import load_target_golden, load_golden_evidence
+        result = []
+        for t in resolved_targets:
+            ts, golden, golden_path = None, None, None
+            if t.get('asp_id') and t.get('asp_args') is not None:
+                # Source of truth is target_goldens.json — don't fall back to the
+                # bundle file, which may exist from a prior provision/different protocol.
+                entry = load_target_golden(t['asp_id'], t['asp_args'], proto_id)
+                if entry:
+                    ts          = entry.get('timestamp', '')
+                    golden      = entry.get('evidence_bundle')
+                    golden_path = entry.get('evidence_bundle_path') or None
+            else:
+                # No asp_id/args — fall back to bundle file timestamp
+                if not ts:
+                    _, _, ts, _ = load_golden_evidence(golden_evidence_path)
+            result.append({
+                'target':      t['label'],
+                'golden':      golden,
+                'golden_path': golden_path,
+                'sha256':      None,
+                'timestamp':   ts,
+                'tamper_id':   t['id'],
+            })
+        return result
 
     tamper_targets = {
         t['id']: _make_file_tamper_target(
@@ -345,6 +371,7 @@ def load_protocol_from_file(path):
             asp_id=t.get('asp_id'),
             asp_args=t.get('asp_args'),
             asp_types=asp_types,
+            proto_id=proto_id,
         )
         for t in resolved_targets
     }
@@ -353,12 +380,21 @@ def load_protocol_from_file(path):
         {'type': 'asp', 'label': spec.get('copland', proto_id), 'style': 'default'}
     ]
 
+    # Reconstruct step builders from the serialized steps array (if present).
+    # Each step was stored as {id, label, manifest, request} by save_and_register.
+    _spec_steps = spec.get('steps', [])
+    reconstructed_steps = [
+        (s['id'], s['label'],
+         (lambda m=s['manifest'], r=s['request']: (json.dumps(m), json.dumps(r))))
+        for s in _spec_steps
+    ] or None
+
     def prepare(req):
         """Inject golden_b64 into ASPC ASP_ARGS from the shared target golden store."""
         from protocol_builder import inject_golden_b64
-        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}))}
+        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}), proto_id)}
 
-    return proto_id, {
+    entry = {
         'id':             proto_id,
         'name':           spec.get('name', proto_id),
         'description':    spec.get('description', ''),
@@ -369,8 +405,12 @@ def load_protocol_from_file(path):
         'golden_state':   golden_state,
         'prepare':        prepare,
         'tamper_targets': tamper_targets,
+        'places':         spec.get('places', {}),
         'custom_source':  path,          # marks this as a dynamically-loaded protocol
     }
+    if reconstructed_steps:
+        entry['steps'] = reconstructed_steps
+    return proto_id, entry
 
 
 def register_protocol_file(path):
@@ -405,9 +445,53 @@ def add_protocol_file(path):
     return proto_id
 
 
-def remove_protocol(proto_id):
+def list_cleanup_files(proto_id):
+    """
+    Return an ordered list of file paths that exist on disk and would be
+    deleted when this protocol is removed.  Called by the dashboard before
+    showing the confirmation dialog.
+    """
+    registry = _get_registry()
+    entry = registry.get(proto_id)
+    if not entry or 'custom_source' not in entry:
+        return []
+
+    source_file = entry['custom_source']
+    seen = set()
+    files = []
+
+    def _add(path):
+        if path and path not in seen and os.path.exists(path):
+            seen.add(path)
+            files.append(path)
+
+    # Protocol JSON file
+    _add(source_file)
+
+    # Evidence bundles from provision history + the default bundle path
+    from evidence_slice import load_provision_history, _EXAMPLES_DIR
+    default_bundle = os.path.splitext(source_file)[0] + '_evidence.json'
+    for p in list(dict.fromkeys(load_provision_history(proto_id) + [default_bundle])):
+        _add(p)
+
+    # .{proto_id}.original_golden.json sidecars
+    suffix = f'.{proto_id}.original_golden.json'
+    for search_dir in dict.fromkeys([_EXAMPLES_DIR, os.path.dirname(source_file)]):
+        try:
+            for fname in os.listdir(search_dir):
+                if fname.endswith(suffix):
+                    _add(os.path.join(search_dir, fname))
+        except Exception:
+            pass
+
+    return files
+
+
+def remove_protocol(proto_id, delete_files=False):
     """
     Remove a dynamically-loaded protocol from the REGISTRY and config.
+    If delete_files=True, also deletes the protocol JSON, evidence bundles,
+    and sidecar files returned by list_cleanup_files().
     Returns True if removed, False if not found or built-in.
     """
     registry = _get_registry()
@@ -415,10 +499,47 @@ def remove_protocol(proto_id):
     if not entry or 'custom_source' not in entry:
         return False
     source_file = entry['custom_source']
+
+    # Collect files before modifying registry (list_cleanup_files reads registry)
+    files_to_delete = list_cleanup_files(proto_id) if delete_files else []
+
+    # Stop any running am_place subprocesses for this protocol
+    try:
+        import place_manager
+        place_manager.stop_all_places(proto_id)
+    except Exception:
+        pass
+
     del registry[proto_id]
     config = _load_config()
     config['files'] = [f for f in config['files'] if f != source_file]
     _save_config(config)
+
+    # Clear all persisted state so a re-registration starts fresh
+    from evidence_slice import clear_protocol_state
+    clear_protocol_state(proto_id)
+
+    # Also delete sidecars in the directory where the protocol file lives,
+    # in case targets point to files outside the examples/ dir
+    try:
+        proto_dir = os.path.dirname(source_file)
+        suffix = f'.{proto_id}.original_golden.json'
+        for fname in os.listdir(proto_dir):
+            if fname.endswith(suffix):
+                try:
+                    os.remove(os.path.join(proto_dir, fname))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # Delete provisioning files if requested
+    for fpath in files_to_delete:
+        try:
+            os.remove(fpath)
+        except Exception:
+            pass
+
     return True
 
 

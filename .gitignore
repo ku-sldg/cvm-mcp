@@ -12,7 +12,9 @@ examples/*.bin.src
 examples/*.src
 examples/*.original
 examples/*.original_golden.json
+examples/*.*.original_golden.json
 examples/target_goldens.json
+examples/provision_history.json
 examples/*_evidence.json
 examples/*_evidence.json.ts
 

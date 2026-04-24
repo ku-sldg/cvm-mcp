@@ -7,6 +7,7 @@ import server as cvm_server
 from protocols import REGISTRY
 import protocol_loader
 import protocol_builder
+import place_manager
 from flask import Flask, render_template_string, request as flask_request, jsonify
 
 app = Flask(__name__)
@@ -42,7 +43,7 @@ def walk_et(node, raw_ev, idx):
         if asp_id.endswith('_appr'):
             v, msg = decode_verdict(raw_ev[idx[0]] if idx[0] < len(raw_ev) else '')
             idx[0] += 1
-            target = asp_id[:-5]
+            target = asp_args.get('filepath_golden', '').split('/')[-1] or asp_id[:-5]
             fp = asp_args.get('filepath') or asp_args.get('filepath_golden', '')
             fp = fp.split('/')[-1] if fp else ''
             results.append({'appr': asp_id, 'target': target,
@@ -54,10 +55,57 @@ def walk_et(node, raw_ev, idx):
 def run_protocol(protocol_id, log_level='Info'):
     """Run a protocol by ID and return parsed appraisal results."""
     proto = REGISTRY[protocol_id]
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Guard: if this protocol requires golden injection, ensure it has been provisioned.
+    if 'prepare' in proto and 'golden_state' in proto:
+        unprovisioned = True
+        try:
+            gs = proto['golden_state']()
+            unprovisioned = not any(e.get('timestamp') for e in gs)
+        except Exception:
+            pass  # golden_state() failed — treat as unprovisioned below
+        if unprovisioned:
+            return {
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     [],
+                'all_pass':    False,
+                'pass_count':  0,
+                'fail_count':  0,
+                'error':       'Not provisioned — run Provision before attesting',
+                'timestamp':   ts,
+            }
+
     manifest, req = proto['build']()
     req = json.loads(req) if isinstance(req, str) else req
     if 'prepare' in proto:
         req = proto['prepare'](req) or req   # inject golden_b64 from evidence bundle
+
+    # Build plc_mapping from protocol's places config and check reachability
+    places_config = proto.get('places', {})
+    if places_config:
+        plc_mapping = {pid: f"{cfg['host']}:{cfg['port']}" for pid, cfg in places_config.items()}
+        unreachable = [
+            f"{pid} ({cfg['host']}:{cfg['port']})"
+            for pid, cfg in places_config.items()
+            if not place_manager.is_place_reachable(cfg['host'], int(cfg['port']))
+        ]
+        if unreachable:
+            return {
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     [],
+                'all_pass':    False,
+                'pass_count':  0,
+                'fail_count':  0,
+                'error':       'Place(s) unreachable — start them first: ' + ', '.join(unreachable),
+                'timestamp':   ts,
+            }
+        attest = req.get('ATTESTATION_SESSION', {})
+        attest  = {**attest, 'Plc_Mapping': {**attest.get('Plc_Mapping', {}), **plc_mapping}}
+        req = {**req, 'ATTESTATION_SESSION': attest}
+
     raw = cvm_server.run_attestation(
         manifest if isinstance(manifest, str) else json.dumps(manifest),
         json.dumps(req),
@@ -67,7 +115,7 @@ def run_protocol(protocol_id, log_level='Info'):
     cvm_success = response.get('SUCCESS', False)
     error = None
     results = []
-    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # update to run time
     if cvm_success:
         try:
             raw_ev  = response['PAYLOAD'][0]['RawEv']
@@ -169,6 +217,7 @@ tr:hover td { background:#1c2128; }
 .flow-node { background:#21262d;border:1px solid #30363d;border-radius:6px;
              padding:7px 12px;font-size:0.78rem;color:#79c0ff;white-space:nowrap; }
 .fn-bseq { border-color:#553098;background:#1a1230;color:#d2a8ff;padding:6px 10px; }
+.fn-bpar { border-color:#0d6e6e;background:#0d2626;color:#56d4d4;padding:6px 10px; }
 .fn-sig  { border-color:#9e6a03;background:#1a1200;color:#e3b341; }
 .fn-appr { border-color:#1f6feb;background:#0d1a2e;color:#58a6ff; }
 .fn-hsh  { border-color:#553098;background:#1a1230;color:#d2a8ff; }
@@ -215,12 +264,36 @@ tr:hover td { background:#1c2128; }
 .run-btn:hover:not(:disabled) { background:#1f6feb;color:#fff; }
 .run-btn:disabled { opacity:.5;cursor:not-allowed; }
 .run-btn-lg { padding:7px 16px;font-size:0.82rem; }
+.check-btn { background:#21262d;border:1px solid #1b6e4f;color:#56d364;border-radius:6px;
+             padding:5px 12px;font-size:0.75rem;font-family:inherit;cursor:pointer;
+             transition:background .15s,opacity .15s;white-space:nowrap; }
+.check-btn:hover:not(:disabled) { background:#1a4731;color:#3fb950; }
+.check-btn:disabled { opacity:.5;cursor:not-allowed; }
+.check-btn-lg { padding:7px 16px;font-size:0.82rem; }
 .prov-btn { background:#21262d;border:1px solid #9e6a03;color:#e3b341;border-radius:6px;
             padding:5px 12px;font-size:0.75rem;font-family:inherit;cursor:pointer;
             transition:background .15s,opacity .15s;white-space:nowrap; }
 .prov-btn:hover:not(:disabled) { background:#3a2800;color:#ffd700; }
 .prov-btn:disabled { opacity:.5;cursor:not-allowed; }
 .prov-btn-lg { padding:7px 16px;font-size:0.82rem; }
+.prov-split { display:inline-flex;position:relative; }
+.prov-split .prov-btn { border-radius:6px 0 0 6px;border-right:none; }
+.prov-split .prov-btn-lg { border-radius:6px 0 0 6px; }
+.prov-arrow { background:#21262d;border:1px solid #9e6a03;color:#e3b341;border-radius:0 6px 6px 0;
+              padding:0 7px;font-size:0.7rem;cursor:pointer;transition:background .15s; }
+.prov-arrow:hover { background:#3a2800;color:#ffd700; }
+.prov-popover { display:none;position:absolute;top:calc(100% + 4px);right:0;left:auto;z-index:100;
+                background:#161b22;border:1px solid #9e6a03;border-radius:6px;
+                padding:8px 10px;width:max(260px,min(420px,55vw)); }
+.prov-popover.open { display:flex;flex-direction:column;gap:4px; }
+.prov-popover-row { display:flex;gap:6px;align-items:center; }
+.prov-history { display:flex;flex-direction:column;margin-top:2px; }
+.prov-hist-item { padding:3px 6px;font-size:0.72rem;color:#8b949e;cursor:pointer;border-radius:3px;
+                  overflow:hidden;white-space:nowrap; }
+.prov-hist-item:hover { background:#21262d;color:#e3b341; }
+.prov-path-input { background:#0d1117;border:1px solid #444;color:#e6edf3;padding:4px 8px;
+                   border-radius:4px;font-size:0.78rem;font-family:inherit;flex:1;min-width:0; }
+.prov-path-input::placeholder { color:#555; }
 .prov-result { background:#1a1200;border:1px solid #9e6a03;border-radius:8px;
                padding:14px 16px;margin-top:12px;font-size:0.78rem; }
 .prov-row { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2a1f00;flex-wrap:wrap; }
@@ -277,6 +350,139 @@ tr:hover td { background:#1c2128; }
             padding:3px 9px;font-size:0.72rem;cursor:pointer; }
 .copy-btn:hover { color:#58a6ff;border-color:#388bfd; }
 .load-error { color:#f85149;font-size:0.75rem; }
+.path-dropdown { position:fixed;background:#161b22;border:1px solid #388bfd;border-radius:6px;
+                 max-height:220px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.6);
+                 z-index:9999;font-family:'SF Mono','Fira Code',monospace;
+                 max-width:90vw;overflow-x:hidden; }
+.path-dropdown-item { padding:5px 11px;font-size:0.72rem;color:#8b949e;cursor:pointer;
+                      white-space:pre-wrap;word-break:break-all;line-height:1.4; }
+.path-dropdown-item.active { background:#21262d;color:#e6edf3; }
+.place-row  { display:flex;align-items:center;gap:10px;padding:7px 0;
+              border-bottom:1px solid #21262d;flex-wrap:wrap; }
+.place-row:last-child { border-bottom:none; }
+.place-id   { color:#79c0ff;font-family:'SF Mono','Fira Code',monospace;
+              min-width:60px;font-size:0.82rem;font-weight:600; }
+.place-addr { color:#6e7681;font-size:0.75rem;font-family:'SF Mono','Fira Code',monospace;
+              min-width:140px; }
+.place-start-btn { background:#001a00;border:1px solid #238636;color:#3fb950;
+                   border-radius:6px;padding:3px 10px;font-size:0.72rem;cursor:pointer; }
+.place-start-btn:hover { background:#0d2c0d; }
+.place-stop-btn  { background:#1a0000;border:1px solid #da3633;color:#f85149;
+                   border-radius:6px;padding:3px 10px;font-size:0.72rem;cursor:pointer; }
+.place-stop-btn:hover  { background:#2d0000; }
+.places-row { display:grid;
+              grid-template-columns:80px 110px 65px 1fr 1fr auto;
+              gap:6px;align-items:center;margin-bottom:6px;font-size:0.78rem; }
+.places-row input { background:#0d1117;color:#e6edf3;border:1px solid #30363d;
+                    border-radius:4px;padding:4px 7px;font-family:inherit;
+                    font-size:0.75rem;outline:none;width:100%; }
+.places-row input:focus { border-color:#388bfd; }
+"""
+
+BASE_JS = """
+// ── Path tab-completion (shared across pages) ────────────────────────────────
+function setupPathComplete(inputId, onEnter) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  let dropdown = null;
+  let items    = [];
+  let selIdx   = -1;
+  let debounce = null;
+
+  async function fetchItems(path) {
+    try {
+      const res = await fetch('/api/complete_path?path=' + encodeURIComponent(path));
+      return (await res.json()).completions || [];
+    } catch { return []; }
+  }
+
+  function reposition() {
+    if (!dropdown) return;
+    const r = input.getBoundingClientRect();
+    dropdown.style.top      = (r.bottom + window.scrollY) + 'px';
+    dropdown.style.left     = (r.left   + window.scrollX) + 'px';
+    dropdown.style.minWidth = r.width + 'px';
+  }
+
+  function show(list) {
+    hide();
+    if (!list.length) return;
+    items  = list;
+    selIdx = -1;
+    dropdown = document.createElement('div');
+    dropdown.className = 'path-dropdown';
+    dropdown.style.position = 'absolute';
+    reposition();
+    list.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'path-dropdown-item';
+      el.textContent = item;
+      el.addEventListener('mousemove', () => highlight(i));
+      el.addEventListener('mousedown', ev => { ev.preventDefault(); select(i); });
+      dropdown.appendChild(el);
+    });
+    document.body.appendChild(dropdown);
+  }
+
+  function hide() {
+    if (dropdown) { dropdown.remove(); dropdown = null; }
+    items = []; selIdx = -1;
+  }
+
+  function highlight(i) {
+    if (!dropdown) return;
+    selIdx = i;
+    Array.from(dropdown.children).forEach((el, j) => el.classList.toggle('active', j === i));
+    const el = dropdown.children[i];
+    if (el) el.scrollIntoView({block: 'nearest'});
+  }
+
+  function select(i) {
+    if (i >= 0 && i < items.length) {
+      input.value = items[i];
+      input.scrollLeft = input.scrollWidth;
+    }
+    hide();
+    input.focus();
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(async () => {
+      const list = await fetchItems(input.value);
+      if (list.length > 1 || (list.length === 1 && list[0] !== input.value))
+        show(list);
+      else
+        hide();
+    }, 180);
+  });
+
+  input.addEventListener('keydown', async e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (dropdown && selIdx >= 0) { select(selIdx); return; }
+      if (dropdown && items.length)  { select(0);      return; }
+      const list = await fetchItems(input.value);
+      if (list.length === 1) { input.value = list[0]; input.scrollLeft = input.scrollWidth; hide(); }
+      else if (list.length > 1) { show(list); highlight(0); }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (dropdown) highlight(Math.min(selIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (dropdown) highlight(Math.max(selIdx - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (dropdown && selIdx >= 0) { e.preventDefault(); select(selIdx); return; }
+      if (!document.querySelector('.path-dropdown') && onEnter) onEnter();
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  });
+
+  input.addEventListener('blur', () => setTimeout(hide, 160));
+  window.addEventListener('scroll', reposition, true);
+  window.addEventListener('resize', reposition);
+}
 """
 
 HOME_TMPL = """
@@ -314,6 +520,14 @@ HOME_TMPL = """
       </div>
       <div class="proto-desc">{{ p.description }}</div>
       <div class="proto-copland">{{ p.copland }}</div>
+      {% if p.places %}
+      <div style="display:flex;align-items:center;gap:5px;margin-top:5px;">
+        <span style="font-size:0.63rem;color:#6e7681;letter-spacing:.04em;text-transform:uppercase;">places</span>
+        <span id="place-strip-{{ p.id }}" style="display:flex;gap:3px;align-items:center;">
+          {% for pid in p.places %}<span class="dot-d" style="width:8px;height:8px;" title="{{ pid }}"></span>{% endfor %}
+        </span>
+      </div>
+      {% endif %}
     </a>
     <div class="proto-card-footer">
       <div class="proto-stats" id="stats-{{ p.id }}" style="min-width:0;">
@@ -326,10 +540,34 @@ HOME_TMPL = """
         {% endif %}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="prov-btn" id="provbtn-{{ p.id }}"
-                onclick="provisionProtocol('{{ p.id }}')">⚙ Provision</button>
+        <div class="prov-split">
+          <button class="prov-btn" id="provbtn-{{ p.id }}"
+                  onclick="provisionWithPath('{{ p.id }}')">⚙ Provision</button>
+          <button class="prov-arrow" onclick="toggleProvPopover('{{ p.id }}', event)" title="Custom evidence path">▾</button>
+          <div class="prov-popover" id="prov-popover-{{ p.id }}">
+            <div class="prov-popover-row">
+              <input type="text" class="prov-path-input" id="prov-path-{{ p.id }}"
+                     placeholder="Custom evidence path…" autocomplete="off">
+              <button class="prov-btn" onclick="provisionWithPath('{{ p.id }}')">Provision</button>
+            </div>
+            <div class="prov-history" id="prov-history-{{ p.id }}"></div>
+          </div>
+        </div>
         <button class="run-btn" id="runbtn-{{ p.id }}"
                 onclick="runProtocol('{{ p.id }}')">▶ Run</button>
+        {% if p.steps %}
+        <button class="check-btn" id="checkbtn-{{ p.id }}"
+                onclick="checkProtocol('{{ p.id }}')">⚡ Check</button>
+        {% endif %}
+        {% if p.places %}
+          {% set all_sim = namespace(v=true) %}
+          {% for cfg in p.places.values() %}{% if not cfg.manifest or not cfg.asp_bin %}{% set all_sim.v = false %}{% endif %}{% endfor %}
+          {% if all_sim.v %}
+          <button class="run-btn" style="border-color:#238636;color:#3fb950;padding:3px 9px;font-size:0.72rem;"
+                  id="startallbtn-{{ p.id }}"
+                  onclick="startAllPlaces('{{ p.id }}', event)">▶ Places</button>
+          {% endif %}
+        {% endif %}
         <button class="copy-btn"
                 onclick="location.href='/build?copy={{ p.id }}'">⎘ Copy</button>
         {% if p.custom_source %}
@@ -344,30 +582,120 @@ HOME_TMPL = """
 
 
 <script>
-async function runProtocol(id) {
-  const btn  = document.getElementById('runbtn-' + id);
-  const card = document.getElementById('card-' + id);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Running…'; }
-  try {
-    const res  = await fetch('/api/run/' + id);
-    const r    = await res.json();
-    const dot = card.querySelector('.dot-g, .dot-r, .dot-d');
-    if (dot) dot.className = r.all_pass ? 'dot-g' : 'dot-r';
-    const stats = document.getElementById('stats-' + id);
-    if (stats) {
-      const failPart = r.fail_count > 0 ? `<span class="ps-fail">✗ ${r.fail_count} failed</span>` : '';
-      stats.innerHTML = `<span class="ps-pass">✓ ${r.pass_count} passed</span>${failPart}
-                         <span class="ps-idle" style="margin-left:auto;">${r.timestamp.slice(11)}</span>`;
-    }
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '▶ Run'; }
+// After triggering a run/check, poll rapidly until the result lands,
+// then let the normal 3-second loop take over.
+function _startEagerPoll(id) {
+  let attempts = 0;
+  const MAX = 40;           // give up after 40 × 250ms = 10 s
+  const INTERVAL = 250;     // ms between eager polls
+  const timer = setInterval(async () => {
+    attempts++;
+    await poll();
+    // Stop eager polling once this protocol is no longer running,
+    // or after the safety limit.
+    try {
+      const res  = await fetch('/api/results');
+      const data = await res.json();
+      const r    = data[id];
+      if (!r || !r.running || attempts >= MAX) clearInterval(timer);
+    } catch(e) { clearInterval(timer); }
+  }, INTERVAL);
 }
 
-async function provisionProtocol(id) {
+async function runProtocol(id) {
+  const btn      = document.getElementById('runbtn-' + id);
+  const checkBtn = document.getElementById('checkbtn-' + id);
+  if (btn)      { btn.disabled = true; btn.textContent = '⟳ Running…'; }
+  if (checkBtn) { checkBtn.disabled = true; }
+  try {
+    await fetch('/api/run/' + id);
+    _startEagerPoll(id);
+  } catch(e) {
+    if (btn)      { btn.disabled = false; btn.textContent = '▶ Run'; }
+    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = '⚡ Check'; }
+  }
+}
+
+async function checkProtocol(id) {
+  const btn      = document.getElementById('runbtn-' + id);
+  const checkBtn = document.getElementById('checkbtn-' + id);
+  if (checkBtn) { checkBtn.disabled = true; checkBtn.textContent = '⟳ Checking…'; }
+  if (btn)      { btn.disabled = true; }
+  try {
+    await fetch('/api/check/' + id);
+    _startEagerPoll(id);
+  } catch(e) {
+    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = '⚡ Check'; }
+    if (btn)      { btn.disabled = false; btn.textContent = '▶ Run'; }
+  }
+}
+
+async function toggleProvPopover(id, ev) {
+  ev.stopPropagation();
+  const pop = document.getElementById('prov-popover-' + id);
+  if (!pop) return;
+  const opening = !pop.classList.contains('open');
+  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
+  if (opening) {
+    pop.classList.add('open');
+    const inp  = document.getElementById('prov-path-' + id);
+    const hist = document.getElementById('prov-history-' + id);
+    try {
+      const d        = await (await fetch('/api/provision_history/' + id)).json();
+      const current  = d.current_path || (d.paths && d.paths[0]) || '';
+      const allPaths = d.paths || [];
+      if (inp) { inp.value = current; inp.scrollLeft = inp.scrollWidth; }
+      if (hist) {
+        hist.innerHTML = '';
+        allPaths.filter(p => p !== current).forEach(p => {
+          const el = document.createElement('div');
+          el.className = 'prov-hist-item';
+          // Trim to a slash boundary so the filename is always visible
+          const max = 48;
+          if (p.length > max) {
+            const cut   = p.length - max;
+            const slash = p.indexOf('/', cut);
+            el.textContent = '\u2026' + (slash >= 0 ? p.slice(slash) : p.slice(cut));
+          } else {
+            el.textContent = p;
+          }
+          el.title = p;
+          el.addEventListener('click', ev => {
+            ev.stopPropagation();
+            if (inp) { inp.value = p; inp.scrollLeft = inp.scrollWidth; inp.focus(); }
+          });
+          hist.appendChild(el);
+        });
+      }
+    } catch(e) {}
+    if (inp) inp.focus();
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
+});
+
+async function provisionWithPath(id) {
+  const inp = document.getElementById('prov-path-' + id);
+  const customPath = inp ? inp.value.trim() : '';
+  const pop = document.getElementById('prov-popover-' + id);
+  if (pop) pop.classList.remove('open');
+  await provisionProtocol(id, customPath || null);
+}
+
+async function provisionProtocol(id, customPath) {
   const btn = document.getElementById('provbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
+  const url = '/api/provision/' + id +
+    (customPath ? '?golden_path=' + encodeURIComponent(customPath) : '');
   try {
-    await fetch('/api/provision/' + id);
+    const res = await fetch(url);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Provision failed');
+      if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
+      return;
+    }
     location.reload();
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
@@ -377,37 +705,168 @@ async function provisionProtocol(id) {
 async function removeProtocol(id) {
   const btn = document.getElementById('rmbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
+  let files = [];
   try {
-    const res = await fetch('/api/protocols/' + id, {method: 'DELETE'});
-    if (res.ok) { location.reload(); return; }
-    const data = await res.json();
-    alert(data.error || 'Remove failed');
-  } catch(e) { alert('Error: ' + e.message); }
-  if (btn) { btn.disabled = false; btn.textContent = '× Remove'; }
+    const fr = await fetch('/api/protocols/' + id + '/files');
+    if (fr.ok) { const fd = await fr.json(); files = fd.files || []; }
+  } catch(e) {}
+
+  // Build modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#161b22;border:1px solid #30363d;border-radius:10px;padding:24px 28px;max-width:560px;width:90%;color:#e6edf3;font-family:inherit;';
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:1rem;font-weight:600;margin-bottom:12px;color:#f85149;';
+  title.textContent = 'Remove protocol: ' + id;
+  box.appendChild(title);
+  if (files.length > 0) {
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:0.82rem;color:#8b949e;margin-bottom:8px;';
+    sub.textContent = 'The following files will be permanently deleted:';
+    box.appendChild(sub);
+    const ul = document.createElement('ul');
+    ul.style.cssText = 'margin:0 0 16px 0;padding:0 0 0 16px;list-style:disc;font-size:0.76rem;color:#c9d1d9;max-height:220px;overflow-y:auto;';
+    files.forEach(f => {
+      const li = document.createElement('li');
+      li.style.cssText = 'word-break:break-all;padding:2px 0;font-family:monospace;';
+      li.textContent = f;
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  } else {
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:0.82rem;color:#8b949e;margin-bottom:16px;';
+    sub.textContent = 'This will remove the protocol from the registry (no extra files to delete).';
+    box.appendChild(sub);
+  }
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:transparent;color:#8b949e;border:1px solid #30363d;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:0.85rem;';
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = files.length > 0 ? 'Delete Files & Remove' : 'Remove';
+  confirmBtn.style.cssText = 'background:#b62324;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:0.85rem;';
+  btns.appendChild(cancelBtn); btns.appendChild(confirmBtn);
+  box.appendChild(btns);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  cancelBtn.onclick = () => {
+    document.body.removeChild(overlay);
+    if (btn) { btn.disabled = false; btn.textContent = '× Remove'; }
+  };
+  confirmBtn.onclick = async () => {
+    confirmBtn.disabled = true; confirmBtn.textContent = '⟳';
+    try {
+      const cleanup = files.length > 0 ? '?cleanup=true' : '';
+      const res = await fetch('/api/protocols/' + id + cleanup, {method: 'DELETE'});
+      if (res.ok) { document.body.removeChild(overlay); location.reload(); return; }
+      const data = await res.json();
+      alert(data.error || 'Remove failed');
+    } catch(e) { alert('Error: ' + e.message); }
+    document.body.removeChild(overlay);
+    if (btn) { btn.disabled = false; btn.textContent = '× Remove'; }
+  };
 }
 
-// Poll for live updates (from MCP pushes) every 3 seconds
+// Poll for live updates (from MCP pushes or background runs) every 3 seconds
 async function poll() {
   try {
     const res = await fetch('/api/results');
     const data = await res.json();
     Object.entries(data).forEach(([id, r]) => {
-      const card = document.getElementById('card-' + id);
+      const card  = document.getElementById('card-' + id);
+      const btn   = document.getElementById('runbtn-' + id);
       if (!card) return;
-      const dot = card.querySelector('.dot-g, .dot-r, .dot-d');
+
+      const checkBtn = document.getElementById('checkbtn-' + id);
+      if (r.running) {
+        // Protocol is in-flight — amber dot, disable both buttons
+        const dot = card.querySelector('.dot-g, .dot-r, .dot-d, .dot-o');
+        if (dot) dot.className = 'dot-o';
+        const done  = (r.results || []).length;
+        const total = r.total_steps || 0;
+        const isCheck = r.operation === 'check';
+        const activeTxt = (total > 0 && done > 0)
+          ? `⟳ ${done}/${total}…` : '⟳ Running…';
+        if (btn)      { btn.disabled = true;
+                        btn.textContent = (!isCheck && total > 0 && done > 0) ? activeTxt : (isCheck ? '▶ Run' : '⟳ Running…'); }
+        if (checkBtn) { checkBtn.disabled = true;
+                        checkBtn.textContent = isCheck ? activeTxt : '⚡ Check'; }
+        // Live progress in the mini stats strip
+        const stats = document.getElementById('stats-' + id);
+        if (stats && total > 0) {
+          const passCount = (r.results || []).filter(x => x.verdict === 'PASS').length;
+          const failCount = done - passCount;
+          const failPart  = failCount > 0 ? `<span class="ps-fail">✗ ${failCount} failed</span>` : '';
+          stats.innerHTML = `<span class="ps-pass">✓ ${passCount} passed</span>${failPart}`
+            + `<span class="ps-idle" style="margin-left:auto;color:#e3b341;">${done}/${total} complete…</span>`;
+        }
+        return;
+      }
+
+      // Run/check complete — update dot, stats, re-enable both buttons
+      const dot = card.querySelector('.dot-g, .dot-r, .dot-d, .dot-o');
       if (dot) dot.className = r.all_pass ? 'dot-g' : 'dot-r';
       const stats = document.getElementById('stats-' + id);
-      if (stats) {
+      if (stats && r.timestamp) {
+        const tag      = r.result_type === 'check' ? ' ⚡' : '';
         const failPart = r.fail_count > 0 ? `<span class="ps-fail">✗ ${r.fail_count} failed</span>` : '';
-        stats.innerHTML = `<span class="ps-pass">✓ ${r.pass_count} passed</span>${failPart}
-                           <span class="ps-idle" style="margin-left:auto;">${r.timestamp.slice(11)}</span>`;
+        stats.innerHTML = `<span class="ps-pass">✓ ${r.pass_count} passed</span>${failPart}`
+          + `<span class="ps-idle" style="margin-left:auto;">${r.timestamp.slice(11)}${tag}</span>`;
       }
+      if (btn)      { btn.disabled = false; btn.textContent = '▶ Run'; }
+      if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = '⚡ Check'; }
     });
   } catch(e) {}
 }
 setInterval(poll, 3000);
 
+const PROTO_IDS_WITH_PLACES = [{% for p in protocols %}{% if p.places %}'{{ p.id }}',{% endif %}{% endfor %}];
+async function pollPlaces() {
+  for (const id of PROTO_IDS_WITH_PLACES) {
+    try {
+      const res  = await fetch('/api/protocols/' + id + '/places');
+      const data = await res.json();
+      const strip = document.getElementById('place-strip-' + id);
+      if (!strip) continue;
+      strip.innerHTML = Object.entries(data.places || {}).map(([pid, info]) =>
+        `<span class="${info.reachable ? 'dot-g' : 'dot-r'}"
+               style="width:8px;height:8px;"
+               title="${escHtml(pid + ': ' + (info.reachable ? 'reachable' : 'unreachable'))}"></span>`
+      ).join('');
+    } catch(e) {}
+  }
+}
+async function startAllPlaces(protoId, ev) {
+  ev.stopPropagation();
+  const btn = document.getElementById('startallbtn-' + protoId);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
+  try {
+    const res  = await fetch('/api/protocols/' + protoId + '/places');
+    const data = await res.json();
+    await Promise.all(Object.keys(data.places || {}).map(pid =>
+      fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(pid) + '/start', {method:'POST'})
+    ));
+    await pollPlaces();
+  } catch(e) {}
+  if (btn) { btn.disabled = false; btn.textContent = '▶ Places'; }
+}
+if (PROTO_IDS_WITH_PLACES.length) { pollPlaces(); setInterval(pollPlaces, 3000); }
 
+{{ base_js | safe }}
+{% for p in protocols %}
+setupPathComplete('prov-path-{{ p.id }}', () => provisionWithPath('{{ p.id }}'));
+fetch('/api/provision_history/{{ p.id }}').then(r => r.json()).then(d => {
+  const fill = d.current_path || (d.paths && d.paths[0]) || '';
+  if (fill) {
+    const inp = document.getElementById('prov-path-{{ p.id }}');
+    if (inp && !inp.value) { inp.value = fill; inp.scrollLeft = inp.scrollWidth; }
+  }
+}).catch(() => {});
+{% endfor %}
 </script>
 </body></html>
 """
@@ -427,10 +886,26 @@ DETAIL_TMPL = """
     <div class="sub">{{ proto.copland }}</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-    <button class="prov-btn prov-btn-lg" id="prov-btn"
-            onclick="provisionProtocol('{{ proto.id }}')">⚙ Provision</button>
-    <button class="run-btn run-btn-lg" id="run-btn"
+    <div class="prov-split">
+      <button class="prov-btn prov-btn-lg" id="provbtn-{{ proto.id }}"
+              onclick="provisionWithPath('{{ proto.id }}')">⚙ Provision</button>
+      <button class="prov-arrow" style="padding:0 9px;font-size:0.75rem;"
+              onclick="toggleProvPopover('{{ proto.id }}', event)" title="Custom evidence path">▾</button>
+      <div class="prov-popover" id="prov-popover-{{ proto.id }}">
+        <div class="prov-popover-row">
+          <input type="text" class="prov-path-input" id="prov-path-{{ proto.id }}"
+                 placeholder="Custom evidence path…" autocomplete="off">
+          <button class="prov-btn" onclick="provisionWithPath('{{ proto.id }}')">Provision</button>
+        </div>
+        <div class="prov-history" id="prov-history-{{ proto.id }}"></div>
+      </div>
+    </div>
+    <button class="run-btn run-btn-lg" id="run-btn-detail"
             onclick="runProtocol('{{ proto.id }}')">▶ Run</button>
+    {% if proto.steps %}
+    <button class="check-btn check-btn-lg" id="check-btn-detail"
+            onclick="checkProtocol('{{ proto.id }}')">⚡ Check</button>
+    {% endif %}
     {% if proto.custom_source %}
     <a href="/build?edit={{ proto.id }}" class="run-btn run-btn-lg">✎ Edit</a>
     {% endif %}
@@ -461,6 +936,18 @@ DETAIL_TMPL = """
             {% endfor %}
           </div>
         </div>
+      {% elif node.type == 'bpar' %}
+        <div class="flow-node fn-bpar">
+          <div class="bseq-label">{{ node.label }}</div>
+          <div class="flow-sub">
+            {% for child in node.children %}
+              <div class="flow-node fn-file">{{ child }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif node.type == 'att' %}
+        <div class="flow-node fn-default" style="border-color:#553098;color:#d2a8ff;"
+             title="Remote attestation at {{ node.place }}">{{ node.label }}</div>
       {% else %}
         <div class="flow-node fn-{{ node.style }}">{{ node.label }}</div>
       {% endif %}
@@ -476,18 +963,22 @@ DETAIL_TMPL = """
     <div>
       <div class="prov-row" id="prov-row-{{ e.tamper_id or loop.index }}">
         <span class="prov-label">{{ e.target }}</span>
-        <span class="prov-file">{{ e.golden }}</span>
+        {% if e.timestamp %}
+        <span class="prov-file" title="{{ e.golden_path or e.golden }}">{{ e.golden }}</span>
+        {% endif %}
         {% if e.timestamp %}
           <span style="color:#6e7681;font-size:0.7rem;white-space:nowrap;">{{ e.timestamp }}</span>
         {% else %}
           <span style="color:#8b949e;font-size:0.75rem;font-style:italic;">not provisioned</span>
         {% endif %}
-        {% if e.tamper_id and e.tamper_state %}
+        {% if e.tamper_id and e.tamper_state and e.timestamp %}
           <div class="tamper-action-group">
             {% if e.tamper_state.compliant %}
               <span class="badge-compliant">✓ COMPLIANT</span>
               <button class="tamper-btn" id="tamper-btn-{{ e.tamper_id }}"
                       onclick="tamperTarget('{{ proto.id }}', '{{ e.tamper_id }}')">⚡ Tamper</button>
+            {% elif e.tamper_state.compliant is none %}
+              <span style="color:#8b949e;font-size:0.75rem;font-style:italic;">unknown</span>
             {% else %}
               <span class="badge-tampered">⚠ TAMPERED</span>
               <button class="repair-btn" id="repair-btn-{{ e.tamper_id }}"
@@ -508,19 +999,73 @@ DETAIL_TMPL = """
     {% endfor %}
   </div>
   {% else %}
+  {% if 'provision' in proto %}
+  <div style="color:#8b949e;font-size:0.78rem;font-style:italic;">No per-file targets defined — click <strong style="color:#e3b341;">⚙ Provision</strong> to capture the golden evidence bundle.</div>
+  {% else %}
   <div style="color:#8b949e;font-size:0.78rem;font-style:italic;">No golden evidence configured for this protocol.</div>
+  {% endif %}
   {% endif %}
 </div>
 
-{% if r %}
+{% if proto.places %}
+<div class="card" style="border-color:#553098;">
+  <div class="card-title" style="color:#d2a8ff;">Remote Places</div>
+  <div id="places-panel">
+    {% for pid, cfg in proto.places.items() %}
+    <div class="place-row" id="place-row-{{ pid }}">
+      <span class="place-id">{{ pid }}</span>
+      <span class="place-addr">{{ cfg.host }}:{{ cfg.port }}</span>
+      <span class="dot-d" id="place-dot-{{ pid }}" title="Checking…" style="flex-shrink:0;"></span>
+      <span id="place-pid-{{ pid }}" style="color:#6e7681;font-size:0.7rem;font-family:monospace;"></span>
+      <div class="place-btns" style="display:flex;gap:6px;margin-left:auto;">
+        {% if cfg.manifest and cfg.asp_bin %}
+        <button class="place-start-btn" id="place-start-{{ pid }}"
+                onclick="startPlace('{{ proto.id }}', '{{ pid }}')">▶ Start</button>
+        <button class="place-stop-btn" id="place-stop-{{ pid }}"
+                onclick="stopPlace('{{ proto.id }}', '{{ pid }}')">■ Stop</button>
+        {% else %}
+        <span style="color:#6e7681;font-size:0.7rem;font-style:italic;">external</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if not r %}
+  <div class="card" style="border-color:#21262d;">
+    <div class="card-title" style="color:#8b949e;">Appraisal Results</div>
+    {% if not provisioned %}
+    <div style="color:#8b949e;font-size:.82rem;">Run <strong style="color:#e3b341;">⚙ Provision</strong> to establish a golden baseline, then click <strong style="color:#3fb950;">▶ Run</strong> to attest.</div>
+    {% else %}
+    <div style="color:#8b949e;font-size:.82rem;">Click <strong style="color:#3fb950;">▶ Run</strong> to attest this protocol.</div>
+    {% endif %}
+  </div>
+{% elif r %}
   {% if r.error %}
+    {% if 'Not provisioned' in r.error %}
+    <div class="card" style="border-color:#9e6a03;">
+      <div class="card-title" style="color:#d29922;">Not Provisioned</div>
+      <div style="color:#d29922;font-size:.82rem;">Run <strong>⚙ Provision</strong> to establish a golden baseline, then click <strong>▶ Run</strong> to attest.</div>
+    </div>
+    {% else %}
     <div class="card" style="border-color:#da3633;">
       <div class="card-title" style="color:#f85149;">Error</div>
       <div style="color:#f85149;font-size:.82rem;">{{ r.error }}</div>
     </div>
+    {% endif %}
   {% else %}
   <div class="card">
-    <div class="card-title">Appraisal Results</div>
+    <div class="card-title">Appraisal Results
+      {% if r.result_type == 'check' %}
+        <span style="margin-left:8px;font-size:0.68rem;background:#1a4731;color:#56d364;
+                     border:1px solid #1b6e4f;padding:2px 8px;border-radius:20px;">⚡ checked</span>
+      {% else %}
+        <span style="margin-left:8px;font-size:0.68rem;background:#0d1a2e;color:#58a6ff;
+                     border:1px solid #1f6feb;padding:2px 8px;border-radius:20px;">🔒 attested</span>
+      {% endif %}
+    </div>
     <table>
       <colgroup><col style="width:24%"><col style="width:36%"><col style="width:20%"><col style="width:20%"></colgroup>
       <thead><tr><th>Appraiser</th><th>Target</th><th>Verdict</th><th>Appraised At</th></tr></thead>
@@ -595,22 +1140,156 @@ async function _restoreInspectPanels() {
 }
 document.addEventListener('DOMContentLoaded', _restoreInspectPanels);
 
+function _renderProgressTable(r) {
+  const done  = (r.results || []).length;
+  const total = r.total_steps || done;
+  const step  = r.current_step ? ` — running: <em>${escHtml(r.current_step)}</em>` : '';
+  const rows  = (r.results || []).map(row => {
+    const v   = row.verdict === 'PASS';
+    const dot = v ? 'dot-g' : 'dot-r';
+    const cls = v ? 'vpass' : 'vfail';
+    return `<tr>
+      <td><span class="asp-pill asp-default">${escHtml(row.appr)}</span></td>
+      <td><span class="target-hsh">${escHtml(row.target)}</span></td>
+      <td><div class="${cls}"><span class="${dot}"></span> ${row.verdict}</div>
+          ${row.msg ? `<div class="fail-msg">${escHtml(row.msg)}</div>` : ''}</td>
+      <td style="color:#6e7681;font-size:0.72rem;">${escHtml(row.timestamp || '')}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="card-title" style="color:#e3b341;">
+    ⟳ Live Progress — ${done}/${total} complete${step}
+  </div>
+  <table>
+    <colgroup><col style="width:24%"><col style="width:36%"><col style="width:20%"><col style="width:20%"></colgroup>
+    <thead><tr><th>Appraiser</th><th>Target</th><th>Verdict</th><th>Appraised At</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="4" style="color:#8b949e;font-style:italic;">Waiting for first step…</td></tr>'}</tbody>
+  </table>`;
+}
+
+function _startDetailPoll(id, runBtn, checkBtn) {
+  const pollDetail = setInterval(async () => {
+    try {
+      const res  = await fetch('/api/results');
+      const data = await res.json();
+      const r    = data[id];
+      if (!r) return;
+      if (r.running) {
+        // Show or update live progress card if this is a stepped protocol
+        if (r.total_steps) {
+          let prog = document.getElementById('live-progress-card');
+          if (!prog) {
+            prog = document.createElement('div');
+            prog.id = 'live-progress-card';
+            prog.className = 'card';
+            prog.style.borderColor = '#9e6a03';
+            const firstCard = document.querySelector('.card');
+            if (firstCard) firstCard.parentNode.insertBefore(prog, firstCard);
+            else document.body.appendChild(prog);
+          }
+          prog.innerHTML = _renderProgressTable(r);
+        }
+        return;
+      }
+      clearInterval(pollDetail);
+      location.reload();
+    } catch(e) { clearInterval(pollDetail); }
+  }, 2000);
+}
+
 async function runProtocol(id) {
-  const btn = document.getElementById('run-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Running…'; }
+  const btn      = document.getElementById('run-btn-detail');
+  const checkBtn = document.getElementById('check-btn-detail');
+  if (btn)      { btn.disabled = true; btn.textContent = '⟳ Running…'; }
+  if (checkBtn) { checkBtn.disabled = true; }
   try {
     await fetch('/api/run/' + id);
-    location.reload();
+    _startDetailPoll(id, btn, checkBtn);
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '▶ Run'; }
+    if (btn)      { btn.disabled = false; btn.textContent = '▶ Run'; }
+    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = '⚡ Check'; }
   }
 }
 
-async function provisionProtocol(id) {
-  const btn = document.getElementById('prov-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
+async function checkProtocol(id) {
+  const btn      = document.getElementById('run-btn-detail');
+  const checkBtn = document.getElementById('check-btn-detail');
+  if (checkBtn) { checkBtn.disabled = true; checkBtn.textContent = '⟳ Checking…'; }
+  if (btn)      { btn.disabled = true; }
   try {
-    await fetch('/api/provision/' + id);
+    await fetch('/api/check/' + id);
+    _startDetailPoll(id, btn, checkBtn);
+  } catch(e) {
+    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = '⚡ Check'; }
+    if (btn)      { btn.disabled = false; btn.textContent = '▶ Run'; }
+  }
+}
+
+async function toggleProvPopover(id, ev) {
+  ev.stopPropagation();
+  const pop = document.getElementById('prov-popover-' + id);
+  if (!pop) return;
+  const opening = !pop.classList.contains('open');
+  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
+  if (opening) {
+    pop.classList.add('open');
+    const inp  = document.getElementById('prov-path-' + id);
+    const hist = document.getElementById('prov-history-' + id);
+    try {
+      const d        = await (await fetch('/api/provision_history/' + id)).json();
+      const current  = d.current_path || (d.paths && d.paths[0]) || '';
+      const allPaths = d.paths || [];
+      if (inp) { inp.value = current; inp.scrollLeft = inp.scrollWidth; }
+      if (hist) {
+        hist.innerHTML = '';
+        allPaths.filter(p => p !== current).forEach(p => {
+          const el = document.createElement('div');
+          el.className = 'prov-hist-item';
+          // Trim to a slash boundary so the filename is always visible
+          const max = 48;
+          if (p.length > max) {
+            const cut   = p.length - max;
+            const slash = p.indexOf('/', cut);
+            el.textContent = '\u2026' + (slash >= 0 ? p.slice(slash) : p.slice(cut));
+          } else {
+            el.textContent = p;
+          }
+          el.title = p;
+          el.addEventListener('click', ev => {
+            ev.stopPropagation();
+            if (inp) { inp.value = p; inp.scrollLeft = inp.scrollWidth; inp.focus(); }
+          });
+          hist.appendChild(el);
+        });
+      }
+    } catch(e) {}
+    if (inp) inp.focus();
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
+});
+
+async function provisionWithPath(id) {
+  const inp = document.getElementById('prov-path-' + id);
+  const customPath = inp ? inp.value.trim() : '';
+  const pop = document.getElementById('prov-popover-' + id);
+  if (pop) pop.classList.remove('open');
+  await provisionProtocol(id, customPath || null);
+}
+
+async function provisionProtocol(id, customPath) {
+  const btn = document.getElementById('provbtn-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
+  const url = '/api/provision/' + id +
+    (customPath ? '?golden_path=' + encodeURIComponent(customPath) : '');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Provision failed');
+      if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
+      return;
+    }
     location.reload();
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
@@ -685,12 +1364,12 @@ function renderInspect(data) {
       if (line.startsWith('@@')) return `<span class="diff-hdr">${e}</span>`;
       return `<span class="diff-ctx">${e}</span>`;
     }).join('');
-    return hdr('Diff — last provisioned → current') +
+    return hdr('Diff — pre-tamper → current') +
       `<div class="diff-block">${lines}</div>`;
   }
 
   // No .src file — just show current vs golden hash mismatch
-  return hdr('Content — no provisioned snapshot available') +
+  return hdr('Content — no pre-tamper snapshot available') +
     `<pre class="inspect-pre" style="border-color:#da3633;">${escHtml(data.current)}</pre>
      <div style="color:#8b949e;font-size:0.68rem;margin-top:6px;">
        Current SHA-256 <code style="color:#f85149;">${data.current_sha256}</code><br>
@@ -717,6 +1396,65 @@ async function toggleInspect(protocolId, targetId) {
   await _loadInspectPanel(protocolId, targetId);
   _inspectIntervals[targetId] = setInterval(() => _loadInspectPanel(protocolId, targetId), 2000);
 }
+
+{{ base_js | safe }}
+setupPathComplete('prov-path-{{ proto.id }}', () => provisionWithPath('{{ proto.id }}'));
+fetch('/api/provision_history/{{ proto.id }}').then(r => r.json()).then(d => {
+  const fill = d.current_path || (d.paths && d.paths[0]) || '';
+  if (fill) {
+    const inp = document.getElementById('prov-path-{{ proto.id }}');
+    if (inp && !inp.value) { inp.value = fill; inp.scrollLeft = inp.scrollWidth; }
+  }
+}).catch(() => {});
+
+{% if proto.places %}
+async function refreshPlaces() {
+  try {
+    const res  = await fetch('/api/protocols/{{ proto.id }}/places');
+    const data = await res.json();
+    let anyUnreachable = false;
+    Object.entries(data.places || {}).forEach(([pid, info]) => {
+      const dot = document.getElementById('place-dot-' + pid);
+      if (dot) {
+        dot.className = info.reachable ? 'dot-g' : 'dot-r';
+        dot.title     = info.reachable
+          ? (info.running ? `Running (PID ${info.pid})` : 'Reachable (external)')
+          : 'Unreachable — click Start';
+      }
+      const pidEl = document.getElementById('place-pid-' + pid);
+      if (pidEl) pidEl.textContent = info.running ? `PID ${info.pid}` : '';
+      if (!info.reachable) anyUnreachable = true;
+    });
+    const runBtn = document.getElementById('run-btn-detail');
+    if (runBtn) {
+      runBtn.disabled = anyUnreachable;
+      runBtn.title    = anyUnreachable ? 'One or more places unreachable — start them first' : '';
+    }
+  } catch(e) {}
+}
+async function startPlace(protoId, placeId) {
+  const btn = document.getElementById('place-start-' + placeId);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
+  try {
+    const res  = await fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(placeId) + '/start', {method:'POST'});
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) alert(data.error || 'Start failed');
+  } catch(e) { alert('Error: ' + e.message); }
+  if (btn) { btn.disabled = false; btn.textContent = '▶ Start'; }
+  await refreshPlaces();
+}
+async function stopPlace(protoId, placeId) {
+  const btn = document.getElementById('place-stop-' + placeId);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
+  try {
+    await fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(placeId) + '/stop', {method:'POST'});
+  } catch(e) {}
+  if (btn) { btn.disabled = false; btn.textContent = '■ Stop'; }
+  await refreshPlaces();
+}
+refreshPlaces();
+setInterval(refreshPlaces, 3000);
+{% endif %}
 </script>
 </body></html>
 """
@@ -768,13 +1506,6 @@ BUILD_TMPL = """
               padding:10px 14px;color:#f85149;font-size:0.78rem;margin-bottom:12px; }
 .ok-banner  { background:#001a00;border:1px solid #238636;border-radius:8px;
               padding:10px 14px;color:#3fb950;font-size:0.78rem;margin-bottom:12px; }
-.path-dropdown { position:fixed;background:#161b22;border:1px solid #388bfd;border-radius:6px;
-                 max-height:220px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.6);
-                 z-index:9999;font-family:'SF Mono','Fira Code',monospace;
-                 max-width:90vw;overflow-x:hidden; }
-.path-dropdown-item { padding:5px 11px;font-size:0.72rem;color:#8b949e;cursor:pointer;
-                      white-space:pre-wrap;word-break:break-all;line-height:1.4; }
-.path-dropdown-item.active { background:#21262d;color:#e6edf3; }
 </style>
 </head><body>
 <div class="header">
@@ -793,7 +1524,9 @@ BUILD_TMPL = """
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
     <div>
       <label class="build-label">Protocol ID <span style="color:#6e7681;text-transform:none;font-size:0.65rem;">(no spaces)</span></label>
-      <input class="build-input" id="meta-id" placeholder="my_protocol" spellcheck="false">
+      <input class="build-input" id="meta-id" placeholder="my_protocol" spellcheck="false"
+             oninput="_clearOverwriteWarn()" onblur="_checkOverwrite()">
+      <span id="id-overwrite-warn" style="display:none;font-size:0.72rem;color:#e3b341;margin-top:4px;"></span>
     </div>
     <div>
       <label class="build-label">Name</label>
@@ -891,6 +1624,23 @@ BUILD_TMPL = """
   <div id="targets-preview">
     <span style="color:#6e7681;font-size:0.78rem;font-style:italic;">None detected yet.</span>
   </div>
+</div>
+
+<!-- Remote Places (optional) -->
+<div class="card" style="margin-bottom:14px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="card-title" style="margin-bottom:0;">Remote Places
+      <span style="color:#6e7681;font-size:0.65rem;text-transform:none;font-weight:normal;">
+        — optional, for att(P, …) terms
+      </span>
+    </div>
+    <button class="copy-btn" onclick="addPlaceRow()">+ Add Place</button>
+  </div>
+  <div class="places-row" style="color:#6e7681;font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;padding-bottom:4px;border-bottom:1px solid #21262d;margin-bottom:6px;">
+    <span>Place ID</span><span>Host</span><span>Port</span>
+    <span>Manifest path</span><span>asp_bin path</span><span></span>
+  </div>
+  <div id="places-list"></div>
 </div>
 
 <!-- Register -->
@@ -1079,123 +1829,21 @@ async function loadFromFile(pathInputId, textareaId, btnId, errId) {
   btn.disabled = false; btn.textContent = '↓ Load file';
 }
 
-// ── Path tab-completion ───────────────────────────────────────────────────────
-function setupPathComplete(inputId) {
-  const input = document.getElementById(inputId);
-  let dropdown = null;
-  let items    = [];
-  let selIdx   = -1;
-  let debounce = null;
-
-  async function fetchItems(path) {
-    try {
-      const res = await fetch('/api/complete_path?path=' + encodeURIComponent(path));
-      return (await res.json()).completions || [];
-    } catch { return []; }
-  }
-
-  function reposition() {
-    if (!dropdown) return;
-    const r = input.getBoundingClientRect();
-    dropdown.style.top      = (r.bottom + window.scrollY) + 'px';
-    dropdown.style.left     = (r.left   + window.scrollX) + 'px';
-    dropdown.style.minWidth = r.width + 'px';
-  }
-
-  function show(list) {
-    hide();
-    if (!list.length) return;
-    items  = list;
-    selIdx = -1;
-    dropdown = document.createElement('div');
-    dropdown.className = 'path-dropdown';
-    // use absolute positioning anchored to document origin
-    dropdown.style.position = 'absolute';
-    reposition();
-    list.forEach((item, i) => {
-      const el = document.createElement('div');
-      el.className = 'path-dropdown-item';
-      el.textContent = item;
-      el.addEventListener('mousemove', () => highlight(i));
-      el.addEventListener('mousedown', ev => { ev.preventDefault(); select(i); });
-      dropdown.appendChild(el);
-    });
-    document.body.appendChild(dropdown);
-  }
-
-  function hide() {
-    if (dropdown) { dropdown.remove(); dropdown = null; }
-    items = []; selIdx = -1;
-  }
-
-  function highlight(i) {
-    if (!dropdown) return;
-    selIdx = i;
-    Array.from(dropdown.children).forEach((el, j) => el.classList.toggle('active', j === i));
-    // scroll item into view within dropdown
-    const el = dropdown.children[i];
-    if (el) el.scrollIntoView({block: 'nearest'});
-  }
-
-  function select(i) {
-    if (i >= 0 && i < items.length) {
-      input.value = items[i];
-      input.scrollLeft = input.scrollWidth;  // show end of path, not beginning
-    }
-    hide();
-    input.focus();
-  }
-
-  // Trigger completions as the user types (debounced)
-  input.addEventListener('input', () => {
-    clearTimeout(debounce);
-    debounce = setTimeout(async () => {
-      const list = await fetchItems(input.value);
-      // Only pop up automatically when there's more than one match, or the
-      // single match differs from what's already typed (i.e. it added a /)
-      if (list.length > 1 || (list.length === 1 && list[0] !== input.value))
-        show(list);
-      else
-        hide();
-    }, 180);
-  });
-
-  input.addEventListener('keydown', async e => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      if (dropdown && selIdx >= 0) { select(selIdx); return; }
-      if (dropdown && items.length)  { select(0);      return; }
-      // No dropdown yet — fetch and either fill or show
-      const list = await fetchItems(input.value);
-      if (list.length === 1) { input.value = list[0]; input.scrollLeft = input.scrollWidth; hide(); }
-      else if (list.length > 1) { show(list); highlight(0); }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (dropdown) highlight(Math.min(selIdx + 1, items.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (dropdown) highlight(Math.max(selIdx - 1, 0));
-    } else if (e.key === 'Enter') {
-      if (dropdown && selIdx >= 0) { e.preventDefault(); select(selIdx); }
-      // otherwise fall through to load-button Enter handler below
-    } else if (e.key === 'Escape') {
-      hide();
-    }
-  });
-
-  // Close on blur (delay so mousedown on item fires first)
-  input.addEventListener('blur', () => setTimeout(hide, 160));
-
-  // Reposition if window scrolls or resizes while open
-  window.addEventListener('scroll', reposition, true);
-  window.addEventListener('resize', reposition);
-}
+{{ base_js | safe }}
 
 // Wire up the three path inputs
+const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
+// Only restore saved file paths when opening a blank new-protocol form.
+// In copy/edit mode the form is pre-populated from the source protocol,
+// so stale paths from a previous session must not bleed in.
+const _isBlankForm = !new URLSearchParams(window.location.search).get('copy') &&
+                     !new URLSearchParams(window.location.search).get('edit');
 ['term-file', 'manifest-file', 'session-file'].forEach(id => {
-  setupPathComplete(id);
-  const saved = localStorage.getItem('cvm_fp_' + id);
-  if (saved) document.getElementById(id).value = saved;
+  setupPathComplete(id, () => document.getElementById(_loadBtnMap[id]).click());
+  if (_isBlankForm) {
+    const saved = localStorage.getItem('cvm_fp_' + id);
+    if (saved) document.getElementById(id).value = saved;
+  }
 });
 
 // Auto-derive flow when term textarea is edited (debounced 600ms)
@@ -1203,15 +1851,6 @@ let _termDeriveTimer = null;
 document.getElementById('term-json').addEventListener('input', () => {
   clearTimeout(_termDeriveTimer);
   _termDeriveTimer = setTimeout(() => deriveFromTerm(true), 600);
-});
-
-// Enter key in path inputs triggers the load button
-const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
-['term-file','manifest-file','session-file'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !document.querySelector('.path-dropdown'))
-      document.getElementById(_loadBtnMap[id]).click();
-  });
 });
 
 // silent=true: update flow/targets only, no button state or error UI changes
@@ -1303,6 +1942,12 @@ async function maybeLoadEdit() {
       document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
     deriveFromTerm(true);
 
+    if (spec.places && typeof spec.places === 'object') {
+      document.getElementById('places-list').innerHTML = '';
+      Object.entries(spec.places).forEach(([pid, cfg]) =>
+        addPlaceRow(pid, cfg.host||'localhost', cfg.port||'', cfg.manifest||'', cfg.asp_bin||''));
+    }
+
   } catch(e) {
     banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
   }
@@ -1359,11 +2004,101 @@ async function maybeLoadCopy() {
       document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
     deriveFromTerm(true);
 
+    if (spec.places && typeof spec.places === 'object') {
+      document.getElementById('places-list').innerHTML = '';
+      Object.entries(spec.places).forEach(([pid, cfg]) =>
+        addPlaceRow(pid, cfg.host||'localhost', cfg.port||'', cfg.manifest||'', cfg.asp_bin||''));
+    }
+
   } catch(e) {
     banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
   }
 }
 document.addEventListener('DOMContentLoaded', maybeLoadCopy);
+
+// ── Places configuration ───────────────────────────────────────────────────────
+let _placeCounter = 0;
+function addPlaceRow(pid='', host='localhost', port='', manifest='', asp_bin='') {
+  const idx  = _placeCounter++;
+  const list = document.getElementById('places-list');
+  const row  = document.createElement('div');
+  row.className    = 'places-row';
+  row.dataset.pidx = idx;
+  row.innerHTML = `
+    <input type="text"   data-role="pid"      placeholder="P1"        value="${escHtml(pid)}"      style="font-family:monospace;">
+    <input type="text"   data-role="host"     placeholder="localhost"  value="${escHtml(host)}">
+    <input type="number" data-role="port"     placeholder="8081"       value="${escHtml(String(port))}" min="1" max="65535">
+    <input type="text"   data-role="manifest" placeholder="/path/to/manifest.json" value="${escHtml(manifest)}">
+    <input type="text"   data-role="asp_bin"  placeholder="/path/to/asps"          value="${escHtml(asp_bin)}">
+    <button class="remove-btn" onclick="this.closest('.places-row').remove()" style="padding:2px 8px;font-size:0.7rem;">×</button>`;
+  list.appendChild(row);
+}
+function collectPlaces() {
+  const rows = document.querySelectorAll('#places-list .places-row');
+  const result = {};
+  rows.forEach(row => {
+    const pid      = row.querySelector('[data-role="pid"]').value.trim();
+    const host     = row.querySelector('[data-role="host"]').value.trim() || 'localhost';
+    const port     = parseInt(row.querySelector('[data-role="port"]').value.trim(), 10);
+    const manifest = row.querySelector('[data-role="manifest"]').value.trim();
+    const asp_bin  = row.querySelector('[data-role="asp_bin"]').value.trim();
+    if (pid && port) result[pid] = {host, port, manifest, asp_bin};
+  });
+  return Object.keys(result).length ? result : null;
+}
+function showPortConflictWarning(newId, conflicts) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#161b22;border:2px solid #9e6a03;border-radius:10px;padding:24px 28px;max-width:520px;width:90%;color:#e6edf3;font-family:inherit;';
+  const rows = conflicts.map(c =>
+    `<li style="font-family:monospace;padding:2px 0;font-size:0.78rem;color:#e3b341;">
+       Port ${c.port} (place <strong>${escHtml(c.place_id)}</strong>) already used by <strong>${escHtml(c.conflicts_with)}</strong>
+     </li>`
+  ).join('');
+  box.innerHTML = `
+    <div style="color:#e3b341;font-size:1rem;font-weight:600;margin-bottom:10px;">⚠ Port Conflict Warning</div>
+    <div style="font-size:0.82rem;color:#8b949e;margin-bottom:10px;">
+      Protocol <strong style="color:#e6edf3;">${escHtml(newId)}</strong> shares ports with existing protocols that have different configurations:
+    </div>
+    <ul style="margin:0 0 16px 16px;padding:0;">${rows}</ul>
+    <div style="font-size:0.75rem;color:#6e7681;margin-bottom:16px;">
+      Running both simultaneously will cause ZMQ bind conflicts. Ensure only one protocol's places are running at a time.
+    </div>
+    <div style="text-align:right;">
+      <button style="background:#21262d;color:#e3b341;border:1px solid #9e6a03;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:0.85rem;"
+              onclick="this.closest('div[style*=inset]').remove()">Understood</button>
+    </div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function _clearOverwriteWarn() {
+  const w = document.getElementById('id-overwrite-warn');
+  if (w) { w.style.display = 'none'; w.textContent = ''; }
+}
+
+async function _checkOverwrite() {
+  const idEl = document.getElementById('meta-id');
+  if (!idEl || idEl.readOnly) return;   // skip in edit mode
+  const id = idEl.value.trim();
+  if (!id) return;
+  try {
+    const res  = await fetch('/api/proto_overwrite_check?id=' + encodeURIComponent(id));
+    const data = await res.json();
+    const w    = document.getElementById('id-overwrite-warn');
+    if (!w) return;
+    if (data.would_overwrite) {
+      const who  = data.existing_name ? `"${data.existing_name}"` : `"${id}"`;
+      const kind = data.is_builtin ? 'a built-in protocol' : 'an existing protocol';
+      const file = data.file_path  ? ` (${data.file_path.split('/').pop()})` : '';
+      w.textContent = `⚠ ID conflicts with ${kind} ${who}${file} — registering will overwrite it.`;
+      w.style.display = 'block';
+    } else {
+      _clearOverwriteWarn();
+    }
+  } catch(e) {}
+}
 
 async function registerProtocol() {
   const banner = document.getElementById('banner');
@@ -1371,27 +2106,51 @@ async function registerProtocol() {
   banner.innerHTML = '';
   const id = document.getElementById('meta-id').value.trim();
   if (!id) { banner.innerHTML = '<div class="err-banner">Protocol ID is required.</div>'; return; }
+
+  // Warn before overwriting an existing protocol file or registry entry.
+  const idEl = document.getElementById('meta-id');
+  if (!idEl.readOnly) {
+    try {
+      const chk  = await fetch('/api/proto_overwrite_check?id=' + encodeURIComponent(id));
+      const info = await chk.json();
+      if (info.would_overwrite) {
+        const who  = info.existing_name ? `"${info.existing_name}"` : `"${id}"`;
+        const kind = info.is_builtin ? 'built-in protocol' : 'existing protocol';
+        const file = info.file_path  ? `\n\nFile: ${info.file_path}` : '';
+        const ok   = confirm(
+          `Registering as "${id}" will overwrite the ${kind} ${who}.${file}\n\nContinue?`
+        );
+        if (!ok) return;
+      }
+    } catch(e) {}
+  }
+
   btn.disabled = true; btn.textContent = '⟳ Registering…';
   try {
+    const places = collectPlaces();
     const res  = await fetch('/api/register_builder', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        id:           id,
-        name:         document.getElementById('meta-name').value.trim() || id,
-        description:  document.getElementById('meta-desc').value.trim(),
-        copland:      document.getElementById('meta-copland').value.trim(),
-        term_json:    document.getElementById('term-json').value.trim(),
-        manifest_json:  document.getElementById('manifest-json').value.trim(),
-        session_json:   document.getElementById('session-json').value.trim(),
-        evidence_json:  document.getElementById('evidence-json').value.trim(),
+        id:            id,
+        name:          document.getElementById('meta-name').value.trim() || id,
+        description:   document.getElementById('meta-desc').value.trim(),
+        copland:       document.getElementById('meta-copland').value.trim(),
+        term_json:     document.getElementById('term-json').value.trim(),
+        manifest_json: document.getElementById('manifest-json').value.trim(),
+        session_json:  document.getElementById('session-json').value.trim(),
+        evidence_json: document.getElementById('evidence-json').value.trim(),
+        places_json:   places ? JSON.stringify(places) : '',
+        copy_source:   new URLSearchParams(window.location.search).get('copy') || '',
       }),
     });
     const data = await res.json();
     if (!res.ok) {
       banner.innerHTML = `<div class="err-banner">${escHtml(data.error || 'Registration failed')}</div>`;
     } else {
-      banner.innerHTML = `<div class="ok-banner">✓ Protocol <strong>${escHtml(data.name)}</strong> registered. <a href="/protocol/${escHtml(data.id)}" style="color:#3fb950;">View →</a></div>`;
+      if (data.port_conflicts && data.port_conflicts.length)
+        showPortConflictWarning(data.id, data.port_conflicts);
+      banner.innerHTML = `<div class="ok-banner">✓ Protocol <strong>${escHtml(data.name)}</strong> registered. <a href="/protocol/${escHtml(data.id)}" style="color:#3fb950;">View →</a>${data.saved_path ? `<br><span style="font-size:0.78rem;color:#8b949e;font-family:monospace;">Saved to: ${escHtml(data.saved_path)}</span>` : ''}</div>`;
     }
   } catch(e) {
     banner.innerHTML = `<div class="err-banner">Error: ${escHtml(e.message)}</div>`;
@@ -1411,7 +2170,7 @@ def home():
         snap = dict(results_store)
     protocols = list(REGISTRY.values())
     tamper_states = {pid: protocol_any_tampered(pid) for pid in REGISTRY}
-    return render_template_string(HOME_TMPL, style=BASE_STYLE,
+    return render_template_string(HOME_TMPL, style=BASE_STYLE, base_js=BASE_JS,
                                   protocols=protocols, results=snap,
                                   tamper_states=tamper_states)
 
@@ -1423,10 +2182,6 @@ def protocol_detail(protocol_id):
     proto = REGISTRY[protocol_id]
     with store_lock:
         r = results_store.get(protocol_id)
-    # If no cached result, run it now
-    if r is None:
-        r = run_protocol(protocol_id)
-        store_result(r)
     prov = proto['golden_state']() if 'golden_state' in proto else []
     # Augment prov entries with live tamper state
     tamper_targets = proto.get('tamper_targets', {})
@@ -1437,16 +2192,280 @@ def protocol_detail(protocol_id):
         else:
             entry['tamper_id'] = None
             entry['tamper_state'] = None
-    return render_template_string(DETAIL_TMPL, style=BASE_STYLE, proto=proto, r=r, prov=prov)
+    provisioned = any(e.get('timestamp') for e in prov) if prov else True
+    return render_template_string(DETAIL_TMPL, style=BASE_STYLE, base_js=BASE_JS, proto=proto, r=r, prov=prov, provisioned=provisioned)
+
+
+# Track which protocols are currently running so the UI can show a spinner.
+_running_protocols  = set()
+_running_operations = {}   # protocol_id -> 'run' | 'check'
+_running_lock       = threading.Lock()
+
+
+def _run_stepped(protocol_id, steps):
+    """Run a stepped protocol incrementally.
+
+    Executes each step as a separate CVM call (one lseq/APPR per step),
+    publishing partial results to results_store after every step so the
+    UI poll loop can display live progress.
+
+    If all individual steps pass, the full build() term is executed once
+    more to produce the canonical single-bundle evidence result that gets
+    stored as the final outcome.  If any step fails, the partial failure
+    is stored immediately and no further steps are run.
+    """
+    asp_bin = os.environ.get(
+        'CVM_ASP_BIN',
+        os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
+    )
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    total = len(steps)
+    partial = []
+    failed  = False
+
+    for step_idx, (step_id, label, build_fn) in enumerate(steps):
+        # Publish progress snapshot *before* this step starts so the UI
+        # shows which step is currently executing.
+        with store_lock:
+            results_store[protocol_id] = {
+                'protocol_id':  protocol_id,
+                'cvm_success':  True,
+                'results':      list(partial),
+                'all_pass':     False,
+                'pass_count':   sum(1 for r in partial if r['verdict'] == 'PASS'),
+                'fail_count':   sum(1 for r in partial if r['verdict'] != 'PASS'),
+                'error':        None,
+                'timestamp':    ts,
+                'current_step': label,
+                'total_steps':  total,
+            }
+
+        # Run this single step.
+        try:
+            manifest, request = build_fn()
+            raw = cvm_server.run_attestation(
+                manifest if isinstance(manifest, str) else json.dumps(manifest),
+                json.dumps(request) if isinstance(request, dict) else request,
+                log_level='Info',
+            )
+            response = json.loads(raw) if isinstance(raw, str) else raw
+        except Exception as exc:
+            store_result({
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     partial,
+                'all_pass':    False,
+                'pass_count':  sum(1 for r in partial if r['verdict'] == 'PASS'),
+                'fail_count':  len(partial) - sum(1 for r in partial if r['verdict'] == 'PASS'),
+                'error':       str(exc),
+                'timestamp':   ts,
+            })
+            return
+
+        step_ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if not response.get('SUCCESS'):
+            partial.append({
+                'appr': 'run_command_hamr_appr', 'target': label, 'filepath': '',
+                'verdict': 'FAIL',
+                'msg': str(response.get('PAYLOAD', 'CVM error')),
+                'timestamp': step_ts,
+            })
+            failed = True
+            break
+
+        try:
+            raw_ev = response['PAYLOAD'][0]['RawEv']
+            et     = response['PAYLOAD'][1]
+            rows   = walk_et(et, raw_ev, [0])
+            for row in rows:
+                row['timestamp'] = step_ts
+                # Use the step label from the steps list rather than anything
+                # embedded in ASP_ARGS — keeps display metadata out of the
+                # evidence channel.
+                row['target'] = label
+            partial.extend(rows)
+            if any(row['verdict'] != 'PASS' for row in rows):
+                failed = True
+                break
+        except Exception as exc:
+            store_result({
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     partial,
+                'all_pass':    False,
+                'pass_count':  sum(1 for r in partial if r['verdict'] == 'PASS'),
+                'fail_count':  len(partial) - sum(1 for r in partial if r['verdict'] == 'PASS'),
+                'error':       str(exc),
+                'timestamp':   ts,
+            })
+            return
+
+    if not failed:
+        # All steps passed individually — run the full combined term once to
+        # produce the canonical single Copland evidence bundle.
+        final = run_protocol(protocol_id)
+        store_result(final)
+    else:
+        store_result({
+            'protocol_id': protocol_id,
+            'cvm_success': True,
+            'results':     partial,
+            'all_pass':    False,
+            'pass_count':  sum(1 for r in partial if r['verdict'] == 'PASS'),
+            'fail_count':  sum(1 for r in partial if r['verdict'] != 'PASS'),
+            'error':       None,
+            'timestamp':   ts,
+        })
+
+
+def _run_check(protocol_id, steps):
+    """Run all steps in parallel and store results with result_type='check'.
+
+    Each step is dispatched to its own thread via ThreadPoolExecutor.
+    Results are written into ordered slots so the table always shows steps
+    in canonical order regardless of which finishes first.
+    The progress snapshot is pushed to results_store after each future
+    resolves so the UI poll loop can render incremental updates.
+    No final combined run — the result is the set of individual attestations.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    ts    = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    total = len(steps)
+    slots = [None] * total   # ordered result slots
+    fail  = [False]
+    slots_lock = threading.Lock()
+
+    def _step(idx, label, build_fn):
+        manifest, request = build_fn()
+        raw = cvm_server.run_attestation(
+            manifest if isinstance(manifest, str) else json.dumps(manifest),
+            json.dumps(request) if isinstance(request, dict) else request,
+            log_level='Info',
+        )
+        response = json.loads(raw) if isinstance(raw, str) else raw
+        step_ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if not response.get('SUCCESS'):
+            return idx, [{'appr': 'run_command_hamr_appr', 'target': label,
+                          'filepath': '', 'verdict': 'FAIL',
+                          'msg': str(response.get('PAYLOAD', 'CVM error')),
+                          'timestamp': step_ts}]
+        rows = walk_et(response['PAYLOAD'][1], response['PAYLOAD'][0]['RawEv'], [0])
+        for row in rows:
+            row['timestamp'] = step_ts
+        return idx, rows
+
+    with ThreadPoolExecutor(max_workers=total) as executor:
+        futures = {
+            executor.submit(_step, i, label, build_fn): label
+            for i, (sid, label, build_fn) in enumerate(steps)
+        }
+        for future in as_completed(futures):
+            try:
+                idx, rows = future.result()
+            except Exception as exc:
+                store_result({'protocol_id': protocol_id, 'cvm_success': False,
+                              'results': [], 'all_pass': False,
+                              'pass_count': 0, 'fail_count': 0,
+                              'error': str(exc), 'timestamp': ts,
+                              'result_type': 'check'})
+                return
+            with slots_lock:
+                slots[idx] = rows
+                if any(r['verdict'] != 'PASS' for r in rows):
+                    fail[0] = True
+                partial = [row for s in slots if s is not None for row in s]
+                done    = sum(1 for s in slots if s is not None)
+            with store_lock:
+                results_store[protocol_id] = {
+                    'protocol_id': protocol_id,
+                    'cvm_success': True,
+                    'results':     partial,
+                    'all_pass':    False,
+                    'pass_count':  sum(1 for r in partial if r['verdict'] == 'PASS'),
+                    'fail_count':  sum(1 for r in partial if r['verdict'] != 'PASS'),
+                    'error':       None,
+                    'timestamp':   ts,
+                    'total_steps': total,
+                    'result_type': 'check',
+                }
+
+    # All futures done — write the final result (running flag removed by caller)
+    all_rows = [row for s in slots if s is not None for row in s]
+    store_result({
+        'protocol_id': protocol_id,
+        'cvm_success': True,
+        'results':     all_rows,
+        'all_pass':    not fail[0] and len(all_rows) == total,
+        'pass_count':  sum(1 for r in all_rows if r['verdict'] == 'PASS'),
+        'fail_count':  sum(1 for r in all_rows if r['verdict'] != 'PASS'),
+        'error':       None,
+        'timestamp':   ts,
+        'result_type': 'check',
+    })
+
+
+@app.route('/api/check/<protocol_id>')
+def api_check(protocol_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    proto = REGISTRY[protocol_id]
+    if not proto.get('steps'):
+        return jsonify({'error': 'Protocol has no check steps defined'}), 400
+
+    with _running_lock:
+        already_running = protocol_id in _running_protocols
+        if not already_running:
+            _running_protocols.add(protocol_id)
+            _running_operations[protocol_id] = 'check'
+
+    if already_running:
+        return jsonify({'running': True, 'protocol_id': protocol_id})
+
+    steps = proto['steps']
+
+    def _check():
+        try:
+            _run_check(protocol_id, steps)
+        finally:
+            with _running_lock:
+                _running_protocols.discard(protocol_id)
+                _running_operations.pop(protocol_id, None)
+
+    threading.Thread(target=_check, daemon=True).start()
+    return jsonify({'running': True, 'operation': 'check', 'protocol_id': protocol_id})
 
 
 @app.route('/api/run/<protocol_id>')
 def api_run(protocol_id):
     if protocol_id not in REGISTRY:
         return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    r = run_protocol(protocol_id)
-    store_result(r)
-    return jsonify(r)
+
+    with _running_lock:
+        already_running = protocol_id in _running_protocols
+        if not already_running:
+            _running_protocols.add(protocol_id)
+            _running_operations[protocol_id] = 'run'
+
+    if already_running:
+        return jsonify({'running': True, 'protocol_id': protocol_id})
+
+    proto = REGISTRY[protocol_id]
+    steps = proto.get('steps')
+
+    def _run():
+        try:
+            if steps:
+                _run_stepped(protocol_id, steps)
+            else:
+                r = run_protocol(protocol_id)
+                store_result(r)
+        finally:
+            with _running_lock:
+                _running_protocols.discard(protocol_id)
+                _running_operations.pop(protocol_id, None)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return jsonify({'running': True, 'operation': 'run', 'protocol_id': protocol_id})
 
 
 @app.route('/api/provision/<protocol_id>')
@@ -1456,7 +2475,14 @@ def api_provision(protocol_id):
     proto = REGISTRY[protocol_id]
     if 'provision' not in proto:
         return jsonify({'error': 'Protocol has no provisioning function'}), 400
-    entries = proto['provision']()
+    golden_path = flask_request.args.get('golden_path') or None
+    try:
+        entries = proto['provision'](golden_path=golden_path)
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 409
+    # Clear any stale run result so the page reloads without an old error card
+    with store_lock:
+        results_store.pop(protocol_id, None)
     return jsonify({'protocol_id': protocol_id, 'entries': entries})
 
 
@@ -1492,11 +2518,11 @@ def api_inspect(protocol_id, target_id):
         return jsonify({'error': f'Unknown target: {target_id}'}), 404
     data = tamper_targets[target_id]['inspect']()
     if (not data.get('compliant') and data.get('type') == 'file'
-            and data.get('provisioned') is not None):
+            and data.get('pre_tamper') is not None):
         data['diff'] = list(difflib.unified_diff(
-            data['provisioned'].splitlines(keepends=True),
+            data['pre_tamper'].splitlines(keepends=True),
             data['current'].splitlines(keepends=True),
-            fromfile='last provisioned',
+            fromfile='pre-tamper',
             tofile='current',
         ))
     return jsonify(data)
@@ -1514,12 +2540,58 @@ def api_reset(protocol_id, target_id):
 
 
 
+@app.route('/api/protocols/<protocol_id>/places', methods=['GET'])
+def api_protocol_places(protocol_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    proto  = REGISTRY[protocol_id]
+    places = proto.get('places', {})
+    status = place_manager.get_place_status(protocol_id, places)
+    return jsonify({'places': status})
+
+
+@app.route('/api/protocols/<protocol_id>/places/<place_id>/start', methods=['POST'])
+def api_place_start(protocol_id, place_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    places = REGISTRY[protocol_id].get('places', {})
+    cfg    = places.get(place_id)
+    if not cfg:
+        return jsonify({'error': f'Unknown place: {place_id}'}), 404
+    try:
+        result = place_manager.start_place(protocol_id, place_id, cfg)
+        return jsonify({'ok': True, **result})
+    except FileNotFoundError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/protocols/<protocol_id>/places/<place_id>/stop', methods=['POST'])
+def api_place_stop(protocol_id, place_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    result = place_manager.stop_place(protocol_id, place_id)
+    return jsonify({'ok': True, **result})
+
+
+@app.route('/api/protocols/<protocol_id>/files', methods=['GET'])
+def api_protocol_files(protocol_id):
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    files = protocol_loader.list_cleanup_files(protocol_id)
+    return jsonify({'files': files})
+
+
 @app.route('/api/protocols/<protocol_id>', methods=['DELETE'])
 def api_remove_protocol(protocol_id):
     if protocol_id not in REGISTRY:
         return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    if not protocol_loader.remove_protocol(protocol_id):
+    cleanup = flask_request.args.get('cleanup', '').lower() == 'true'
+    if not protocol_loader.remove_protocol(protocol_id, delete_files=cleanup):
         return jsonify({'error': 'Cannot remove built-in protocol'}), 400
+    with store_lock:
+        results_store.pop(protocol_id, None)
     return jsonify({'ok': True, 'id': protocol_id})
 
 
@@ -1537,12 +2609,39 @@ def api_push():
 def api_results():
     with store_lock:
         snap = dict(results_store)
+    with _running_lock:
+        running    = set(_running_protocols)
+        operations = dict(_running_operations)
+    # Inject a sentinel entry for each in-flight run/check so the poll loop
+    # can show a spinner and knows which button is active.
+    for pid in running:
+        op = operations.get(pid, 'run')
+        if pid not in snap:
+            snap[pid] = {'protocol_id': pid, 'running': True, 'operation': op}
+        else:
+            snap[pid] = {**snap[pid], 'running': True, 'operation': op}
     return jsonify(snap)
 
 
 @app.route('/build')
 def build_page():
-    return render_template_string(BUILD_TMPL, style=BASE_STYLE)
+    return render_template_string(BUILD_TMPL, style=BASE_STYLE, base_js=BASE_JS)
+
+
+@app.route('/api/provision_history/<protocol_id>')
+def api_provision_history(protocol_id):
+    from evidence_slice import load_provision_history
+    paths = load_provision_history(protocol_id)
+    current_path = ''
+    proto = REGISTRY.get(protocol_id)
+    if proto and 'golden_state' in proto:
+        try:
+            gs = proto['golden_state']()
+            if gs:
+                current_path = gs[0].get('golden_path', '') or ''
+        except Exception:
+            pass
+    return jsonify({'paths': paths, 'current_path': current_path})
 
 
 @app.route('/api/complete_path')
@@ -1696,6 +2795,39 @@ def api_protocol_copy_spec(protocol_id):
     return Response(json.dumps(spec), mimetype='application/json')
 
 
+@app.route('/api/proto_overwrite_check')
+def api_proto_overwrite_check():
+    """
+    Return whether registering a protocol with the given ID would overwrite
+    an existing file on disk or shadow a built-in protocol.
+    """
+    proto_id = flask_request.args.get('id', '').strip()
+    if not proto_id:
+        return jsonify({'would_overwrite': False})
+
+    # Check whether the built_protocols JSON file already exists
+    built_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'built_protocols', f'{proto_id}.json',
+    )
+    file_exists = os.path.exists(built_path)
+
+    # Check registry membership (catches both custom and built-in collisions)
+    in_registry  = proto_id in REGISTRY
+    is_custom    = in_registry and bool(REGISTRY[proto_id].get('custom_source'))
+    is_builtin   = in_registry and not is_custom
+    existing_name = REGISTRY[proto_id].get('name', proto_id) if in_registry else None
+
+    return jsonify({
+        'would_overwrite': file_exists or in_registry,
+        'file_exists':     file_exists,
+        'file_path':       built_path if file_exists else None,
+        'in_registry':     in_registry,
+        'is_builtin':      is_builtin,
+        'existing_name':   existing_name,
+    })
+
+
 @app.route('/api/register_builder', methods=['POST'])
 def api_register_builder():
     data = flask_request.get_json(force=True) or {}
@@ -1708,6 +2840,8 @@ def api_register_builder():
     manifest_json    = data.get('manifest_json', '').strip()
     attestation_json = data.get('session_json', '').strip()
     evidence_json    = data.get('evidence_json', '').strip()
+    places_json      = data.get('places_json', '').strip()
+    copy_source      = data.get('copy_source', '').strip()
 
     if not proto_id:
         return jsonify({'error': 'Protocol ID is required'}), 400
@@ -1735,6 +2869,11 @@ def api_register_builder():
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid evidence JSON: {e}'}), 400
 
+    try:
+        places_obj = json.loads(places_json) if places_json else None
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid places JSON: {e}'}), 400
+
     # Always re-derive targets and flow from the term
     derived = protocol_builder.derive_from_term(term_dict)
 
@@ -1760,17 +2899,42 @@ def api_register_builder():
     if proto_id in REGISTRY and REGISTRY[proto_id].get('custom_source'):
         protocol_loader.remove_protocol(proto_id)
 
+    # If this is a copy of a stepped protocol, carry the steps forward.
+    source_steps = None
+    if copy_source and copy_source in REGISTRY:
+        source_steps = REGISTRY[copy_source].get('steps') or None
+
     try:
-        protocol_builder.save_and_register(
+        _, saved_path = protocol_builder.save_and_register(
             proto_id, name, description, copland,
             term_dict, manifest_obj, attestation_obj,
             evidence_obj, derived['targets'], derived['flow'],
+            places=places_obj,
+            steps=source_steps,
         )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    return jsonify({'ok': True, 'id': proto_id, 'name': name})
+    # Detect port conflicts with other registered protocols
+    port_conflicts = []
+    if places_obj:
+        for existing_id, existing_entry in REGISTRY.items():
+            if existing_id == proto_id:
+                continue
+            for ex_pid, ex_cfg in existing_entry.get('places', {}).items():
+                for new_pid, new_cfg in places_obj.items():
+                    if (int(ex_cfg.get('port', 0)) == int(new_cfg.get('port', 0)) and
+                            ex_cfg.get('host', 'localhost') == new_cfg.get('host', 'localhost') and
+                            ex_cfg != new_cfg):
+                        port_conflicts.append({
+                            'place_id':       new_pid,
+                            'port':           new_cfg['port'],
+                            'conflicts_with': existing_id,
+                        })
+
+    return jsonify({'ok': True, 'id': proto_id, 'name': name,
+                    'saved_path': saved_path, 'port_conflicts': port_conflicts})
 
 
 if __name__ == '__main__':
-    app.run(port=5050, debug=False)
+    app.run(port=5050, debug=False, threaded=True)
