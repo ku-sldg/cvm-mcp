@@ -1,0 +1,52 @@
+{
+  "Session_Plc": "P0",
+  "Plc_Mapping": {},
+  "PubKey_Mapping": {},
+  "Session_Context": {
+    "ASP_Types": {
+      "readfile_range": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "readfile_marker_range": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "readfile_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "sig": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "ALL"
+        },
+        "ATTRS": []
+      },
+      "sig_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      }
+    },
+    "ASP_Comps": {
+      "readfile_range": "readfile_appr",
+      "readfile_marker_range": "readfile_appr",
+      "sig": "sig_appr"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Verus Protocol",
+  "description": "",
+  "copland": "bseq({'split1': 'ALL', 'split2': 'ALL'})( hashfile, run_command_verus )",
+  "flow": [
+    {
+      "type": "bseq",
+      "label": "bseq / {'split1': 'ALL', 'split2': 'ALL'}",
+      "children": [
+        "hashfile",
+        "run_command_verus"
+      ],
+      "children_flow": [
+        [
+          {
+            "type": "asp",
+            "label": "hashfile",
+            "style": "default",
+            "term_path": [
+              "TERM_BODY",
+              1,
+              "TERM_BODY",
+              "ASP_BODY"
+            ]
+          }
+        ],
+        [
+          {
+            "type": "asp",
+            "label": "run_command_verus",
+            "style": "default",
+            "term_path": [
+              "TERM_BODY",
+              2,
+              "TERM_BODY",
+              "ASP_BODY"
+            ]
+          }
+        ]
+      ]
+    }
+  ]
+}

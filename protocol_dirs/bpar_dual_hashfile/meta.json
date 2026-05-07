@@ -1,0 +1,31 @@
+{
+  "name": "Parallel Dual File Hash (bpar)",
+  "description": "Hash two files using bpar (branching parallel) \u2014 left branch runs as a CVM subprocess, right branch in the current process. Sign the combined evidence, then appraise all layers.",
+  "copland": "lseq( lseq( bpar/both_paths( hashfile\u00d72 ), SIG ), APPR )",
+  "flow": [
+    {
+      "type": "bpar",
+      "label": "bpar / both_paths",
+      "children": [
+        "hashfile(file1.txt)",
+        "hashfile(file2.txt)"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "SIG",
+      "style": "sig"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

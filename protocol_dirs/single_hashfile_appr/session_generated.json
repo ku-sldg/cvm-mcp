@@ -1,0 +1,26 @@
+{
+  "Session_Plc": "P0",
+  "Plc_Mapping": {},
+  "PubKey_Mapping": {},
+  "Session_Context": {
+    "ASP_Types": {
+      "hashfile": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "hashfile_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      }
+    },
+    "ASP_Comps": {
+      "hashfile": "hashfile_appr"
+    }
+  }
+}

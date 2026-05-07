@@ -441,11 +441,17 @@ def list_protocols() -> str:
         id, name, description, and copland (the Copland term expression).
     """
     from protocols import REGISTRY
-    return json.dumps([
-        {'id': p['id'], 'name': p['name'],
-         'description': p['description'], 'copland': p['copland']}
-        for p in REGISTRY.values()
-    ], indent=2)
+    import protocol_loader
+    result = []
+    for p in REGISTRY.values():
+        meta = protocol_loader.get_protocol_dir_meta(p['id'])
+        result.append({
+            'id':          p['id'],
+            'name':        meta.get('name',        p.get('name', p['id'])),
+            'description': meta.get('description', p.get('description', '')),
+            'copland':     meta.get('copland',     p.get('copland', '')),
+        })
+    return json.dumps(result, indent=2)
 
 
 @mcp.tool()
@@ -483,14 +489,19 @@ def run_protocol(
         }
     """
     from protocols import REGISTRY
-    import base64, datetime
+    import protocol_loader, base64, datetime
 
     if protocol_id not in REGISTRY:
         ids = list(REGISTRY.keys())
         return json.dumps({"error": f"Unknown protocol '{protocol_id}'. Available: {ids}"})
 
     proto = REGISTRY[protocol_id]
-    manifest, req = proto['build']()
+
+    # Load manifest + request from protocol_dirs/ when available; fall back to build()
+    if protocol_loader.has_protocol_dir(protocol_id):
+        manifest, req = protocol_loader.build_from_dir(protocol_id)
+    else:
+        manifest, req = proto['build']()
 
     # Inject golden values (golden_b64) from the evidence bundle, just as the
     # dashboard does.  Without this, ASPs that compare against a golden file
@@ -987,6 +998,91 @@ def _dashboard_error_html(title: str, message: str) -> str:
         f'<body style="font-family:sans-serif;background:#0f172a;color:#fca5a5;padding:2rem">'
         f'<h2>{title}</h2><pre>{message}</pre></body></html>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Protocol config management
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def refresh_protocol_config(protocol_id: str) -> str:
+    """
+    Regenerate the protocol_dirs/<protocol_id>/ configuration files by
+    re-running generate_protocol_dirs.py for the given protocol.
+
+    Use this for dynamic protocols (gumbo_l1, gumbo_l2) whose Copland terms
+    reference source file line numbers that may change.  Run this before
+    provisioning or attesting when the underlying source files have been
+    modified.
+
+    Args:
+        protocol_id: ID of the protocol to refresh (must be a dynamic protocol).
+
+    Returns:
+        JSON string with {"ok": true, "output": "..."} on success, or
+        {"error": "..."} on failure.
+    """
+    import protocol_loader, subprocess
+
+    meta = protocol_loader.get_protocol_dir_meta(protocol_id)
+    if not meta:
+        return json.dumps({"error": f"No protocol_dirs entry found for '{protocol_id}'"})
+    if not meta.get('dynamic'):
+        return json.dumps({"error": f"'{protocol_id}' is not a dynamic protocol; no refresh needed"})
+
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        gen = os.path.join(here, 'generate_protocol_dirs.py')
+        out_dir = protocol_loader._protocol_dirs_root()
+        result = subprocess.run(
+            ['python3', gen, '--protocols', protocol_id, '-o', out_dir],
+            capture_output=True, text=True, timeout=60, cwd=here,
+        )
+        if result.returncode != 0:
+            return json.dumps({"error": result.stdout + result.stderr})
+        return json.dumps({"ok": True, "output": result.stdout})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+def run_summary(protocol_id: str) -> str:
+    """
+    Return a Markdown summary of a protocol's CVM configuration and most recent
+    run results.
+
+    The summary is generated directly from the on-disk JSON files in
+    protocol_dirs/<protocol_id>/ — the same files that are passed to the CVM:
+      - manifest.json  (ASPs registered, ASP_FS_MAP, policy)
+      - term.json      (Copland term tree, with asp_args.json substitutions applied)
+      - session.json   (place mappings, ASP types, ASP compositions)
+      - asp_args.json  (argument substitutions injected into ASP nodes)
+
+    golden_b64 blobs are stripped; only human-readable configuration is shown.
+
+    Also includes run results if the protocol has been run since the dashboard
+    was last started.
+
+    Args:
+        protocol_id: ID of the protocol (use list_protocols() to see options).
+
+    Returns:
+        Markdown string on success, or an error string prefixed with "ERROR:".
+    """
+    try:
+        import urllib.request
+        url = f"{DASHBOARD_URL}/api/run_summary/{protocol_id}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.read().decode('utf-8')
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read().decode())
+            return f"ERROR: {body.get('error', str(e))}"
+        except Exception:
+            return f"ERROR: HTTP {e.code} from dashboard"
+    except Exception as e:
+        return f"ERROR: Could not fetch summary from dashboard — {e}"
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,164 @@
+{
+  "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl": {
+    "label": "TempControlSystem.aadl",
+    "asp_id": "readfile_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+      "start_index": 164,
+      "end_index": 168,
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl": {
+    "label": "TempSensor.aadl",
+    "asp_id": "readfile_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+      "start_index": 52,
+      "end_index": 53,
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala": {
+    "label": "TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+    "asp_id": "readfile_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+      "start_index": 226,
+      "end_index": 235,
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala": {
+    "label": "TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+    "asp_id": "readfile_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+      "start_index": 65,
+      "end_index": 68,
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "readfile_marker_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala": {
+    "label": "TempControlPeriodic_p_tcproc_tempControl.scala",
+    "asp_id": "readfile_marker_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+      "begin_marker": "BEGIN INITIALIZES ENSURES",
+      "end_marker": "END INITIALIZES ENSURES",
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "readfile_marker_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala": {
+    "label": "TempSensorPeriodic_p_tcproc_tempSensor.scala",
+    "asp_id": "readfile_marker_range",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala",
+      "begin_marker": "BEGIN INITIALIZES ENSURES",
+      "end_marker": "END INITIALIZES ENSURES",
+      "env_var_golden": "",
+      "filepath_golden": "",
+      "asp_id_appr": "readfile_appr"
+    }
+  },
+  "aadl_tc_inv_setpoint": {
+    "label": "AADL: inv SetPoint_Data_Invariant"
+  },
+  "aadl_tc_assume_range": {
+    "label": "AADL: assume currentTempInputRange"
+  },
+  "aadl_tc_init_fan_cmd": {
+    "label": "AADL: guarantee initLatestFanCmd"
+  },
+  "aadl_tc_init_fan": {
+    "label": "AADL: guarantee initFanCmd"
+  },
+  "aadl_tc_lt": {
+    "label": "AADL: guarantee altTempLTSetPoint"
+  },
+  "aadl_tc_gt": {
+    "label": "AADL: guarantee altTempGTSetPoint"
+  },
+  "aadl_tc_inrange": {
+    "label": "AADL: guarantee altTempInRange"
+  },
+  "aadl_ts_output_range": {
+    "label": "AADL: guarantee currentTempOutputRange"
+  },
+  "aadl_ts_init_val": {
+    "label": "AADL: guarantee currentTempInitialVal"
+  },
+  "gumbox_tc_assm": {
+    "label": "GumboX TC: I_Assm_currentTemp"
+  },
+  "gumbox_tc_init_lfc": {
+    "label": "GumboX TC: initialize_initLatestFanCmd"
+  },
+  "gumbox_tc_init_fc": {
+    "label": "GumboX TC: initialize_initFanCmd"
+  },
+  "gumbox_tc_spec_lt": {
+    "label": "GumboX TC: compute_spec_LTSetPoint"
+  },
+  "gumbox_tc_spec_gt": {
+    "label": "GumboX TC: compute_spec_GTSetPoint"
+  },
+  "gumbox_tc_spec_inrange": {
+    "label": "GumboX TC: compute_spec_InRange"
+  },
+  "gumbox_tc_case_lt": {
+    "label": "GumboX TC: compute_case_LTSetPoint"
+  },
+  "gumbox_tc_case_gt": {
+    "label": "GumboX TC: compute_case_GTSetPoint"
+  },
+  "gumbox_tc_case_inrange": {
+    "label": "GumboX TC: compute_case_InRange"
+  },
+  "gumbox_ts_guar": {
+    "label": "GumboX TS: I_Guar_currentTemp"
+  },
+  "gumbox_ts_init": {
+    "label": "GumboX TS: initialize_initializes"
+  },
+  "gumbox_ts_iep_post": {
+    "label": "GumboX TS: inititialize_IEP_Post"
+  },
+  "gumbox_ts_cep_post": {
+    "label": "GumboX TS: compute_CEP_Post"
+  },
+  "comp_tc_state_vars": {
+    "label": "TC Component: STATE VARS"
+  },
+  "comp_tc_compute_mod": {
+    "label": "TC Component: COMPUTE MODIFIES"
+  },
+  "comp_tc_compute_ens": {
+    "label": "TC Component: COMPUTE ENSURES"
+  },
+  "comp_tc_init_mod": {
+    "label": "TC Component: INITIALIZES MODIFIES"
+  },
+  "comp_tc_init_ens": {
+    "label": "TC Component: INITIALIZES ENSURES"
+  },
+  "comp_ts_init_ens": {
+    "label": "TS Component: INITIALIZES ENSURES"
+  }
+}

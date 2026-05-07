@@ -1,0 +1,28 @@
+{
+  "name": "Evidence Hash + Signature",
+  "description": "Hash evidence, sign it, then appraise both layers",
+  "copland": "lseq( lseq( hsh, SIG ), APPR )",
+  "flow": [
+    {
+      "type": "asp",
+      "label": "hsh",
+      "style": "hsh"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "SIG",
+      "style": "sig"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

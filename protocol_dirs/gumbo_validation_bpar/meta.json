@@ -1,0 +1,26 @@
+{
+  "name": "GUMBO Behavioral Validation (bpar)",
+  "description": "Parallel variant of GUMBO Behavioral Validation using bpar. Left branch (main process): tipe + Logika TempControl + GumboX tests TempControl. Right branch (subprocess): Logika TempSensor + GumboX tests TempSensor. Both tracks are independent, so they run concurrently. No provisioned golden required \u2014 appraiser checks tool exit codes.",
+  "copland": "lseq( bpar/both_paths(  bseq_chain(tipe, logika_tc, test_tc),  bseq_chain(logika_ts, test_ts)), APPR )",
+  "flow": [
+    {
+      "type": "bpar",
+      "label": "bpar / both_paths",
+      "children": [
+        "Type Check (tipe)",
+        "Logika: TempControl GumboX",
+        "GumboX Unit Tests: TempControl",
+        "\u2016 Logika: TempSensor GumboX",
+        "\u2016 GumboX Unit Tests: TempSensor"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

@@ -1,0 +1,649 @@
+{
+  "TERM_CONSTRUCTOR": "lseq",
+  "TERM_BODY": [
+    {
+      "TERM_CONSTRUCTOR": "bseq",
+      "TERM_BODY": [
+        "both_paths",
+        {
+          "TERM_CONSTRUCTOR": "bseq",
+          "TERM_BODY": [
+            "both_paths",
+            {
+              "TERM_CONSTRUCTOR": "bseq",
+              "TERM_BODY": [
+                "both_paths",
+                {
+                  "TERM_CONSTRUCTOR": "bseq",
+                  "TERM_BODY": [
+                    "both_paths",
+                    {
+                      "TERM_CONSTRUCTOR": "bseq",
+                      "TERM_BODY": [
+                        "both_paths",
+                        {
+                          "TERM_CONSTRUCTOR": "bseq",
+                          "TERM_BODY": [
+                            "both_paths",
+                            {
+                              "TERM_CONSTRUCTOR": "bseq",
+                              "TERM_BODY": [
+                                "both_paths",
+                                {
+                                  "TERM_CONSTRUCTOR": "bseq",
+                                  "TERM_BODY": [
+                                    "both_paths",
+                                    {
+                                      "TERM_CONSTRUCTOR": "bseq",
+                                      "TERM_BODY": [
+                                        "both_paths",
+                                        {
+                                          "TERM_CONSTRUCTOR": "bseq",
+                                          "TERM_BODY": [
+                                            "both_paths",
+                                            {
+                                              "TERM_CONSTRUCTOR": "bseq",
+                                              "TERM_BODY": [
+                                                "both_paths",
+                                                {
+                                                  "TERM_CONSTRUCTOR": "bseq",
+                                                  "TERM_BODY": [
+                                                    "both_paths",
+                                                    {
+                                                      "TERM_CONSTRUCTOR": "bseq",
+                                                      "TERM_BODY": [
+                                                        "both_paths",
+                                                        {
+                                                          "TERM_CONSTRUCTOR": "bseq",
+                                                          "TERM_BODY": [
+                                                            "both_paths",
+                                                            {
+                                                              "TERM_CONSTRUCTOR": "bseq",
+                                                              "TERM_BODY": [
+                                                                "both_paths",
+                                                                {
+                                                                  "TERM_CONSTRUCTOR": "bseq",
+                                                                  "TERM_BODY": [
+                                                                    "both_paths",
+                                                                    {
+                                                                      "TERM_CONSTRUCTOR": "bseq",
+                                                                      "TERM_BODY": [
+                                                                        "both_paths",
+                                                                        {
+                                                                          "TERM_CONSTRUCTOR": "bseq",
+                                                                          "TERM_BODY": [
+                                                                            "both_paths",
+                                                                            {
+                                                                              "TERM_CONSTRUCTOR": "bseq",
+                                                                              "TERM_BODY": [
+                                                                                "both_paths",
+                                                                                {
+                                                                                  "TERM_CONSTRUCTOR": "bseq",
+                                                                                  "TERM_BODY": [
+                                                                                    "both_paths",
+                                                                                    {
+                                                                                      "TERM_CONSTRUCTOR": "bseq",
+                                                                                      "TERM_BODY": [
+                                                                                        "both_paths",
+                                                                                        {
+                                                                                          "TERM_CONSTRUCTOR": "bseq",
+                                                                                          "TERM_BODY": [
+                                                                                            "both_paths",
+                                                                                            {
+                                                                                              "TERM_CONSTRUCTOR": "bseq",
+                                                                                              "TERM_BODY": [
+                                                                                                "both_paths",
+                                                                                                {
+                                                                                                  "TERM_CONSTRUCTOR": "bseq",
+                                                                                                  "TERM_BODY": [
+                                                                                                    "both_paths",
+                                                                                                    {
+                                                                                                      "TERM_CONSTRUCTOR": "bseq",
+                                                                                                      "TERM_BODY": [
+                                                                                                        "both_paths",
+                                                                                                        {
+                                                                                                          "TERM_CONSTRUCTOR": "bseq",
+                                                                                                          "TERM_BODY": [
+                                                                                                            "both_paths",
+                                                                                                            {
+                                                                                                              "TERM_CONSTRUCTOR": "bseq",
+                                                                                                              "TERM_BODY": [
+                                                                                                                "both_paths",
+                                                                                                                {
+                                                                                                                  "TERM_CONSTRUCTOR": "asp",
+                                                                                                                  "TERM_BODY": {
+                                                                                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                                    "ASP_BODY": {
+                                                                                                                      "ASP_ID": "readfile_range",
+                                                                                                                      "ASP_ARGS": {
+                                                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                                        "start_index": 305,
+                                                                                                                        "end_index": 308,
+                                                                                                                        "env_var_golden": "",
+                                                                                                                        "filepath_golden": "",
+                                                                                                                        "asp_id_appr": "readfile_appr"
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                },
+                                                                                                                {
+                                                                                                                  "TERM_CONSTRUCTOR": "asp",
+                                                                                                                  "TERM_BODY": {
+                                                                                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                                    "ASP_BODY": {
+                                                                                                                      "ASP_ID": "readfile_range",
+                                                                                                                      "ASP_ARGS": {
+                                                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                                        "start_index": 140,
+                                                                                                                        "end_index": 141,
+                                                                                                                        "env_var_golden": "",
+                                                                                                                        "filepath_golden": "",
+                                                                                                                        "asp_id_appr": "readfile_appr"
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              ]
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "TERM_CONSTRUCTOR": "asp",
+                                                                                                              "TERM_BODY": {
+                                                                                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                                "ASP_BODY": {
+                                                                                                                  "ASP_ID": "readfile_range",
+                                                                                                                  "ASP_ARGS": {
+                                                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                                    "start_index": 145,
+                                                                                                                    "end_index": 146,
+                                                                                                                    "env_var_golden": "",
+                                                                                                                    "filepath_golden": "",
+                                                                                                                    "asp_id_appr": "readfile_appr"
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "TERM_CONSTRUCTOR": "asp",
+                                                                                                          "TERM_BODY": {
+                                                                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                            "ASP_BODY": {
+                                                                                                              "ASP_ID": "readfile_range",
+                                                                                                              "ASP_ARGS": {
+                                                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                                "start_index": 148,
+                                                                                                                "end_index": 149,
+                                                                                                                "env_var_golden": "",
+                                                                                                                "filepath_golden": "",
+                                                                                                                "asp_id_appr": "readfile_appr"
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "TERM_CONSTRUCTOR": "asp",
+                                                                                                      "TERM_BODY": {
+                                                                                                        "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                        "ASP_BODY": {
+                                                                                                          "ASP_ID": "readfile_range",
+                                                                                                          "ASP_ARGS": {
+                                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                            "start_index": 154,
+                                                                                                            "end_index": 157,
+                                                                                                            "env_var_golden": "",
+                                                                                                            "filepath_golden": "",
+                                                                                                            "asp_id_appr": "readfile_appr"
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  ]
+                                                                                                },
+                                                                                                {
+                                                                                                  "TERM_CONSTRUCTOR": "asp",
+                                                                                                  "TERM_BODY": {
+                                                                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                    "ASP_BODY": {
+                                                                                                      "ASP_ID": "readfile_range",
+                                                                                                      "ASP_ARGS": {
+                                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                        "start_index": 159,
+                                                                                                        "end_index": 162,
+                                                                                                        "env_var_golden": "",
+                                                                                                        "filepath_golden": "",
+                                                                                                        "asp_id_appr": "readfile_appr"
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
+                                                                                            },
+                                                                                            {
+                                                                                              "TERM_CONSTRUCTOR": "asp",
+                                                                                              "TERM_BODY": {
+                                                                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                                                                "ASP_BODY": {
+                                                                                                  "ASP_ID": "readfile_range",
+                                                                                                  "ASP_ARGS": {
+                                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                                                                                                    "start_index": 164,
+                                                                                                    "end_index": 168,
+                                                                                                    "env_var_golden": "",
+                                                                                                    "filepath_golden": "",
+                                                                                                    "asp_id_appr": "readfile_appr"
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          ]
+                                                                                        },
+                                                                                        {
+                                                                                          "TERM_CONSTRUCTOR": "asp",
+                                                                                          "TERM_BODY": {
+                                                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                                                            "ASP_BODY": {
+                                                                                              "ASP_ID": "readfile_range",
+                                                                                              "ASP_ARGS": {
+                                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+                                                                                                "start_index": 48,
+                                                                                                "end_index": 49,
+                                                                                                "env_var_golden": "",
+                                                                                                "filepath_golden": "",
+                                                                                                "asp_id_appr": "readfile_appr"
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    {
+                                                                                      "TERM_CONSTRUCTOR": "asp",
+                                                                                      "TERM_BODY": {
+                                                                                        "ASP_CONSTRUCTOR": "ASPC",
+                                                                                        "ASP_BODY": {
+                                                                                          "ASP_ID": "readfile_range",
+                                                                                          "ASP_ARGS": {
+                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+                                                                                            "start_index": 52,
+                                                                                            "end_index": 53,
+                                                                                            "env_var_golden": "",
+                                                                                            "filepath_golden": "",
+                                                                                            "asp_id_appr": "readfile_appr"
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                {
+                                                                                  "TERM_CONSTRUCTOR": "asp",
+                                                                                  "TERM_BODY": {
+                                                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                                                    "ASP_BODY": {
+                                                                                      "ASP_ID": "readfile_range",
+                                                                                      "ASP_ARGS": {
+                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                                        "start_index": 14,
+                                                                                        "end_index": 16,
+                                                                                        "env_var_golden": "",
+                                                                                        "filepath_golden": "",
+                                                                                        "asp_id_appr": "readfile_appr"
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            },
+                                                                            {
+                                                                              "TERM_CONSTRUCTOR": "asp",
+                                                                              "TERM_BODY": {
+                                                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                                                "ASP_BODY": {
+                                                                                  "ASP_ID": "readfile_range",
+                                                                                  "ASP_ARGS": {
+                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                                    "start_index": 28,
+                                                                                    "end_index": 30,
+                                                                                    "env_var_golden": "",
+                                                                                    "filepath_golden": "",
+                                                                                    "asp_id_appr": "readfile_appr"
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        },
+                                                                        {
+                                                                          "TERM_CONSTRUCTOR": "asp",
+                                                                          "TERM_BODY": {
+                                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                                            "ASP_BODY": {
+                                                                              "ASP_ID": "readfile_range",
+                                                                              "ASP_ARGS": {
+                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                                "start_index": 38,
+                                                                                "end_index": 40,
+                                                                                "env_var_golden": "",
+                                                                                "filepath_golden": "",
+                                                                                "asp_id_appr": "readfile_appr"
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    {
+                                                                      "TERM_CONSTRUCTOR": "asp",
+                                                                      "TERM_BODY": {
+                                                                        "ASP_CONSTRUCTOR": "ASPC",
+                                                                        "ASP_BODY": {
+                                                                          "ASP_ID": "readfile_range",
+                                                                          "ASP_ARGS": {
+                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                            "start_index": 113,
+                                                                            "end_index": 120,
+                                                                            "env_var_golden": "",
+                                                                            "filepath_golden": "",
+                                                                            "asp_id_appr": "readfile_appr"
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "TERM_CONSTRUCTOR": "asp",
+                                                                  "TERM_BODY": {
+                                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                                    "ASP_BODY": {
+                                                                      "ASP_ID": "readfile_range",
+                                                                      "ASP_ARGS": {
+                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                        "start_index": 132,
+                                                                        "end_index": 139,
+                                                                        "env_var_golden": "",
+                                                                        "filepath_golden": "",
+                                                                        "asp_id_appr": "readfile_appr"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "TERM_CONSTRUCTOR": "asp",
+                                                              "TERM_BODY": {
+                                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                                "ASP_BODY": {
+                                                                  "ASP_ID": "readfile_range",
+                                                                  "ASP_ARGS": {
+                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                    "start_index": 153,
+                                                                    "end_index": 162,
+                                                                    "env_var_golden": "",
+                                                                    "filepath_golden": "",
+                                                                    "asp_id_appr": "readfile_appr"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        {
+                                                          "TERM_CONSTRUCTOR": "asp",
+                                                          "TERM_BODY": {
+                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                            "ASP_BODY": {
+                                                              "ASP_ID": "readfile_range",
+                                                              "ASP_ARGS": {
+                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                                "start_index": 190,
+                                                                "end_index": 197,
+                                                                "env_var_golden": "",
+                                                                "filepath_golden": "",
+                                                                "asp_id_appr": "readfile_appr"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "TERM_CONSTRUCTOR": "asp",
+                                                      "TERM_BODY": {
+                                                        "ASP_CONSTRUCTOR": "ASPC",
+                                                        "ASP_BODY": {
+                                                          "ASP_ID": "readfile_range",
+                                                          "ASP_ARGS": {
+                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                            "start_index": 207,
+                                                            "end_index": 214,
+                                                            "env_var_golden": "",
+                                                            "filepath_golden": "",
+                                                            "asp_id_appr": "readfile_appr"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "TERM_CONSTRUCTOR": "asp",
+                                                  "TERM_BODY": {
+                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                    "ASP_BODY": {
+                                                      "ASP_ID": "readfile_range",
+                                                      "ASP_ARGS": {
+                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                                                        "start_index": 226,
+                                                        "end_index": 235,
+                                                        "env_var_golden": "",
+                                                        "filepath_golden": "",
+                                                        "asp_id_appr": "readfile_appr"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "TERM_CONSTRUCTOR": "asp",
+                                              "TERM_BODY": {
+                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                "ASP_BODY": {
+                                                  "ASP_ID": "readfile_range",
+                                                  "ASP_ARGS": {
+                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+                                                    "start_index": 14,
+                                                    "end_index": 15,
+                                                    "env_var_golden": "",
+                                                    "filepath_golden": "",
+                                                    "asp_id_appr": "readfile_appr"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "TERM_CONSTRUCTOR": "asp",
+                                          "TERM_BODY": {
+                                            "ASP_CONSTRUCTOR": "ASPC",
+                                            "ASP_BODY": {
+                                              "ASP_ID": "readfile_range",
+                                              "ASP_ARGS": {
+                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+                                                "start_index": 26,
+                                                "end_index": 28,
+                                                "env_var_golden": "",
+                                                "filepath_golden": "",
+                                                "asp_id_appr": "readfile_appr"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "TERM_CONSTRUCTOR": "asp",
+                                      "TERM_BODY": {
+                                        "ASP_CONSTRUCTOR": "ASPC",
+                                        "ASP_BODY": {
+                                          "ASP_ID": "readfile_range",
+                                          "ASP_ARGS": {
+                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+                                            "start_index": 42,
+                                            "end_index": 45,
+                                            "env_var_golden": "",
+                                            "filepath_golden": "",
+                                            "asp_id_appr": "readfile_appr"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "TERM_CONSTRUCTOR": "asp",
+                                  "TERM_BODY": {
+                                    "ASP_CONSTRUCTOR": "ASPC",
+                                    "ASP_BODY": {
+                                      "ASP_ID": "readfile_range",
+                                      "ASP_ARGS": {
+                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+                                        "start_index": 65,
+                                        "end_index": 68,
+                                        "env_var_golden": "",
+                                        "filepath_golden": "",
+                                        "asp_id_appr": "readfile_appr"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "TERM_CONSTRUCTOR": "asp",
+                              "TERM_BODY": {
+                                "ASP_CONSTRUCTOR": "ASPC",
+                                "ASP_BODY": {
+                                  "ASP_ID": "readfile_marker_range",
+                                  "ASP_ARGS": {
+                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+                                    "begin_marker": "BEGIN STATE VARS",
+                                    "end_marker": "END STATE VARS",
+                                    "env_var_golden": "",
+                                    "filepath_golden": "",
+                                    "asp_id_appr": "readfile_appr"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "TERM_CONSTRUCTOR": "asp",
+                          "TERM_BODY": {
+                            "ASP_CONSTRUCTOR": "ASPC",
+                            "ASP_BODY": {
+                              "ASP_ID": "readfile_marker_range",
+                              "ASP_ARGS": {
+                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+                                "begin_marker": "BEGIN COMPUTE MODIFIES timeTriggered",
+                                "end_marker": "END COMPUTE MODIFIES timeTriggered",
+                                "env_var_golden": "",
+                                "filepath_golden": "",
+                                "asp_id_appr": "readfile_appr"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "TERM_CONSTRUCTOR": "asp",
+                      "TERM_BODY": {
+                        "ASP_CONSTRUCTOR": "ASPC",
+                        "ASP_BODY": {
+                          "ASP_ID": "readfile_marker_range",
+                          "ASP_ARGS": {
+                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+                            "begin_marker": "BEGIN COMPUTE ENSURES timeTriggered",
+                            "end_marker": "END COMPUTE ENSURES timeTriggered",
+                            "env_var_golden": "",
+                            "filepath_golden": "",
+                            "asp_id_appr": "readfile_appr"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "TERM_CONSTRUCTOR": "asp",
+                  "TERM_BODY": {
+                    "ASP_CONSTRUCTOR": "ASPC",
+                    "ASP_BODY": {
+                      "ASP_ID": "readfile_marker_range",
+                      "ASP_ARGS": {
+                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+                        "begin_marker": "BEGIN INITIALIZES MODIFIES",
+                        "end_marker": "END INITIALIZES MODIFIES",
+                        "env_var_golden": "",
+                        "filepath_golden": "",
+                        "asp_id_appr": "readfile_appr"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "TERM_CONSTRUCTOR": "asp",
+              "TERM_BODY": {
+                "ASP_CONSTRUCTOR": "ASPC",
+                "ASP_BODY": {
+                  "ASP_ID": "readfile_marker_range",
+                  "ASP_ARGS": {
+                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
+                    "begin_marker": "BEGIN INITIALIZES ENSURES",
+                    "end_marker": "END INITIALIZES ENSURES",
+                    "env_var_golden": "",
+                    "filepath_golden": "",
+                    "asp_id_appr": "readfile_appr"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "TERM_CONSTRUCTOR": "asp",
+          "TERM_BODY": {
+            "ASP_CONSTRUCTOR": "ASPC",
+            "ASP_BODY": {
+              "ASP_ID": "readfile_marker_range",
+              "ASP_ARGS": {
+                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala",
+                "begin_marker": "BEGIN INITIALIZES ENSURES",
+                "end_marker": "END INITIALIZES ENSURES",
+                "env_var_golden": "",
+                "filepath_golden": "",
+                "asp_id_appr": "readfile_appr"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "TERM_CONSTRUCTOR": "asp",
+      "TERM_BODY": {
+        "ASP_CONSTRUCTOR": "SIG"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "GUMBO File Integrity (Level 1)",
+  "description": "Hash AADL model files and GumboX oracle files as a whole. Fast check: detects any change to \"do not edit\" contract artifacts. Run Level 2 on failure for per-contract attribution.",
+  "copland": "lseq( lseq( bseq_chain( hashfile\u00d74 ), SIG ), APPR )",
+  "flow": [
+    {
+      "type": "bseq",
+      "label": "bseq / both_paths",
+      "children": [
+        "hashfile(TempControlSystem.aadl)",
+        "hashfile(TempSensor.aadl)",
+        "hashfile(TempControl_GumboX.scala)",
+        "hashfile(TempSensor_GumboX.scala)"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "SIG",
+      "style": "sig"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ],
+  "dynamic": true
+}

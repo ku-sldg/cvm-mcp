@@ -1,0 +1,97 @@
+{
+  "TERM_CONSTRUCTOR": "lseq",
+  "TERM_BODY": [
+    {
+      "TERM_CONSTRUCTOR": "bseq",
+      "TERM_BODY": [
+        "both_paths",
+        {
+          "TERM_CONSTRUCTOR": "bseq",
+          "TERM_BODY": [
+            "both_paths",
+            {
+              "TERM_CONSTRUCTOR": "bseq",
+              "TERM_BODY": [
+                "both_paths",
+                {
+                  "TERM_CONSTRUCTOR": "asp",
+                  "TERM_BODY": {
+                    "ASP_CONSTRUCTOR": "ASPC",
+                    "ASP_BODY": {
+                      "ASP_ID": "hashfile",
+                      "ASP_ARGS": {
+                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+                        "env_var": "",
+                        "filepath_golden": "",
+                        "env_var_golden": "",
+                        "asp_id_appr": "hashfile_appr",
+                        "golden_b64": "KJb+kA5IH/qWZWT0a5PXq52SVlGhl69qEbLIEpeoIBc="
+                      }
+                    }
+                  }
+                },
+                {
+                  "TERM_CONSTRUCTOR": "asp",
+                  "TERM_BODY": {
+                    "ASP_CONSTRUCTOR": "ASPC",
+                    "ASP_BODY": {
+                      "ASP_ID": "hashfile",
+                      "ASP_ARGS": {
+                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+                        "env_var": "",
+                        "filepath_golden": "",
+                        "env_var_golden": "",
+                        "asp_id_appr": "hashfile_appr",
+                        "golden_b64": "vGHdyb7kH1uLR7Wzh8QP0J/QFGVl29g8OzdCc0o7X1I="
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "TERM_CONSTRUCTOR": "asp",
+              "TERM_BODY": {
+                "ASP_CONSTRUCTOR": "ASPC",
+                "ASP_BODY": {
+                  "ASP_ID": "hashfile",
+                  "ASP_ARGS": {
+                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+                    "env_var": "",
+                    "filepath_golden": "",
+                    "env_var_golden": "",
+                    "asp_id_appr": "hashfile_appr",
+                    "golden_b64": "ju4/hFOvWoKtFT5Uw0x5wWbBYXifGZnzhD3i3G7aB0g="
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "TERM_CONSTRUCTOR": "asp",
+          "TERM_BODY": {
+            "ASP_CONSTRUCTOR": "ASPC",
+            "ASP_BODY": {
+              "ASP_ID": "hashfile",
+              "ASP_ARGS": {
+                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+                "env_var": "",
+                "filepath_golden": "",
+                "env_var_golden": "",
+                "asp_id_appr": "hashfile_appr",
+                "golden_b64": "/tu3vzyk13T97JretrQXwn385Gr5siFb/orqDiA8zdU="
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "TERM_CONSTRUCTOR": "asp",
+      "TERM_BODY": {
+        "ASP_CONSTRUCTOR": "SIG"
+      }
+    }
+  ]
+}

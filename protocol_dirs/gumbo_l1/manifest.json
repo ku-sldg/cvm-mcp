@@ -1,0 +1,10 @@
+{
+  "ASPS": [
+    "hashfile",
+    "sig",
+    "sig_appr",
+    "hashfile_appr"
+  ],
+  "ASP_FS_MAP": {},
+  "POLICY": []
+}

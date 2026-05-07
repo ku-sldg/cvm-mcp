@@ -24,6 +24,15 @@ examples/*_evidence.json.ts
 # Scratch / session exports
 examples/dashboard.html
 loaded_protocols.json
+session-export.md
+*-export.md
+
+# Test run outputs
+testing/
+
+# Protocol dir runtime artifacts
+protocol_dirs/**/*_evidence.json
+protocol_dirs/**/.vscode/
 
 # Protocols registered via the builder UI (machine-specific paths)
 built_protocols/

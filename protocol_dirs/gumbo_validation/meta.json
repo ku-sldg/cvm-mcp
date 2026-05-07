@@ -1,0 +1,26 @@
+{
+  "name": "GUMBO Behavioral Validation",
+  "description": "Runs live HAMR validation tools over the GUMBO contract implementation. Sireum proyek tipe type-checks all modules; proyek logika formally verifies the GumboX @strictpure predicates; proyek test exercises randomised GumboX unit tests for both TempControl and TempSensor. Pass means all tools exit clean \u2014 no provisioned golden required.",
+  "copland": "lseq( bseq_chain( run_command_hamr\u00d75 ), APPR )",
+  "flow": [
+    {
+      "type": "bseq",
+      "label": "bseq / both_paths",
+      "children": [
+        "Type Check (tipe)",
+        "Logika: TempControl GumboX",
+        "Logika: TempSensor GumboX",
+        "GumboX Unit Tests: TempControl",
+        "GumboX Unit Tests: TempSensor"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

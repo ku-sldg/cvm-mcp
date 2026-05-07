@@ -1,0 +1,20 @@
+{
+  "name": "Single File Integrity",
+  "description": "Hash one file and appraise it against a golden value",
+  "copland": "lseq( hashfile(file1), APPR )",
+  "flow": [
+    {
+      "type": "asp",
+      "label": "hashfile(file1.txt)",
+      "style": "file"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

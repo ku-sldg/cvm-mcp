@@ -1,0 +1,100 @@
+{
+  "Session_Plc": "P0",
+  "Plc_Mapping": {},
+  "PubKey_Mapping": {},
+  "Session_Context": {
+    "ASP_Types": {
+      "run_command_verus": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "hamr_readfile_range_many": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "goldenevidence_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "hashfile": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "readfile_range_many_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "provision_goldenevidence": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "ALL"
+        },
+        "ATTRS": []
+      },
+      "magic_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "sig": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "ALL"
+        },
+        "ATTRS": []
+      },
+      "sig_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      }
+    },
+    "ASP_Comps": {
+      "attest": "magic_appr",
+      "certificate": "magic_appr",
+      "appraise": "magic_appr",
+      "hashevidence": "hashfile_appr",
+      "hashfile": "goldenevidence_appr",
+      "hashdir": "goldenevidence_appr",
+      "invary_get_measurement": "invary_get_measurement_appr",
+      "provision": "NULL",
+      "provision_goldenevidence": "magic_appr",
+      "readfile": "readfile_appr",
+      "readfile_range": "goldenevidence_appr",
+      "hamr_readfile_range_many": "readfile_range_many_appr",
+      "selinux_pol_dump": "hashfile_appr",
+      "sig": "sig_appr",
+      "sig_tpm": "sig_tpm_appr",
+      "uptime": "NULL",
+      "run_command_verus": "run_command_verus_appr",
+      "run_command_cargo_verus": "run_command_verus_appr",
+      "run_command_rocq": "run_command_rocq_appr",
+      "run_command_autoverus": "magic_appr",
+      "verus_compare": "verus_compare_appr"
+    }
+  }
+}

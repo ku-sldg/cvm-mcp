@@ -62,7 +62,9 @@ def run_protocol(protocol_id, log_level='Info'):
         unprovisioned = True
         try:
             gs = proto['golden_state']()
-            unprovisioned = not any(e.get('timestamp') for e in gs)
+            # If golden_state is empty the protocol has no file targets to provision;
+            # treat that as already-provisioned so Run is not blocked.
+            unprovisioned = bool(gs) and not any(e.get('timestamp') for e in gs)
         except Exception:
             pass  # golden_state() failed — treat as unprovisioned below
         if unprovisioned:
@@ -77,8 +79,12 @@ def run_protocol(protocol_id, log_level='Info'):
                 'timestamp':   ts,
             }
 
-    manifest, req = proto['build']()
-    req = json.loads(req) if isinstance(req, str) else req
+    # Load manifest + request from protocol_dirs/ when available; fall back to build()
+    if protocol_loader.has_protocol_dir(protocol_id):
+        manifest, req = protocol_loader.build_from_dir(protocol_id)
+    else:
+        manifest, req = proto['build']()
+        req = json.loads(req) if isinstance(req, str) else req
     if 'prepare' in proto:
         req = proto['prepare'](req) or req   # inject golden_b64 from evidence bundle
 
@@ -142,6 +148,46 @@ def run_protocol(protocol_id, log_level='Info'):
 def store_result(data):
     with store_lock:
         results_store[data['protocol_id']] = data
+
+
+def check_protocol_dir_staleness(proto_id):
+    """
+    For a dynamic protocol, check whether term.json is older than any source
+    file it references.  Returns a dict:
+      {'dynamic': bool, 'stale': bool, 'stale_files': [str]}
+    'stale' is False for non-dynamic protocols.
+    """
+    meta = protocol_loader.get_protocol_dir_meta(proto_id)
+    if not meta.get('dynamic'):
+        return {'dynamic': False, 'stale': False, 'stale_files': []}
+
+    try:
+        term_path = os.path.join(protocol_loader._protocol_dir(proto_id), 'term.json')
+        term_mtime = os.path.getmtime(term_path)
+        term = protocol_loader._read_dir_json(proto_id, 'term.json')
+    except FileNotFoundError:
+        return {'dynamic': True, 'stale': True, 'stale_files': ['term.json missing']}
+
+    # Collect all filepath values from ASP_ARGS in the term tree
+    stale_files = []
+    def _walk(node):
+        if not isinstance(node, dict):
+            return
+        if node.get('TERM_CONSTRUCTOR') == 'asp':
+            body = node.get('TERM_BODY', {})
+            if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'ASPC':
+                args = body.get('ASP_BODY', {}).get('ASP_ARGS', {})
+                fp = args.get('filepath', '')
+                if fp and os.path.exists(fp):
+                    if os.path.getmtime(fp) > term_mtime:
+                        stale_files.append(fp)
+        body = node.get('TERM_BODY')
+        if isinstance(body, list):
+            for child in body:
+                _walk(child)
+    _walk(term)
+
+    return {'dynamic': True, 'stale': bool(stale_files), 'stale_files': stale_files}
 
 
 def protocol_any_tampered(protocol_id):
@@ -253,6 +299,11 @@ tr:hover td { background:#1c2128; }
 
 .back-link { font-size:0.78rem;color:#8b949e;margin-bottom:16px;display:inline-block; }
 .back-link:hover { color:#e6edf3; }
+.copy-btn { background:#21262d;border:1px solid #30363d;color:#8b949e;border-radius:6px;
+            padding:7px 14px;font-size:0.82rem;cursor:pointer;text-decoration:none;
+            white-space:nowrap;display:inline-block; }
+.copy-btn:hover { border-color:#8b949e;color:#e6edf3; }
+.copy-btn.copied { border-color:#3fb950;color:#3fb950; }
 .timestamp { font-size:0.72rem;color:#8b949e;margin-top:16px;text-align:right; }
 .live-dot { width:8px;height:8px;border-radius:50%;background:#3fb950;
             display:inline-block;animation:pulse 2s infinite; }
@@ -380,6 +431,11 @@ tr:hover td { background:#1c2128; }
 """
 
 BASE_JS = """
+// ── Shared utilities ──────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 // ── Path tab-completion (shared across pages) ────────────────────────────────
 function setupPathComplete(inputId, onEnter) {
   const input = document.getElementById(inputId);
@@ -580,6 +636,40 @@ HOME_TMPL = """
 {% endfor %}
 </div>
 
+<!-- Import Protocol Directory panel -->
+<div style="max-width:820px;margin:28px auto 0;padding:0 16px;">
+  <details id="import-dir-section">
+    <summary style="cursor:pointer;font-size:0.85rem;color:#8b949e;user-select:none;padding:6px 0;">
+      ▸ Import protocol directory
+    </summary>
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;margin-top:8px;">
+      <div style="font-size:0.82rem;color:#8b949e;margin-bottom:10px;">
+        Enter the path to a protocol directory (e.g. from rust-am-clients) that contains
+        <code style="color:#c9d1d9;">meta.json</code>, <code style="color:#c9d1d9;">term.json</code>,
+        <code style="color:#c9d1d9;">session.json</code>, and <code style="color:#c9d1d9;">manifest.json</code>.
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <input type="text" id="import-dir-path" placeholder="/path/to/protocol_dirs/my_protocol"
+               style="flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+                      color:#c9d1d9;padding:7px 10px;font-size:0.82rem;font-family:monospace;"
+               oninput="clearImportPreview()" />
+        <button onclick="previewImportDir()"
+                style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;
+                       padding:7px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;
+                       white-space:nowrap;">
+          Preview
+        </button>
+        <button id="import-dir-btn" onclick="confirmImportDir()" disabled
+                style="background:#238636;border:1px solid #2ea043;color:#fff;
+                       padding:7px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;
+                       white-space:nowrap;opacity:0.5;">
+          Import
+        </button>
+      </div>
+      <div id="import-preview" style="margin-top:12px;"></div>
+    </div>
+  </details>
+</div>
 
 <script>
 // After triggering a run/check, poll rapidly until the result lands,
@@ -856,6 +946,105 @@ async function startAllPlaces(protoId, ev) {
 }
 if (PROTO_IDS_WITH_PLACES.length) { pollPlaces(); setInterval(pollPlaces, 3000); }
 
+// ── Import Protocol Directory ─────────────────────────────────────────────────
+let _importPreviewOk = false;
+
+function clearImportPreview() {
+  document.getElementById('import-preview').innerHTML = '';
+  const btn = document.getElementById('import-dir-btn');
+  btn.disabled = true; btn.style.opacity = '0.5';
+  _importPreviewOk = false;
+}
+
+async function previewImportDir() {
+  const path = document.getElementById('import-dir-path').value.trim();
+  if (!path) return;
+  const preview = document.getElementById('import-preview');
+  preview.innerHTML = '<span style="color:#8b949e;font-size:0.82rem;">Loading…</span>';
+  _importPreviewOk = false;
+  const btn = document.getElementById('import-dir-btn');
+  btn.disabled = true; btn.style.opacity = '0.5';
+  try {
+    const res  = await fetch('/api/preview_protocol_dir?path=' + encodeURIComponent(path));
+    const data = await res.json();
+    if (data.error) {
+      preview.innerHTML = `<div class="err-banner" style="margin:0;">${escHtml(data.error)}</div>`;
+      return;
+    }
+    const targets = Object.entries(data.inferred_targets || {});
+    const stubs   = data.stubs_needed || [];
+    const warns   = data.warnings    || [];
+    let html = `
+      <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;font-size:0.82rem;">
+        <div style="display:flex;gap:16px;margin-bottom:8px;">
+          <div><span style="color:#8b949e;">ID</span> <strong style="color:#c9d1d9;">${escHtml(data.proto_id)}</strong></div>
+          <div><span style="color:#8b949e;">Name</span> <strong style="color:#c9d1d9;">${escHtml(data.name || '')}</strong></div>
+        </div>`;
+    if (data.description) {
+      html += `<div style="color:#8b949e;margin-bottom:6px;">${escHtml(data.description)}</div>`;
+    }
+    if (data.copland) {
+      html += `<div style="font-family:monospace;color:#79c0ff;font-size:0.78rem;margin-bottom:8px;">${escHtml(data.copland)}</div>`;
+    }
+    if (targets.length) {
+      html += `<div style="color:#8b949e;font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Measurement targets (${targets.length})</div>
+               <ul style="margin:0 0 8px 18px;padding:0;color:#c9d1d9;">`;
+      for (const [tid, cfg] of targets) {
+        const isStub = stubs.includes(cfg.target_file);
+        html += `<li>${escHtml(cfg.label || tid)}
+                   <code style="font-size:0.75rem;color:${isStub ? '#f0883e' : '#3fb950'};">
+                     ${escHtml(cfg.target_file || '')}${isStub ? ' ⚠ stub' : ' ✓'}
+                   </code></li>`;
+      }
+      html += '</ul>';
+    }
+    for (const w of warns) {
+      const isInfo = w.includes('meta.json not found');
+      const color  = isInfo ? '#8b949e' : '#f0883e';
+      const icon   = isInfo ? 'ℹ' : '⚠';
+      html += `<div style="color:${color};margin-top:4px;">${icon} ${escHtml(w)}</div>`;
+    }
+    html += `<div style="color:#8b949e;margin-top:8px;font-size:0.78rem;">
+               Files found: ${escHtml(data.files_found.join(', '))}
+             </div></div>`;
+    preview.innerHTML = html;
+    const hasBlocker = warns.some(w => w.includes('built-in'));
+    if (!hasBlocker) {
+      _importPreviewOk = true;
+      btn.disabled = false; btn.style.opacity = '1';
+    }
+  } catch(e) {
+    preview.innerHTML = `<div class="err-banner" style="margin:0;">${escHtml(String(e))}</div>`;
+  }
+}
+
+async function confirmImportDir() {
+  if (!_importPreviewOk) return;
+  const path = document.getElementById('import-dir-path').value.trim();
+  const btn  = document.getElementById('import-dir-btn');
+  btn.disabled = true; btn.textContent = '⟳ Importing…';
+  try {
+    const res  = await fetch('/api/import_protocol_dir', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({source_path: path}),
+    });
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById('import-preview').innerHTML +=
+        `<div class="err-banner" style="margin-top:8px;">${escHtml(data.error)}</div>`;
+      btn.disabled = false; btn.textContent = 'Import'; btn.style.opacity = '1';
+      return;
+    }
+    // Success — reload page to show new card
+    window.location.reload();
+  } catch(e) {
+    document.getElementById('import-preview').innerHTML +=
+      `<div class="err-banner" style="margin-top:8px;">${escHtml(String(e))}</div>`;
+    btn.disabled = false; btn.textContent = 'Import'; btn.style.opacity = '1';
+  }
+}
+
 {{ base_js | safe }}
 {% for p in protocols %}
 setupPathComplete('prov-path-{{ p.id }}', () => provisionWithPath('{{ p.id }}'));
@@ -886,6 +1075,11 @@ DETAIL_TMPL = """
     <div class="sub">{{ proto.copland }}</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    {% if staleness.dynamic %}
+    <button class="prov-btn prov-btn-lg" id="refresh-cfg-btn"
+            onclick="refreshProtocolConfig('{{ proto.id }}')"
+            title="Re-run generator to capture latest source file line numbers">↻ Refresh Config</button>
+    {% endif %}
     <div class="prov-split">
       <button class="prov-btn prov-btn-lg" id="provbtn-{{ proto.id }}"
               onclick="provisionWithPath('{{ proto.id }}')">⚙ Provision</button>
@@ -909,9 +1103,38 @@ DETAIL_TMPL = """
     {% if proto.custom_source %}
     <a href="/build?edit={{ proto.id }}" class="run-btn run-btn-lg">✎ Edit</a>
     {% endif %}
+    {% if proto.id in proto_dir_ids %}
+    <button class="copy-btn" id="summary-copy-btn-{{ proto.id }}"
+            onclick="copySummary('{{ proto.id }}')" title="Copy Markdown summary to clipboard">⎘ Markdown</button>
+    <a class="copy-btn" id="summary-dl-btn-{{ proto.id }}"
+       href="/api/run_summary/{{ proto.id }}"
+       download="{{ proto.id }}_summary.md"
+       title="Download Markdown summary">↓ .md</a>
+    {% endif %}
     <a href="/" class="back-link" style="margin-left:4px;">← All protocols</a>
   </div>
 </div>
+
+{% if staleness.stale %}
+<div id="stale-banner" style="background:#3a1f00;border:1px solid #9e6a03;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+  <span style="font-size:1.1rem;">⚠️</span>
+  <span style="color:#e3b341;font-size:0.85rem;">
+    <strong>Term config may be stale.</strong>
+    Source file(s) have changed since <code>term.json</code> was last generated.
+    Click <strong>↻ Refresh Config</strong> to regenerate before provisioning or running.
+  </span>
+  <button onclick="document.getElementById('stale-banner').style.display='none'"
+          style="margin-left:auto;background:none;border:none;color:#8b949e;cursor:pointer;font-size:1rem;">✕</button>
+</div>
+{% endif %}
+
+{% if proto.imported_dir %}
+<div id="import-info-banner" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;color:#8b949e;">
+  <span style="color:#58a6ff;">⊕ Imported protocol</span>
+  — source: <code style="color:#c9d1d9;">{{ proto.custom_source }}</code>
+  <span id="stub-warning-area"></span>
+</div>
+{% endif %}
 
 {% if r %}
 <div class="stats">
@@ -1196,6 +1419,24 @@ function _startDetailPoll(id, runBtn, checkBtn) {
   }, 2000);
 }
 
+async function refreshProtocolConfig(id) {
+  const btn = document.getElementById('refresh-cfg-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Refreshing…'; }
+  try {
+    const resp = await fetch('/api/refresh_protocol_config/' + id, {method: 'POST'});
+    const data = await resp.json();
+    if (data.ok) {
+      window.location.reload();
+    } else {
+      alert('Refresh failed:\n' + (data.error || 'Unknown error'));
+      if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh Config'; }
+    }
+  } catch(e) {
+    alert('Refresh error: ' + e);
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh Config'; }
+  }
+}
+
 async function runProtocol(id) {
   const btn      = document.getElementById('run-btn-detail');
   const checkBtn = document.getElementById('check-btn-detail');
@@ -1326,10 +1567,6 @@ async function resetTarget(protocolId, targetId) {
   if (btn) { btn.disabled = false; btn.textContent = '↺ Reset'; }
 }
 
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 function renderInspect(data) {
   if (data.error) return `<span style="color:#f85149;font-size:0.75rem;">${escHtml(data.error)}</span>`;
 
@@ -1397,6 +1634,27 @@ async function toggleInspect(protocolId, targetId) {
   _inspectIntervals[targetId] = setInterval(() => _loadInspectPanel(protocolId, targetId), 2000);
 }
 
+async function copySummary(id) {
+  const btn = document.getElementById('summary-copy-btn-' + id);
+  try {
+    const res = await fetch('/api/run_summary/' + id);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error || 'Summary unavailable');
+      return;
+    }
+    const text = await res.text();
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⎘ Markdown'; btn.classList.remove('copied'); }, 2000);
+    }
+  } catch(e) {
+    alert('Copy failed: ' + e);
+  }
+}
+
 {{ base_js | safe }}
 setupPathComplete('prov-path-{{ proto.id }}', () => provisionWithPath('{{ proto.id }}'));
 fetch('/api/provision_history/{{ proto.id }}').then(r => r.json()).then(d => {
@@ -1454,6 +1712,23 @@ async function stopPlace(protoId, placeId) {
 }
 refreshPlaces();
 setInterval(refreshPlaces, 3000);
+{% endif %}
+
+{% if proto.imported_dir %}
+// Load stub info for this imported protocol
+(async () => {
+  try {
+    const res  = await fetch('/api/protocols/{{ proto.id }}/import_info');
+    const data = await res.json();
+    if (!data.imported || !data.stubs || !data.stubs.length) return;
+    const area = document.getElementById('stub-warning-area');
+    if (!area) return;
+    const names = data.stubs.map(s => escHtml(s.label || s.tid)).join(', ');
+    area.innerHTML = ` &nbsp;·&nbsp; <span style="color:#f0883e;">⚠ ${data.stubs.length} stub target(s): ${names}</span>
+      <span style="color:#8b949e;"> — provision will fail until real files are provided in
+      <code style="color:#c9d1d9;">${escHtml(data.local_dir)}/targets/</code></span>`;
+  } catch(e) {}
+})();
 {% endif %}
 </script>
 </body></html>
@@ -1649,10 +1924,6 @@ BUILD_TMPL = """
 </div>
 
 <script>
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 let _flowItems = [];   // only ASPC nodes (those with term_path), in render order
 let _argEditorIdx = null;
 
@@ -2168,7 +2439,17 @@ async function registerProtocol() {
 def home():
     with store_lock:
         snap = dict(results_store)
-    protocols = list(REGISTRY.values())
+    # Enrich REGISTRY entries with metadata from protocol_dirs/ where available
+    protocols = []
+    for p in REGISTRY.values():
+        meta = protocol_loader.get_protocol_dir_meta(p['id'])
+        if meta:
+            p = {**p,
+                 'name':        meta.get('name',        p.get('name', p['id'])),
+                 'description': meta.get('description', p.get('description', '')),
+                 'copland':     meta.get('copland',     p.get('copland', '')),
+                 'flow':        meta.get('flow',        p.get('flow', []))}
+        protocols.append(p)
     tamper_states = {pid: protocol_any_tampered(pid) for pid in REGISTRY}
     return render_template_string(HOME_TMPL, style=BASE_STYLE, base_js=BASE_JS,
                                   protocols=protocols, results=snap,
@@ -2193,7 +2474,11 @@ def protocol_detail(protocol_id):
             entry['tamper_id'] = None
             entry['tamper_state'] = None
     provisioned = any(e.get('timestamp') for e in prov) if prov else True
-    return render_template_string(DETAIL_TMPL, style=BASE_STYLE, base_js=BASE_JS, proto=proto, r=r, prov=prov, provisioned=provisioned)
+    staleness = check_protocol_dir_staleness(protocol_id)
+    proto_dir_ids = set(protocol_loader.list_protocol_dir_ids())
+    return render_template_string(DETAIL_TMPL, style=BASE_STYLE, base_js=BASE_JS,
+                                  proto=proto, r=r, prov=prov, provisioned=provisioned,
+                                  staleness=staleness, proto_dir_ids=proto_dir_ids)
 
 
 # Track which protocols are currently running so the UI can show a spinner.
@@ -2473,7 +2758,7 @@ def api_provision(protocol_id):
     if protocol_id not in REGISTRY:
         return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
     proto = REGISTRY[protocol_id]
-    if 'provision' not in proto:
+    if not proto.get('provision'):
         return jsonify({'error': 'Protocol has no provisioning function'}), 400
     golden_path = flask_request.args.get('golden_path') or None
     try:
@@ -2538,6 +2823,26 @@ def api_reset(protocol_id, target_id):
     tamper_targets[target_id]['reset']()
     return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id})
 
+
+
+@app.route('/api/run_summary/<protocol_id>')
+def api_run_summary(protocol_id):
+    """Return a Markdown run summary for a protocol, reading config from protocol_dirs/."""
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    if not protocol_loader.has_protocol_dir(protocol_id):
+        return jsonify({'error': f"Protocol '{protocol_id}' has no protocol_dirs entry — config is code-defined"}), 400
+    with store_lock:
+        result_data = results_store.get(protocol_id)
+    import summary_generator
+    md = summary_generator.generate_run_summary(
+        protocol_id, result_data, REGISTRY[protocol_id]
+    )
+    fmt = flask_request.args.get('format', 'text')
+    if fmt == 'json':
+        return jsonify({'protocol_id': protocol_id, 'markdown': md})
+    from flask import Response
+    return Response(md, mimetype='text/plain; charset=utf-8')
 
 
 @app.route('/api/protocols/<protocol_id>/places', methods=['GET'])
@@ -2642,6 +2947,30 @@ def api_provision_history(protocol_id):
         except Exception:
             pass
     return jsonify({'paths': paths, 'current_path': current_path})
+
+
+@app.route('/api/refresh_protocol_config/<protocol_id>', methods=['POST'])
+def api_refresh_protocol_config(protocol_id):
+    """Regenerate protocol_dirs/<protocol_id>/ by re-running the generator."""
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f"Unknown protocol '{protocol_id}'"}), 404
+    meta = protocol_loader.get_protocol_dir_meta(protocol_id)
+    if not meta.get('dynamic'):
+        return jsonify({'error': f"Protocol '{protocol_id}' is not dynamic"}), 400
+    try:
+        import subprocess
+        gen = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'generate_protocol_dirs.py')
+        out_dir = protocol_loader._protocol_dirs_root()
+        result = subprocess.run(
+            ['python3', gen, '--protocols', protocol_id, '-o', out_dir],
+            capture_output=True, text=True, timeout=60,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+        )
+        if result.returncode != 0:
+            return jsonify({'error': result.stdout + result.stderr}), 500
+        return jsonify({'ok': True, 'output': result.stdout})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/complete_path')
@@ -2779,16 +3108,22 @@ def api_protocol_copy_spec(protocol_id):
         spec['_suggested_copy_id'] = _unique_copy_id(spec.get('id', protocol_id))
         return Response(json.dumps(spec), mimetype='application/json')
 
-    # Built-in protocol — reconstruct spec from registry + build()
-    manifest_str, request_str = entry['build']()
+    # Built-in protocol — reconstruct spec from protocol_dirs/ or build()
+    if protocol_loader.has_protocol_dir(entry['id']):
+        manifest_obj, request_obj = protocol_loader.build_from_dir(entry['id'])
+    else:
+        manifest_str, request_str = entry['build']()
+        manifest_obj = json.loads(manifest_str) if isinstance(manifest_str, str) else manifest_str
+        request_obj  = json.loads(request_str)  if isinstance(request_str,  str) else request_str
+    meta = protocol_loader.get_protocol_dir_meta(entry['id'])
     spec = {
         'id':                  entry['id'],
-        'name':                entry.get('name', entry['id']),
-        'description':         entry.get('description', ''),
-        'copland':             entry.get('copland', ''),
-        'flow':                entry.get('flow', []),
-        'manifest':            json.loads(manifest_str),
-        'request':             json.loads(request_str),
+        'name':                meta.get('name',        entry.get('name', entry['id'])),
+        'description':         meta.get('description', entry.get('description', '')),
+        'copland':             meta.get('copland',     entry.get('copland', '')),
+        'flow':                meta.get('flow',        entry.get('flow', [])),
+        'manifest':            manifest_obj,
+        'request':             request_obj,
         'targets':             [],
         '_suggested_copy_id':  _unique_copy_id(entry['id']),
     }
@@ -2934,6 +3269,80 @@ def api_register_builder():
 
     return jsonify({'ok': True, 'id': proto_id, 'name': name,
                     'saved_path': saved_path, 'port_conflicts': port_conflicts})
+
+
+# ── Import-protocol-directory API ────────────────────────────────────────────
+
+@app.route('/api/preview_protocol_dir')
+def api_preview_protocol_dir():
+    source = flask_request.args.get('path', '').strip()
+    if not source:
+        return jsonify({'error': 'path parameter required'}), 400
+    result = protocol_loader.preview_protocol_dir(source)
+    return jsonify(result)
+
+
+@app.route('/api/import_protocol_dir', methods=['POST'])
+def api_import_protocol_dir():
+    data        = flask_request.get_json(force=True) or {}
+    source_path = data.get('source_path', '').strip()
+    if not source_path:
+        return jsonify({'error': 'source_path required'}), 400
+    try:
+        proto_id = protocol_loader.add_protocol_dir(source_path)
+    except (FileNotFoundError, ValueError) as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception as exc:
+        return jsonify({'error': f'Import failed: {exc}'}), 500
+    return jsonify({'ok': True, 'proto_id': proto_id})
+
+
+@app.route('/api/protocols/<protocol_id>/import_info')
+def api_import_info(protocol_id):
+    """Return import metadata (source, stubs) for an imported protocol."""
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': 'unknown protocol'}), 404
+    entry = REGISTRY[protocol_id]
+    if 'imported_dir' not in entry:
+        return jsonify({'imported': False})
+    local_dir = entry['imported_dir']
+    try:
+        with open(os.path.join(local_dir, 'tamper_config.json')) as f:
+            tc = json.load(f)
+    except Exception:
+        tc = {}
+    stubs = [
+        {'tid': tid, 'label': cfg.get('label', tid),
+         'target_file': cfg.get('target_file', ''),
+         'original': cfg.get('target_file_original', '')}
+        for tid, cfg in tc.items()
+        if cfg.get('stub')
+    ]
+    return jsonify({
+        'imported':   True,
+        'source':     entry.get('custom_source', ''),
+        'local_dir':  local_dir,
+        'stubs':      stubs,
+    })
+
+
+# ── Startup ───────────────────────────────────────────────────────────────────
+
+# Re-register any protocol directories that were imported in previous sessions.
+try:
+    protocol_loader.load_saved_protocol_dirs()
+except Exception as _e:
+    import sys as _sys
+    print(f'[dashboard] WARNING: load_saved_protocol_dirs failed: {_e}', file=_sys.stderr)
+
+# Re-register any protocol JSON files that were loaded in previous sessions.
+_cfg = protocol_loader._load_config()
+for _fpath in _cfg.get('files', []):
+    try:
+        protocol_loader.register_protocol_file(_fpath)
+    except Exception as _e:
+        import sys as _sys
+        print(f'[dashboard] WARNING: could not re-register {_fpath}: {_e}', file=_sys.stderr)
 
 
 if __name__ == '__main__':

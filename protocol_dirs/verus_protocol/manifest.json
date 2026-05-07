@@ -1,0 +1,26 @@
+{
+  "ASPS": [
+    "hashdir",
+    "attest",
+    "magic_appr",
+    "provision",
+    "run_command_verus",
+    "run_command_verus_appr",
+    "run_command_cargo_verus",
+    "run_command_autoverus",
+    "run_command_rocq",
+    "run_command_rocq_appr",
+    "provision_goldenevidence",
+    "goldenevidence_appr",
+    "hashfile",
+    "verus_compare",
+    "verus_compare_appr",
+    "readfile_range",
+    "hamr_readfile_range_many",
+    "readfile_range_many_appr",
+    "sig",
+    "sig_appr"
+  ],
+  "ASP_FS_MAP": {},
+  "POLICY": []
+}

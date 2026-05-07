@@ -1,0 +1,31 @@
+{
+  "name": "Dual File Hash + Signature",
+  "description": "Hash two files in parallel, sign combined evidence, appraise all layers",
+  "copland": "lseq( lseq( bseq/both_paths( hashfile\u00d72 ), SIG ), APPR )",
+  "flow": [
+    {
+      "type": "bseq",
+      "label": "bseq / both_paths",
+      "children": [
+        "hashfile(file1.txt)",
+        "hashfile(file2.txt)"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "SIG",
+      "style": "sig"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "GUMBO Behavioral Validation (full parallel)",
+  "description": "Fully-parallel variant of GUMBO Behavioral Validation. All five sireum steps (tipe, logika TC, logika TS, test TC, test TS) run simultaneously as individual bpar branches \u2014 each step is data-independent, reading source files without shared write state. Expected wall time \u2248 max(step times) \u2248 28s vs 66s sequential. No provisioned golden required \u2014 appraiser checks tool exit codes.",
+  "copland": "lseq( bpar(tipe, bpar(logika_tc, bpar(logika_ts, bpar(test_tc, test_ts)))), APPR )",
+  "flow": [
+    {
+      "type": "bpar",
+      "label": "bpar / both_paths (\u00d74 nested)",
+      "children": [
+        "Type Check (tipe)",
+        "\u2016 Logika: TempControl GumboX",
+        "\u2016 Logika: TempSensor GumboX",
+        "\u2016 GumboX Unit Tests: TempControl",
+        "\u2016 GumboX Unit Tests: TempSensor"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ]
+}

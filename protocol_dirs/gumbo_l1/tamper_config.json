@@ -1,0 +1,56 @@
+{
+  "hashfile::/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl": {
+    "label": "TempControlSystem.aadl",
+    "asp_id": "hashfile",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
+      "env_var": "",
+      "filepath_golden": "",
+      "env_var_golden": "",
+      "asp_id_appr": "hashfile_appr"
+    }
+  },
+  "hashfile::/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl": {
+    "label": "TempSensor.aadl",
+    "asp_id": "hashfile",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
+      "env_var": "",
+      "filepath_golden": "",
+      "env_var_golden": "",
+      "asp_id_appr": "hashfile_appr"
+    }
+  },
+  "hashfile::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala": {
+    "label": "TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+    "asp_id": "hashfile",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
+      "env_var": "",
+      "filepath_golden": "",
+      "env_var_golden": "",
+      "asp_id_appr": "hashfile_appr"
+    }
+  },
+  "hashfile::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala": {
+    "label": "TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+    "asp_id": "hashfile",
+    "target_file": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+    "asp_args": {
+      "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
+      "env_var": "",
+      "filepath_golden": "",
+      "env_var_golden": "",
+      "asp_id_appr": "hashfile_appr"
+    }
+  },
+  "gumbox_tc": {
+    "label": "TempControl_GumboX.scala"
+  },
+  "gumbox_ts": {
+    "label": "TempSensor_GumboX.scala"
+  }
+}
