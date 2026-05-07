@@ -1,1 +1,9 @@
-{}
+{
+  "hashfile": {
+    "file1_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file1.txt",
+      "env_var": "",
+      "golden_b64": ""
+    }
+  }
+}

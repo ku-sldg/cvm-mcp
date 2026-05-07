@@ -10,10 +10,8 @@
             "ASP_CONSTRUCTOR": "ASPC",
             "ASP_BODY": {
               "ASP_ID": "hsh",
-              "ASP_ARGS": {
-                "env_var_golden": "",
-                "filepath_golden": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/hsh_golden.bin"
-              }
+              "ASP_ARGS": {},
+              "ASP_TARG_ID": "hsh_targ"
             }
           }
         },

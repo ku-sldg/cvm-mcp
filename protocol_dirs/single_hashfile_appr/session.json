@@ -12,7 +12,7 @@
         },
         "ATTRS": []
       },
-      "hashfile_appr": {
+      "goldenbytes_appr": {
         "FWD": {
           "FWD": "REPLACE",
           "_BODY": 1
@@ -21,7 +21,7 @@
       }
     },
     "ASP_Comps": {
-      "hashfile": "hashfile_appr"
+      "hashfile": "goldenbytes_appr"
     }
   }
 }
