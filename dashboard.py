@@ -3328,11 +3328,22 @@ def api_import_info(protocol_id):
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 
+# Auto-register every protocol_dirs/<id>/ directory at startup.
+# This ensures that protocol_dir-backed protocols (which may use a different
+# provision strategy than the code-defined REGISTRY entries in protocols.py)
+# always override any stale builtin REGISTRY entries.
+import sys as _sys
+for _pid in protocol_loader.list_protocol_dir_ids():
+    try:
+        protocol_loader.register_protocol_dir(_pid)
+    except Exception as _e:
+        print(f'[dashboard] WARNING: could not auto-register protocol_dir {_pid!r}: {_e}',
+              file=_sys.stderr)
+
 # Re-register any protocol directories that were imported in previous sessions.
 try:
     protocol_loader.load_saved_protocol_dirs()
 except Exception as _e:
-    import sys as _sys
     print(f'[dashboard] WARNING: load_saved_protocol_dirs failed: {_e}', file=_sys.stderr)
 
 # Re-register any protocol JSON files that were loaded in previous sessions.
