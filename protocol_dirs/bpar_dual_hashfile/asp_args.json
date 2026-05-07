@@ -3,12 +3,14 @@
     "file1_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file1.txt",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "fWrHMHwBzx97g6cGXsqXnLq3ZuN/TYXNOragKIPvpdo=",
+      "golden_ts": "2026-05-07 13:59:20"
     },
     "file2_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/cvm-mcp/examples/file2.txt",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "hsufBxsrnmQOEHRzu1tJNEvLdL3zFCEwicwwSSN0JUA=",
+      "golden_ts": "2026-05-07 13:59:20"
     }
   }
 }

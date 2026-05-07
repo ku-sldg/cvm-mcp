@@ -169,13 +169,35 @@ def _golden_refs(proto_id: str, term: dict) -> list[dict]:
     """
     Walk the term tree and look up golden evidence for each ASPC node.
     Returns list of dicts with keys: asp_id, filepath, timestamp, bundle.
+
+    For protocol-dir-based protocols reads golden_ts from asp_args.json and
+    the most-recent provision bundle from provision_history.json.
     """
-    from evidence_slice import load_target_golden
     from protocol_loader import infer_tamper_config
 
     targets = infer_tamper_config(term)
     rows    = []
     seen    = set()
+
+    # Attempt to load golden metadata from the protocol's directory
+    asp_args_store = {}
+    bundle_name    = '—'
+    _SKIP = frozenset({'asp_id_appr', 'env_var_golden', 'filepath_golden',
+                       'golden_b64', 'golden_ts'})
+    try:
+        from protocols import REGISTRY
+        local_dir = REGISTRY.get(proto_id, {}).get('imported_dir', '')
+        if local_dir:
+            import json
+            with open(os.path.join(local_dir, 'asp_args.json')) as f:
+                asp_args_store = json.load(f)
+            from evidence_slice import load_provision_history
+            history = load_provision_history(proto_id)
+            if history:
+                bundle_name = os.path.basename(history[0])
+    except Exception:
+        pass
+
     for _tid, cfg in targets.items():
         asp_id   = cfg['asp_id']
         asp_args = cfg['asp_args']
@@ -184,12 +206,21 @@ def _golden_refs(proto_id: str, term: dict) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        entry = load_target_golden(asp_id, asp_args, proto_id)
+
+        timestamp = '—'
+        if asp_args_store:
+            clean_query = {k: v for k, v in asp_args.items() if k not in _SKIP}
+            for _targ_id, tdata in asp_args_store.get(asp_id, {}).items():
+                clean_stored = {k: v for k, v in tdata.items() if k not in _SKIP}
+                if clean_stored == clean_query:
+                    timestamp = tdata.get('golden_ts', '—')
+                    break
+
         rows.append({
             'asp_id':    asp_id,
             'filepath':  filepath,
-            'timestamp': entry.get('timestamp', '—')        if entry else '—',
-            'bundle':    entry.get('evidence_bundle', '—')  if entry else '—',
+            'timestamp': timestamp,
+            'bundle':    bundle_name,
         })
     return rows
 

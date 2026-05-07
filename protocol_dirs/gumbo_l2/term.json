@@ -118,14 +118,7 @@
                                                                                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                                                                                         "ASP_BODY": {
                                                                                                                           "ASP_ID": "readfile_range",
-                                                                                                                          "ASP_ARGS": {
-                                                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                                            "start_index": 305,
-                                                                                                                            "end_index": 308,
-                                                                                                                            "env_var_golden": "",
-                                                                                                                            "filepath_golden": "",
-                                                                                                                            "asp_id_appr": "readfile_appr"
-                                                                                                                          }
+                                                                                                                          "ASP_TARG_ID": "tc_sys_aadl_305_308_targ"
                                                                                                                         }
                                                                                                                       }
                                                                                                                     },
@@ -135,14 +128,7 @@
                                                                                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                                                                                         "ASP_BODY": {
                                                                                                                           "ASP_ID": "readfile_range",
-                                                                                                                          "ASP_ARGS": {
-                                                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                                            "start_index": 140,
-                                                                                                                            "end_index": 141,
-                                                                                                                            "env_var_golden": "",
-                                                                                                                            "filepath_golden": "",
-                                                                                                                            "asp_id_appr": "readfile_appr"
-                                                                                                                          }
+                                                                                                                          "ASP_TARG_ID": "tc_sys_aadl_140_141_targ"
                                                                                                                         }
                                                                                                                       }
                                                                                                                     }
@@ -154,14 +140,7 @@
                                                                                                                     "ASP_CONSTRUCTOR": "ASPC",
                                                                                                                     "ASP_BODY": {
                                                                                                                       "ASP_ID": "readfile_range",
-                                                                                                                      "ASP_ARGS": {
-                                                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                                        "start_index": 145,
-                                                                                                                        "end_index": 146,
-                                                                                                                        "env_var_golden": "",
-                                                                                                                        "filepath_golden": "",
-                                                                                                                        "asp_id_appr": "readfile_appr"
-                                                                                                                      }
+                                                                                                                      "ASP_TARG_ID": "tc_sys_aadl_145_146_targ"
                                                                                                                     }
                                                                                                                   }
                                                                                                                 }
@@ -173,14 +152,7 @@
                                                                                                                 "ASP_CONSTRUCTOR": "ASPC",
                                                                                                                 "ASP_BODY": {
                                                                                                                   "ASP_ID": "readfile_range",
-                                                                                                                  "ASP_ARGS": {
-                                                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                                    "start_index": 148,
-                                                                                                                    "end_index": 149,
-                                                                                                                    "env_var_golden": "",
-                                                                                                                    "filepath_golden": "",
-                                                                                                                    "asp_id_appr": "readfile_appr"
-                                                                                                                  }
+                                                                                                                  "ASP_TARG_ID": "tc_sys_aadl_148_149_targ"
                                                                                                                 }
                                                                                                               }
                                                                                                             }
@@ -192,14 +164,7 @@
                                                                                                             "ASP_CONSTRUCTOR": "ASPC",
                                                                                                             "ASP_BODY": {
                                                                                                               "ASP_ID": "readfile_range",
-                                                                                                              "ASP_ARGS": {
-                                                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                                "start_index": 154,
-                                                                                                                "end_index": 157,
-                                                                                                                "env_var_golden": "",
-                                                                                                                "filepath_golden": "",
-                                                                                                                "asp_id_appr": "readfile_appr"
-                                                                                                              }
+                                                                                                              "ASP_TARG_ID": "tc_sys_aadl_154_157_targ"
                                                                                                             }
                                                                                                           }
                                                                                                         }
@@ -211,14 +176,7 @@
                                                                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                                                                         "ASP_BODY": {
                                                                                                           "ASP_ID": "readfile_range",
-                                                                                                          "ASP_ARGS": {
-                                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                            "start_index": 159,
-                                                                                                            "end_index": 162,
-                                                                                                            "env_var_golden": "",
-                                                                                                            "filepath_golden": "",
-                                                                                                            "asp_id_appr": "readfile_appr"
-                                                                                                          }
+                                                                                                          "ASP_TARG_ID": "tc_sys_aadl_159_162_targ"
                                                                                                         }
                                                                                                       }
                                                                                                     }
@@ -230,14 +188,7 @@
                                                                                                     "ASP_CONSTRUCTOR": "ASPC",
                                                                                                     "ASP_BODY": {
                                                                                                       "ASP_ID": "readfile_range",
-                                                                                                      "ASP_ARGS": {
-                                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
-                                                                                                        "start_index": 164,
-                                                                                                        "end_index": 168,
-                                                                                                        "env_var_golden": "",
-                                                                                                        "filepath_golden": "",
-                                                                                                        "asp_id_appr": "readfile_appr"
-                                                                                                      }
+                                                                                                      "ASP_TARG_ID": "tc_sys_aadl_164_168_targ"
                                                                                                     }
                                                                                                   }
                                                                                                 }
@@ -249,14 +200,7 @@
                                                                                                 "ASP_CONSTRUCTOR": "ASPC",
                                                                                                 "ASP_BODY": {
                                                                                                   "ASP_ID": "readfile_range",
-                                                                                                  "ASP_ARGS": {
-                                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
-                                                                                                    "start_index": 48,
-                                                                                                    "end_index": 49,
-                                                                                                    "env_var_golden": "",
-                                                                                                    "filepath_golden": "",
-                                                                                                    "asp_id_appr": "readfile_appr"
-                                                                                                  }
+                                                                                                  "ASP_TARG_ID": "ts_aadl_48_49_targ"
                                                                                                 }
                                                                                               }
                                                                                             }
@@ -268,14 +212,7 @@
                                                                                             "ASP_CONSTRUCTOR": "ASPC",
                                                                                             "ASP_BODY": {
                                                                                               "ASP_ID": "readfile_range",
-                                                                                              "ASP_ARGS": {
-                                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
-                                                                                                "start_index": 52,
-                                                                                                "end_index": 53,
-                                                                                                "env_var_golden": "",
-                                                                                                "filepath_golden": "",
-                                                                                                "asp_id_appr": "readfile_appr"
-                                                                                              }
+                                                                                              "ASP_TARG_ID": "ts_aadl_52_53_targ"
                                                                                             }
                                                                                           }
                                                                                         }
@@ -287,14 +224,7 @@
                                                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                                                         "ASP_BODY": {
                                                                                           "ASP_ID": "readfile_range",
-                                                                                          "ASP_ARGS": {
-                                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                                            "start_index": 14,
-                                                                                            "end_index": 16,
-                                                                                            "env_var_golden": "",
-                                                                                            "filepath_golden": "",
-                                                                                            "asp_id_appr": "readfile_appr"
-                                                                                          }
+                                                                                          "ASP_TARG_ID": "tc_gumbox_14_16_targ"
                                                                                         }
                                                                                       }
                                                                                     }
@@ -306,14 +236,7 @@
                                                                                     "ASP_CONSTRUCTOR": "ASPC",
                                                                                     "ASP_BODY": {
                                                                                       "ASP_ID": "readfile_range",
-                                                                                      "ASP_ARGS": {
-                                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                                        "start_index": 28,
-                                                                                        "end_index": 30,
-                                                                                        "env_var_golden": "",
-                                                                                        "filepath_golden": "",
-                                                                                        "asp_id_appr": "readfile_appr"
-                                                                                      }
+                                                                                      "ASP_TARG_ID": "tc_gumbox_28_30_targ"
                                                                                     }
                                                                                   }
                                                                                 }
@@ -325,14 +248,7 @@
                                                                                 "ASP_CONSTRUCTOR": "ASPC",
                                                                                 "ASP_BODY": {
                                                                                   "ASP_ID": "readfile_range",
-                                                                                  "ASP_ARGS": {
-                                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                                    "start_index": 38,
-                                                                                    "end_index": 40,
-                                                                                    "env_var_golden": "",
-                                                                                    "filepath_golden": "",
-                                                                                    "asp_id_appr": "readfile_appr"
-                                                                                  }
+                                                                                  "ASP_TARG_ID": "tc_gumbox_38_40_targ"
                                                                                 }
                                                                               }
                                                                             }
@@ -344,14 +260,7 @@
                                                                             "ASP_CONSTRUCTOR": "ASPC",
                                                                             "ASP_BODY": {
                                                                               "ASP_ID": "readfile_range",
-                                                                              "ASP_ARGS": {
-                                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                                "start_index": 113,
-                                                                                "end_index": 120,
-                                                                                "env_var_golden": "",
-                                                                                "filepath_golden": "",
-                                                                                "asp_id_appr": "readfile_appr"
-                                                                              }
+                                                                              "ASP_TARG_ID": "tc_gumbox_113_120_targ"
                                                                             }
                                                                           }
                                                                         }
@@ -363,14 +272,7 @@
                                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                                         "ASP_BODY": {
                                                                           "ASP_ID": "readfile_range",
-                                                                          "ASP_ARGS": {
-                                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                            "start_index": 132,
-                                                                            "end_index": 139,
-                                                                            "env_var_golden": "",
-                                                                            "filepath_golden": "",
-                                                                            "asp_id_appr": "readfile_appr"
-                                                                          }
+                                                                          "ASP_TARG_ID": "tc_gumbox_132_139_targ"
                                                                         }
                                                                       }
                                                                     }
@@ -382,14 +284,7 @@
                                                                     "ASP_CONSTRUCTOR": "ASPC",
                                                                     "ASP_BODY": {
                                                                       "ASP_ID": "readfile_range",
-                                                                      "ASP_ARGS": {
-                                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                        "start_index": 153,
-                                                                        "end_index": 162,
-                                                                        "env_var_golden": "",
-                                                                        "filepath_golden": "",
-                                                                        "asp_id_appr": "readfile_appr"
-                                                                      }
+                                                                      "ASP_TARG_ID": "tc_gumbox_153_162_targ"
                                                                     }
                                                                   }
                                                                 }
@@ -401,14 +296,7 @@
                                                                 "ASP_CONSTRUCTOR": "ASPC",
                                                                 "ASP_BODY": {
                                                                   "ASP_ID": "readfile_range",
-                                                                  "ASP_ARGS": {
-                                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                    "start_index": 190,
-                                                                    "end_index": 197,
-                                                                    "env_var_golden": "",
-                                                                    "filepath_golden": "",
-                                                                    "asp_id_appr": "readfile_appr"
-                                                                  }
+                                                                  "ASP_TARG_ID": "tc_gumbox_190_197_targ"
                                                                 }
                                                               }
                                                             }
@@ -420,14 +308,7 @@
                                                             "ASP_CONSTRUCTOR": "ASPC",
                                                             "ASP_BODY": {
                                                               "ASP_ID": "readfile_range",
-                                                              "ASP_ARGS": {
-                                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                                "start_index": 207,
-                                                                "end_index": 214,
-                                                                "env_var_golden": "",
-                                                                "filepath_golden": "",
-                                                                "asp_id_appr": "readfile_appr"
-                                                              }
+                                                              "ASP_TARG_ID": "tc_gumbox_207_214_targ"
                                                             }
                                                           }
                                                         }
@@ -439,14 +320,7 @@
                                                         "ASP_CONSTRUCTOR": "ASPC",
                                                         "ASP_BODY": {
                                                           "ASP_ID": "readfile_range",
-                                                          "ASP_ARGS": {
-                                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
-                                                            "start_index": 226,
-                                                            "end_index": 235,
-                                                            "env_var_golden": "",
-                                                            "filepath_golden": "",
-                                                            "asp_id_appr": "readfile_appr"
-                                                          }
+                                                          "ASP_TARG_ID": "tc_gumbox_226_235_targ"
                                                         }
                                                       }
                                                     }
@@ -458,14 +332,7 @@
                                                     "ASP_CONSTRUCTOR": "ASPC",
                                                     "ASP_BODY": {
                                                       "ASP_ID": "readfile_range",
-                                                      "ASP_ARGS": {
-                                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
-                                                        "start_index": 14,
-                                                        "end_index": 15,
-                                                        "env_var_golden": "",
-                                                        "filepath_golden": "",
-                                                        "asp_id_appr": "readfile_appr"
-                                                      }
+                                                      "ASP_TARG_ID": "ts_gumbox_14_15_targ"
                                                     }
                                                   }
                                                 }
@@ -477,14 +344,7 @@
                                                 "ASP_CONSTRUCTOR": "ASPC",
                                                 "ASP_BODY": {
                                                   "ASP_ID": "readfile_range",
-                                                  "ASP_ARGS": {
-                                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
-                                                    "start_index": 26,
-                                                    "end_index": 28,
-                                                    "env_var_golden": "",
-                                                    "filepath_golden": "",
-                                                    "asp_id_appr": "readfile_appr"
-                                                  }
+                                                  "ASP_TARG_ID": "ts_gumbox_26_28_targ"
                                                 }
                                               }
                                             }
@@ -496,14 +356,7 @@
                                             "ASP_CONSTRUCTOR": "ASPC",
                                             "ASP_BODY": {
                                               "ASP_ID": "readfile_range",
-                                              "ASP_ARGS": {
-                                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
-                                                "start_index": 42,
-                                                "end_index": 45,
-                                                "env_var_golden": "",
-                                                "filepath_golden": "",
-                                                "asp_id_appr": "readfile_appr"
-                                              }
+                                              "ASP_TARG_ID": "ts_gumbox_42_45_targ"
                                             }
                                           }
                                         }
@@ -515,14 +368,7 @@
                                         "ASP_CONSTRUCTOR": "ASPC",
                                         "ASP_BODY": {
                                           "ASP_ID": "readfile_range",
-                                          "ASP_ARGS": {
-                                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
-                                            "start_index": 65,
-                                            "end_index": 68,
-                                            "env_var_golden": "",
-                                            "filepath_golden": "",
-                                            "asp_id_appr": "readfile_appr"
-                                          }
+                                          "ASP_TARG_ID": "ts_gumbox_65_68_targ"
                                         }
                                       }
                                     }
@@ -534,14 +380,7 @@
                                     "ASP_CONSTRUCTOR": "ASPC",
                                     "ASP_BODY": {
                                       "ASP_ID": "readfile_marker_range",
-                                      "ASP_ARGS": {
-                                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
-                                        "begin_marker": "BEGIN STATE VARS",
-                                        "end_marker": "END STATE VARS",
-                                        "env_var_golden": "",
-                                        "filepath_golden": "",
-                                        "asp_id_appr": "readfile_appr"
-                                      }
+                                      "ASP_TARG_ID": "tc_comp_state_vars_targ"
                                     }
                                   }
                                 }
@@ -553,14 +392,7 @@
                                 "ASP_CONSTRUCTOR": "ASPC",
                                 "ASP_BODY": {
                                   "ASP_ID": "readfile_marker_range",
-                                  "ASP_ARGS": {
-                                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
-                                    "begin_marker": "BEGIN COMPUTE MODIFIES timeTriggered",
-                                    "end_marker": "END COMPUTE MODIFIES timeTriggered",
-                                    "env_var_golden": "",
-                                    "filepath_golden": "",
-                                    "asp_id_appr": "readfile_appr"
-                                  }
+                                  "ASP_TARG_ID": "tc_comp_compute_mod_targ"
                                 }
                               }
                             }
@@ -572,14 +404,7 @@
                             "ASP_CONSTRUCTOR": "ASPC",
                             "ASP_BODY": {
                               "ASP_ID": "readfile_marker_range",
-                              "ASP_ARGS": {
-                                "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
-                                "begin_marker": "BEGIN COMPUTE ENSURES timeTriggered",
-                                "end_marker": "END COMPUTE ENSURES timeTriggered",
-                                "env_var_golden": "",
-                                "filepath_golden": "",
-                                "asp_id_appr": "readfile_appr"
-                              }
+                              "ASP_TARG_ID": "tc_comp_compute_ens_targ"
                             }
                           }
                         }
@@ -591,14 +416,7 @@
                         "ASP_CONSTRUCTOR": "ASPC",
                         "ASP_BODY": {
                           "ASP_ID": "readfile_marker_range",
-                          "ASP_ARGS": {
-                            "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
-                            "begin_marker": "BEGIN INITIALIZES MODIFIES",
-                            "end_marker": "END INITIALIZES MODIFIES",
-                            "env_var_golden": "",
-                            "filepath_golden": "",
-                            "asp_id_appr": "readfile_appr"
-                          }
+                          "ASP_TARG_ID": "tc_comp_init_mod_targ"
                         }
                       }
                     }
@@ -610,14 +428,7 @@
                     "ASP_CONSTRUCTOR": "ASPC",
                     "ASP_BODY": {
                       "ASP_ID": "readfile_marker_range",
-                      "ASP_ARGS": {
-                        "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
-                        "begin_marker": "BEGIN INITIALIZES ENSURES",
-                        "end_marker": "END INITIALIZES ENSURES",
-                        "env_var_golden": "",
-                        "filepath_golden": "",
-                        "asp_id_appr": "readfile_appr"
-                      }
+                      "ASP_TARG_ID": "tc_comp_init_ens_targ"
                     }
                   }
                 }
@@ -629,14 +440,7 @@
                 "ASP_CONSTRUCTOR": "ASPC",
                 "ASP_BODY": {
                   "ASP_ID": "readfile_marker_range",
-                  "ASP_ARGS": {
-                    "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala",
-                    "begin_marker": "BEGIN INITIALIZES ENSURES",
-                    "end_marker": "END INITIALIZES ENSURES",
-                    "env_var_golden": "",
-                    "filepath_golden": "",
-                    "asp_id_appr": "readfile_appr"
-                  }
+                  "ASP_TARG_ID": "ts_comp_init_ens_targ"
                 }
               }
             }

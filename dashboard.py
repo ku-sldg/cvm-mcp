@@ -24,6 +24,45 @@ def decode_verdict(b):
     except: s = b
     return ('PASS', '') if s == '' else ('FAIL', s.strip("'"))
 
+def _target_label_from_args(asp_id, asp_args):
+    """
+    Build a human-readable (target, detail, filepath_basename) triple from an
+    appraisal ASP's args so that targets sharing the same source file are
+    distinguishable in the results table.
+
+    target:  Primary label — encodes file + range/marker so each row is unique.
+    detail:  Secondary sub-label shown beneath target (e.g. full marker text).
+             Empty string when target is already fully descriptive.
+    fp:      Basename of the measured file (used for CSS colour class).
+    """
+    raw_fp = (asp_args.get('filepath') or asp_args.get('filepath_golden', ''))
+    fp     = raw_fp.split('/')[-1] if raw_fp else ''
+
+    start = asp_args.get('start_index')
+    end   = asp_args.get('end_index')
+    bm    = asp_args.get('begin_marker')
+    em    = asp_args.get('end_marker')
+
+    if start is not None and end is not None:
+        # Line-range target  →  filename.ext:305–308
+        range_str = f':{start}' if start == end else f':{start}–{end}'
+        target = f'{fp}{range_str}' if fp else f'lines {start}–{end}'
+        detail = ''
+    elif bm is not None:
+        # Marker-range target  →  filename.ext [section name]
+        # Strip the conventional "BEGIN " / "END " prefix to get the section name.
+        section = bm[len('BEGIN '):] if bm.upper().startswith('BEGIN ') else bm
+        section_short = (section[:32] + '…') if len(section) > 32 else section
+        target = f'{fp} [{section_short}]' if fp else section_short
+        detail = bm + (f' → {em}' if em else '')
+    else:
+        # Fallback: use filepath basename, or derive from asp_id
+        target = fp or (asp_id[:-5] if asp_id.endswith('_appr') else asp_id)
+        detail = raw_fp if raw_fp and raw_fp != fp else ''
+
+    return target, detail, fp
+
+
 def walk_et(node, raw_ev, idx):
     results = []
     if not node: return results
@@ -43,10 +82,8 @@ def walk_et(node, raw_ev, idx):
         if asp_id.endswith('_appr'):
             v, msg = decode_verdict(raw_ev[idx[0]] if idx[0] < len(raw_ev) else '')
             idx[0] += 1
-            target = asp_args.get('filepath_golden', '').split('/')[-1] or asp_id[:-5]
-            fp = asp_args.get('filepath') or asp_args.get('filepath_golden', '')
-            fp = fp.split('/')[-1] if fp else ''
-            results.append({'appr': asp_id, 'target': target,
+            target, detail, fp = _target_label_from_args(asp_id, asp_args)
+            results.append({'appr': asp_id, 'target': target, 'detail': detail,
                             'filepath': fp, 'verdict': v, 'msg': msg})
         results += walk_et(sub, raw_ev, idx)
     return results
@@ -255,9 +292,10 @@ tr:hover td { background:#1c2128; }
 .asp-hashfile_appr { background:#0d1f2e;color:#58a6ff;border:1px solid #1f6feb; }
 .asp-sig_appr      { background:#1a1200;color:#e3b341;border:1px solid #9e6a03; }
 .asp-default       { background:#1c2128;color:#8b949e;border:1px solid #30363d; }
-.target-file { color:#a5d6ff; }
-.target-sig  { color:#e3b341; }
-.target-hsh  { color:#d2a8ff; }
+.target-file   { color:#a5d6ff; }
+.target-sig    { color:#e3b341; }
+.target-hsh    { color:#d2a8ff; }
+.target-detail { font-size:0.70rem;color:#6e7681;margin-top:2px;font-style:italic; }
 
 .flow { display:flex;align-items:center;gap:0;flex-wrap:wrap; }
 .flow-node { background:#21262d;border:1px solid #30363d;border-radius:6px;
@@ -596,6 +634,7 @@ HOME_TMPL = """
         {% endif %}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        {% if p.provision %}
         <div class="prov-split">
           <button class="prov-btn" id="provbtn-{{ p.id }}"
                   onclick="provisionWithPath('{{ p.id }}')">⚙ Provision</button>
@@ -609,6 +648,7 @@ HOME_TMPL = """
             <div class="prov-history" id="prov-history-{{ p.id }}"></div>
           </div>
         </div>
+        {% endif %}
         <button class="run-btn" id="runbtn-{{ p.id }}"
                 onclick="runProtocol('{{ p.id }}')">▶ Run</button>
         {% if p.steps %}
@@ -1080,6 +1120,7 @@ DETAIL_TMPL = """
             onclick="refreshProtocolConfig('{{ proto.id }}')"
             title="Re-run generator to capture latest source file line numbers">↻ Refresh Config</button>
     {% endif %}
+    {% if proto.provision %}
     <div class="prov-split">
       <button class="prov-btn prov-btn-lg" id="provbtn-{{ proto.id }}"
               onclick="provisionWithPath('{{ proto.id }}')">⚙ Provision</button>
@@ -1094,6 +1135,7 @@ DETAIL_TMPL = """
         <div class="prov-history" id="prov-history-{{ proto.id }}"></div>
       </div>
     </div>
+    {% endif %}
     <button class="run-btn run-btn-lg" id="run-btn-detail"
             onclick="runProtocol('{{ proto.id }}')">▶ Run</button>
     {% if proto.steps %}
@@ -1290,7 +1332,7 @@ DETAIL_TMPL = """
       {% endif %}
     </div>
     <table>
-      <colgroup><col style="width:24%"><col style="width:36%"><col style="width:20%"><col style="width:20%"></colgroup>
+      <colgroup><col style="width:20%"><col style="width:42%"><col style="width:18%"><col style="width:20%"></colgroup>
       <thead><tr><th>Appraiser</th><th>Target</th><th>Verdict</th><th>Appraised At</th></tr></thead>
       <tbody>
         {% for row in r.results %}
@@ -1298,7 +1340,8 @@ DETAIL_TMPL = """
           <td><span class="asp-pill asp-{{ row.appr }}">{{ row.appr }}</span></td>
           <td>
             {% if row.filepath %}
-              <span class="target-file">{{ row.target }}({{ row.filepath }})</span>
+              <span class="target-file">{{ row.target }}</span>
+              {% if row.detail %}<div class="target-detail">{{ row.detail }}</div>{% endif %}
             {% elif row.target == 'sig' %}
               <span class="target-sig">{{ row.target }}</span>
             {% else %}
@@ -1371,9 +1414,11 @@ function _renderProgressTable(r) {
     const v   = row.verdict === 'PASS';
     const dot = v ? 'dot-g' : 'dot-r';
     const cls = v ? 'vpass' : 'vfail';
+    const targetCls = row.filepath ? 'target-file' : 'target-hsh';
+    const detail = row.detail ? `<div class="target-detail">${escHtml(row.detail)}</div>` : '';
     return `<tr>
       <td><span class="asp-pill asp-default">${escHtml(row.appr)}</span></td>
-      <td><span class="target-hsh">${escHtml(row.target)}</span></td>
+      <td><span class="${targetCls}">${escHtml(row.target)}</span>${detail}</td>
       <td><div class="${cls}"><span class="${dot}"></span> ${row.verdict}</div>
           ${row.msg ? `<div class="fail-msg">${escHtml(row.msg)}</div>` : ''}</td>
       <td style="color:#6e7681;font-size:0.72rem;">${escHtml(row.timestamp || '')}</td>
@@ -1383,7 +1428,7 @@ function _renderProgressTable(r) {
     ⟳ Live Progress — ${done}/${total} complete${step}
   </div>
   <table>
-    <colgroup><col style="width:24%"><col style="width:36%"><col style="width:20%"><col style="width:20%"></colgroup>
+    <colgroup><col style="width:20%"><col style="width:42%"><col style="width:18%"><col style="width:20%"></colgroup>
     <thead><tr><th>Appraiser</th><th>Target</th><th>Verdict</th><th>Appraised At</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="4" style="color:#8b949e;font-style:italic;">Waiting for first step…</td></tr>'}</tbody>
   </table>`;
@@ -1428,7 +1473,7 @@ async function refreshProtocolConfig(id) {
     if (data.ok) {
       window.location.reload();
     } else {
-      alert('Refresh failed:\n' + (data.error || 'Unknown error'));
+      alert('Refresh failed: ' + (data.error || 'Unknown error'));
       if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh Config'; }
     }
   } catch(e) {
@@ -2711,6 +2756,18 @@ def api_check(protocol_id):
     def _check():
         try:
             _run_check(protocol_id, steps)
+        except Exception as exc:
+            ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            store_result({
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     [],
+                'all_pass':    False,
+                'pass_count':  0,
+                'fail_count':  0,
+                'error':       str(exc),
+                'timestamp':   ts,
+            })
         finally:
             with _running_lock:
                 _running_protocols.discard(protocol_id)
@@ -2744,6 +2801,18 @@ def api_run(protocol_id):
             else:
                 r = run_protocol(protocol_id)
                 store_result(r)
+        except Exception as exc:
+            ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            store_result({
+                'protocol_id': protocol_id,
+                'cvm_success': False,
+                'results':     [],
+                'all_pass':    False,
+                'pass_count':  0,
+                'fail_count':  0,
+                'error':       str(exc),
+                'timestamp':   ts,
+            })
         finally:
             with _running_lock:
                 _running_protocols.discard(protocol_id)

@@ -9,7 +9,7 @@
       "end_index": 168,
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl": {
@@ -22,7 +22,7 @@
       "end_index": 53,
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala": {
@@ -35,7 +35,7 @@
       "end_index": 235,
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "readfile_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala": {
@@ -48,7 +48,7 @@
       "end_index": 68,
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "readfile_marker_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala": {
@@ -61,7 +61,7 @@
       "end_marker": "END INITIALIZES ENSURES",
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "readfile_marker_range::/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala": {
@@ -74,7 +74,7 @@
       "end_marker": "END INITIALIZES ENSURES",
       "env_var_golden": "",
       "filepath_golden": "",
-      "asp_id_appr": "readfile_appr"
+      "asp_id_appr": "goldenbytes_appr"
     }
   },
   "aadl_tc_inv_setpoint": {

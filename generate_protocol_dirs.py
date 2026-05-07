@@ -128,57 +128,6 @@ def _normalize_session(session):
     return session
 
 
-def _load_target_goldens():
-    """Load target_goldens.json from the cvm-mcp examples directory, or {} if absent."""
-    here = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(here, 'examples', 'target_goldens.json')
-    try:
-        with open(path) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-
-def _inject_golden_b64(term, proto_id, target_goldens):
-    """
-    Return a deep copy of *term* with golden_b64 injected into every ASPC
-    node whose ASP_ID+filepath has a provisioned entry in *target_goldens*.
-
-    Keys in target_goldens follow the pattern  "<proto_id>::<asp_id>::<filepath>".
-    Returns (injected_term, n_injected) where n_injected is the count of nodes
-    that received a golden_b64.
-    """
-    import copy
-    term = copy.deepcopy(term)
-
-    def _walk(node):
-        if not isinstance(node, dict):
-            return 0
-        constructor = node.get('TERM_CONSTRUCTOR')
-        body = node.get('TERM_BODY')
-
-        if constructor == 'asp':
-            if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                asp_body = body.get('ASP_BODY', {})
-                asp_id   = asp_body.get('ASP_ID', '')
-                asp_args = asp_body.get('ASP_ARGS', {})
-                filepath = asp_args.get('filepath', '')
-                if asp_id and filepath:
-                    key = f'{proto_id}::{asp_id}::{filepath}'
-                    entry = target_goldens.get(key)
-                    if entry and 'golden_b64' in entry:
-                        asp_args['golden_b64'] = entry['golden_b64']
-                        return 1
-            return 0
-
-        if isinstance(body, list):
-            return sum(_walk(child) for child in body if isinstance(child, dict))
-        return 0
-
-    n = _walk(term)
-    return term, n
-
-
 def _infer_tamper_config_from_term(term):
     """
     Walk the term tree and return a dict of tamper-target metadata keyed by
@@ -261,8 +210,6 @@ def export_protocol(proto_id, proto, out_dir, overwrite_asp_args=False):
         except Exception as exc:
             errors.append(f"{filename}: {exc}")
 
-    target_goldens = _load_target_goldens()
-
     # ── call build() to get manifest + ProtocolRunRequest ────────────────────
     try:
         raw_manifest, raw_request = proto['build']()
@@ -291,13 +238,6 @@ def export_protocol(proto_id, proto, out_dir, overwrite_asp_args=False):
         if s is not None and not _is_appr(s) and s != term:
             stripped = s
             _w('term_no_appr.json', stripped)
-
-    # ── term_no_appr_provisioned.json — stripped term + golden_b64 injected ──
-    if stripped is not None:
-        provisioned, n_injected = _inject_golden_b64(stripped, proto_id, target_goldens)
-        if n_injected > 0:
-            _w('term_no_appr_provisioned.json', provisioned)
-        # If no golden entries exist yet, skip silently — provision first
 
     # ── session.json ──────────────────────────────────────────────────────────
     session = request.get('ATTESTATION_SESSION')

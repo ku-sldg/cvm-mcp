@@ -3,22 +3,26 @@
     "tempcontrolsystem_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "KJb+kA5IH/qWZWT0a5PXq52SVlGhl69qEbLIEpeoIBc=",
+      "golden_ts": "2026-05-07 18:15:14"
     },
     "tempsensor_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "vGHdyb7kH1uLR7Wzh8QP0J/QFGVl29g8OzdCc0o7X1I=",
+      "golden_ts": "2026-05-07 18:15:14"
     },
     "tempcontrolperiodic_p_tcproc_tempcontrol_gumbox_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "REw8LkF3Jx9xjVABQKOem21V6I9GFPMKtzpNg+MEIOU=",
+      "golden_ts": "2026-05-07 18:15:14"
     },
     "tempsensorperiodic_p_tcproc_tempsensor_gumbox_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
       "env_var": "",
-      "golden_b64": ""
+      "golden_b64": "/tu3vzyk13T97JretrQXwn385Gr5siFb/orqDiA8zdU=",
+      "golden_ts": "2026-05-07 18:15:14"
     }
   }
 }

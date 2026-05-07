@@ -259,47 +259,6 @@ def _walk(term, ctx, path=None):
     return []
 
 
-# ── Golden injection ─────────────────────────────────────────────────────────
-
-def inject_golden_b64(term, proto_id=''):
-    """
-    Walk a Copland term and inject golden_b64 into every ASPC that has an
-    asp_id_appr, looking up the golden from the shared target golden store.
-
-    Returns a new term dict (original is not mutated).
-    """
-    from evidence_slice import load_target_golden
-
-    if not isinstance(term, dict):
-        return term
-    ctor = term.get('TERM_CONSTRUCTOR', '')
-    body = term.get('TERM_BODY')
-
-    if ctor == 'asp' and isinstance(body, dict):
-        if body.get('ASP_CONSTRUCTOR') == 'ASPC':
-            asp_body = body.get('ASP_BODY', {})
-            asp_id   = asp_body.get('ASP_ID', '')
-            asp_args = asp_body.get('ASP_ARGS', {})
-            if asp_args.get('asp_id_appr'):
-                entry = load_target_golden(asp_id, asp_args, proto_id)
-                if entry:
-                    new_args = {**asp_args, 'golden_b64': entry['golden_b64']}
-                    return {'TERM_CONSTRUCTOR': 'asp',
-                            'TERM_BODY': {**body,
-                                          'ASP_BODY': {**asp_body, 'ASP_ARGS': new_args}}}
-        return term
-
-    elif ctor in ('lseq', 'bseq', 'bpar') and isinstance(body, list):
-        return {'TERM_CONSTRUCTOR': ctor,
-                'TERM_BODY': [inject_golden_b64(c, proto_id) for c in body]}
-
-    elif ctor == 'att' and isinstance(body, list) and len(body) == 2:
-        return {'TERM_CONSTRUCTOR': 'att',
-                'TERM_BODY': [body[0], inject_golden_b64(body[1], proto_id)]}
-
-    return term
-
-
 # ── Protocol persistence + registration ───────────────────────────────────────
 
 def save_and_register(proto_id, name, description, copland,

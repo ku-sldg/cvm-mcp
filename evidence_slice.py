@@ -130,70 +130,9 @@ def do_evidence_slice(et, raw_ev, asp_types, target_id, target_args):
     return None
 
 
-# ── Shared target golden store ───────────────────────────────────────────────
+# ── Provision history ─────────────────────────────────────────────────────────
 
 _EXAMPLES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples')
-TARGET_GOLDENS_PATH = os.path.join(_EXAMPLES_DIR, 'target_goldens.json')
-
-
-def _target_key(asp_id, asp_args, proto_id):
-    """Stable lookup key: proto_id + asp_id + the file being measured.
-
-    For per-contract ASPs (readfile_range, readfile_marker_range) the range
-    discriminator is appended so multiple contracts in the same file each get
-    a unique key.
-    """
-    filepath = asp_args.get('filepath', '') or asp_args.get('env_var', '')
-    start    = asp_args.get('start_index', '')
-    end      = asp_args.get('end_index', '')
-    begin_m  = asp_args.get('begin_marker', '')
-    end_m    = asp_args.get('end_marker', '')
-    if start or end or begin_m or end_m:
-        return f"{proto_id}::{asp_id}::{filepath}::{start}:{end}::{begin_m}::{end_m}"
-    return f"{proto_id}::{asp_id}::{filepath}"
-
-
-def store_target_golden(asp_id, asp_args, golden_b64, proto_id,
-                        evidence_bundle_path, timestamp=None):
-    """
-    Write (or update) a target's golden entry in the shared store.
-
-    Fields stored:
-      golden_b64        — base64-encoded raw evidence slice (for inject / compliance)
-      timestamp         — when it was provisioned
-      asp_id / asp_args — exact ASP identity (for slice re-extraction if needed)
-      protocol_id       — which protocol this golden came from
-      evidence_bundle   — filename of the full evidence bundle (provenance link)
-    """
-    ts = timestamp or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    try:
-        store = json.loads(open(TARGET_GOLDENS_PATH).read())
-    except Exception:
-        store = {}
-    store[_target_key(asp_id, asp_args, proto_id)] = {
-        'golden_b64':           golden_b64,
-        'timestamp':            ts,
-        'asp_id':               asp_id,
-        'asp_args':             asp_args,
-        'protocol_id':          proto_id,
-        'evidence_bundle':      os.path.basename(evidence_bundle_path),
-        'evidence_bundle_path': evidence_bundle_path,
-    }
-    with open(TARGET_GOLDENS_PATH, 'w') as f:
-        json.dump(store, f, indent=2)
-
-
-def load_target_golden(asp_id, asp_args, proto_id=''):
-    """
-    Look up a target's entry in the shared store.
-    Returns the entry dict or None if not found.
-    """
-    try:
-        store = json.loads(open(TARGET_GOLDENS_PATH).read())
-        return store.get(_target_key(asp_id, asp_args, proto_id))
-    except Exception:
-        return None
-
 
 PROVISION_HISTORY_PATH = os.path.join(_EXAMPLES_DIR, 'provision_history.json')
 PROVISION_HISTORY_MAX  = 8
@@ -221,22 +160,10 @@ def load_provision_history(proto_id):
 
 def clear_protocol_state(proto_id):
     """
-    Remove all persisted state for a protocol: target golden entries,
-    provision history, and per-file .original_golden.json sidecars.
+    Remove all persisted state for a protocol: provision history and
+    per-file .original_golden.json sidecars.
     Called when a custom protocol is removed so the next registration starts fresh.
     """
-    # Remove scoped entries from target_goldens.json
-    try:
-        store = json.loads(open(TARGET_GOLDENS_PATH).read())
-        prefix = f"{proto_id}::"
-        keys_to_remove = [k for k in store if k.startswith(prefix)]
-        for k in keys_to_remove:
-            del store[k]
-        with open(TARGET_GOLDENS_PATH, 'w') as f:
-            json.dump(store, f, indent=2)
-    except Exception:
-        pass
-
     # Remove provision history entry
     try:
         history = json.loads(open(PROVISION_HISTORY_PATH).read())
@@ -258,24 +185,6 @@ def clear_protocol_state(proto_id):
                     pass
     except Exception:
         pass
-
-
-def load_target_golden_by_file(filepath, proto_id=''):
-    """
-    Return the most recent target_goldens entry for any ASP targeting filepath,
-    optionally filtered to a specific protocol.
-    """
-    try:
-        store = json.loads(open(TARGET_GOLDENS_PATH).read())
-        prefix = f"{proto_id}::" if proto_id else ''
-        matches = [v for k, v in store.items()
-                   if (not prefix or k.startswith(prefix))
-                   and v.get('asp_args', {}).get('filepath') == filepath]
-        if not matches:
-            return None
-        return max(matches, key=lambda x: x.get('timestamp', ''))
-    except Exception:
-        return None
 
 
 # ── Bundle storage ────────────────────────────────────────────────────────────

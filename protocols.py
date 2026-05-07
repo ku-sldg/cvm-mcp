@@ -93,30 +93,6 @@ def build_bpar_dual_hashfile():
     return manifest, request
 
 
-def provision_bpar_dual_hashfile(golden_path=None):
-    FILE1, FILE2 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/file2.txt'
-    G1,    G2    = f'{EXAMPLES}/golden_file1.bin', f'{EXAMPLES}/golden_file2.bin'
-    ev_path, ts = _provision_builtin(
-        'bpar_dual_hashfile', build_bpar_dual_hashfile, build_bpar_dual_hashfile,
-        [(FILE1, G1), (FILE2, G2)], golden_path=golden_path,
-    )
-    ev_name = os.path.basename(ev_path)
-    return [
-        {'target': 'file1.txt', 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': 'file1'},
-        {'target': 'file2.txt', 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': 'file2'},
-    ]
-
-
-def golden_state_bpar_dual_hashfile():
-    FILE1, FILE2 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/file2.txt'
-    return _golden_state_builtin('bpar_dual_hashfile', [
-        {'target': 'file1.txt', 'tamper_id': 'file1', 'filepath': FILE1},
-        {'target': 'file2.txt', 'tamper_id': 'file2', 'filepath': FILE2},
-    ])
-
-
 def build_single_hashfile_appr():
     """lseq( hashfile(file1), APPR )"""
     FILE1, G1 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin'
@@ -131,371 +107,56 @@ def build_single_hashfile_appr():
     return manifest, request
 
 
-# ── Provisioning helpers ──────────────────────────────────────────────────────
-
-def _write_golden(path, data):
-    """Hash data with SHA-256, write raw digest to path, and save source data to path.src."""
-    digest = hashlib.sha256(data).digest()
-    with open(path, 'wb') as f:
-        f.write(digest)
-    with open(path + '.src', 'wb') as f:
-        f.write(data)
-    return digest.hex()
-
-
-def _read_golden(path):
-    """Read an existing golden file and return its hex digest + mtime, or None."""
-    import os
-    try:
-        mtime = os.path.getmtime(path)
-        ts    = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
-        data  = open(path, 'rb').read()
-        return {'sha256': data.hex(), 'timestamp': ts}
-    except FileNotFoundError:
-        return None
-
-
-def _provision_builtin(proto_id, manifest_fn, request_fn, file_snapshots,
-                       golden_path=None):
-    """
-    Run CVM (measurement-only term) and store the output as a golden evidence bundle.
-
-    proto_id:       used to name the evidence file (examples/{proto_id}_evidence.json)
-    manifest_fn:    callable returning (manifest_str, request_str) — same as build()
-    request_fn:     same callable (manifest_fn == request_fn == build())
-    file_snapshots: list of (file_path, golden_path) for .original sidecar writes
-    golden_path:    optional override for the output evidence bundle path
-    """
-    from cvm_client import run_cvm
-    from evidence_slice import store_golden_evidence, load_golden_evidence
-    from protocol_builder import _make_measurement_term
-
-    ev_path = (os.path.abspath(os.path.expanduser(golden_path))
-               if golden_path else f'{EXAMPLES}/{proto_id}_evidence.json')
-
-    # Conflict check: refuse to overwrite a bundle owned by a different protocol
-    _, _, _, owner = load_golden_evidence(ev_path)
-    if owner and owner != proto_id:
-        raise RuntimeError(
-            f"Bundle '{os.path.basename(ev_path)}' was provisioned by "
-            f"'{owner}', not '{proto_id}'. Choose a different path."
-        )
-    asp_bin = os.environ.get(
-        'CVM_ASP_BIN',
-        os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
-    )
-
-    manifest_str, request_str = manifest_fn()
-    request_obj = request_str if isinstance(request_str, dict) else json.loads(request_str)
-
-    # Save .original snapshot for reset (first provision only, never overwritten)
-    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    for file_path, golden_path in file_snapshots:
-        try:
-            orig = file_path + '.original'
-            if not os.path.exists(orig):
-                open(orig, 'wb').write(open(file_path, 'rb').read())
-        except FileNotFoundError:
-            pass
-
-    meas_term    = _make_measurement_term(request_obj.get('TERM', {}))
-    meas_request = {**request_obj, 'TERM': meas_term}
-
-    response = run_cvm(manifest_str, meas_request, asp_bin)
-    if not response.get('SUCCESS'):
-        raise RuntimeError(
-            f"CVM provision failed for {proto_id}: {response.get('PAYLOAD', 'unknown')}"
-        )
-
-    payload = response['PAYLOAD']
-    store_golden_evidence(ev_path, payload, proto_id)
-
-    # Populate shared target golden store for each measurement ASP in the term
-    from evidence_slice import do_evidence_slice, store_target_golden
-    from protocol_builder import inject_golden_b64   # re-use ASPC walker
-    raw_ev    = payload[0].get('RawEv', [])
-    et        = payload[1]
-    asp_types = (request_obj.get('ATTESTATION_SESSION', {})
-                             .get('Session_Context', {})
-                             .get('ASP_Types', {}))
-
-    def _collect_targets(term):
-        if not isinstance(term, dict):
-            return []
-        ctor = term.get('TERM_CONSTRUCTOR', '')
-        body = term.get('TERM_BODY')
-        if ctor == 'asp' and isinstance(body, dict):
-            if body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                ab = body.get('ASP_BODY', {})
-                if ab.get('ASP_ARGS', {}).get('asp_id_appr'):
-                    return [(ab.get('ASP_ID', ''), ab.get('ASP_ARGS', {}))]
-            return []
-        if ctor in ('lseq', 'bseq', 'bpar') and isinstance(body, list):
-            return [t for c in body for t in _collect_targets(c)]
-        if ctor == 'att' and isinstance(body, list) and len(body) == 2:
-            return _collect_targets(body[1])
-        return []
-
-    for asp_id, asp_args in _collect_targets(request_obj.get('TERM', {})):
-        ev_slice = do_evidence_slice(et, raw_ev, asp_types, asp_id, asp_args)
-        if ev_slice:
-            store_target_golden(asp_id, asp_args, ev_slice[0], proto_id, ev_path, ts)
-            # Save original-golden sidecar for reset semantics (never overwritten)
-            fp = os.path.abspath(os.path.expanduser(asp_args.get('filepath', '')))
-            orig_golden = fp + f'.{proto_id}.original_golden.json' if fp else None
-            if orig_golden and not os.path.exists(orig_golden):
-                # Always use the default bundle path in the sidecar so reset()
-                # shows the protocol's canonical bundle name, not a custom path.
-                default_ev_path = f'{EXAMPLES}/{proto_id}_evidence.json'
-                with open(orig_golden, 'w') as _f:
-                    json.dump({
-                        'golden_b64':           ev_slice[0],
-                        'timestamp':            ts,
-                        'asp_id':               asp_id,
-                        'asp_args':             asp_args,
-                        'protocol_id':          proto_id,
-                        'evidence_bundle':      os.path.basename(default_ev_path),
-                        'evidence_bundle_path': default_ev_path,
-                    }, _f)
-
-    from evidence_slice import store_provision_path
-    store_provision_path(proto_id, ev_path)
-
-    return ev_path, ts
-
-
-def _golden_state_builtin(proto_id, targets):
-    """
-    Return golden state list from the shared target golden store.
-
-    targets: list of {'target', 'tamper_id', 'filepath'(optional)} dicts.
-    When 'filepath' is present, the timestamp and bundle name are read from
-    target_goldens.json so they stay accurate after a custom-path provision.
-    """
-    from evidence_slice import load_target_golden_by_file
-    default_ev_name = f'{proto_id}_evidence.json'
-    default_ev_path = f'{EXAMPLES}/{default_ev_name}'
-
-    result = []
-    for t in targets:
-        ts, golden, golden_path = None, None, None
-        if t.get('filepath'):
-            # Source of truth is target_goldens.json — don't fall back to the
-            # bundle file, which may exist from a prior/different provision.
-            entry = load_target_golden_by_file(t['filepath'], proto_id=proto_id)
-            if entry:
-                ts          = entry.get('timestamp', '')
-                golden      = entry.get('evidence_bundle')
-                golden_path = entry.get('evidence_bundle_path') or None
-        result.append({
-            'target':      t['target'],
-            'golden':      golden,
-            'golden_path': golden_path,
-            'sha256':      None,
-            'timestamp':   ts,
-            'tamper_id':   t['tamper_id'],
-        })
-    return result
-
-
-def provision_single_hashfile_appr(golden_path=None):
-    FILE1, G1 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin'
-    ev_path, ts = _provision_builtin(
-        'single_hashfile_appr', build_single_hashfile_appr, build_single_hashfile_appr,
-        [(FILE1, G1)], golden_path=golden_path,
-    )
-    return [{'target': 'file1.txt', 'golden': os.path.basename(ev_path),
-             'sha256': None, 'timestamp': ts, 'tamper_id': 'file1'}]
-
-def golden_state_single_hashfile_appr():
-    FILE1 = f'{EXAMPLES}/file1.txt'
-    return _golden_state_builtin('single_hashfile_appr',
-                                 [{'target': 'file1.txt', 'tamper_id': 'file1',
-                                   'filepath': FILE1}])
-
-
-def provision_hsh_sig_appr(golden_path=None):
-    GOLDEN = f'{EXAMPLES}/hsh_golden.bin'
-    ev_path, ts = _provision_builtin(
-        'hsh_sig_appr', build_hsh_sig_appr, build_hsh_sig_appr, [],
-        golden_path=golden_path,
-    )
-    # hsh operates on empty evidence — snapshot the golden as a byte blob
-    open(GOLDEN + '.src', 'wb').write(b'')
-    if not os.path.exists(GOLDEN + '.original'):
-        open(GOLDEN + '.original', 'wb').write(b'')
-    return [{'target': '(empty evidence)', 'golden': os.path.basename(ev_path),
-             'sha256': None, 'timestamp': ts, 'tamper_id': 'hsh_golden'}]
-
-def golden_state_hsh_sig_appr():
-    return _golden_state_builtin('hsh_sig_appr',
-                                 [{'target': '(empty evidence)', 'tamper_id': 'hsh_golden'}])
-
-
-def provision_dual_hashfile_sig_appr(golden_path=None):
-    FILE1, FILE2 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/file2.txt'
-    G1,    G2    = f'{EXAMPLES}/golden_file1.bin', f'{EXAMPLES}/golden_file2.bin'
-    ev_path, ts = _provision_builtin(
-        'dual_hashfile_sig_appr', build_dual_hashfile_sig_appr, build_dual_hashfile_sig_appr,
-        [(FILE1, G1), (FILE2, G2)], golden_path=golden_path,
-    )
-    ev_name = os.path.basename(ev_path)
-    return [
-        {'target': 'file1.txt', 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': 'file1'},
-        {'target': 'file2.txt', 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': 'file2'},
-    ]
-
-def golden_state_dual_hashfile_sig_appr():
-    FILE1, FILE2 = f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/file2.txt'
-    return _golden_state_builtin('dual_hashfile_sig_appr', [
-        {'target': 'file1.txt', 'tamper_id': 'file1', 'filepath': FILE1},
-        {'target': 'file2.txt', 'tamper_id': 'file2', 'filepath': FILE2},
-    ])
-
-
 # ── Tamper / Repair helpers ───────────────────────────────────────────────────
 
 _ORIG_HSH_GOLDEN = hashlib.sha256(b'').digest()
 _BAD_HSH_GOLDEN  = bytes([0xff] * 32)
 
 
-def _file_compliant(file_path, golden_path):
-    """Return True if SHA256(current file) matches the binary golden (legacy fallback)."""
-    try:
-        current_hash = hashlib.sha256(open(file_path, 'rb').read()).digest()
-        golden       = open(golden_path, 'rb').read()
-        return current_hash == golden
-    except FileNotFoundError:
-        return False
+def _simple_file_target(target_id, label, file_path):
+    """File tamper target for protocols that do not support provisioning.
 
-
-def _tamper_file(file_path, golden_path, bad_bytes):
-    """Write bad_bytes to file_path. golden_path kept for API compat (unused)."""
-    open(file_path, 'wb').write(bad_bytes)
-
-
-def _make_builtin_file_target(target_id, label, file_path, golden_path,
-                               proto_id, asp_id, asp_args, asp_types):
+    Provides tamper/repair/reset operations but always returns compliant=None
+    because there is no golden to compare against.
     """
-    Build a file tamper target that checks compliance via the shared target
-    golden store (load_target_golden) rather than a binary golden file.
-    """
-    bad_bytes = f"[TAMPERED] {label} - modified to fail appraisal.".encode()
-
-    def _get_golden_hash():
-        from evidence_slice import load_target_golden
-        import base64
-        entry = load_target_golden(asp_id, asp_args, proto_id)
-        if entry:
-            try:
-                return base64.b64decode(entry['golden_b64'])
-            except Exception:
-                pass
-        return None
+    bad_bytes = f'[TAMPERED] {label} - modified to fail appraisal.'.encode()
 
     def tamper():
-        golden_hash = _get_golden_hash()
-        content, nonce = bad_bytes, 0
-        while golden_hash and hashlib.sha256(content).digest() == golden_hash:
-            nonce += 1
-            content = bad_bytes + f'\n[TAMPER-NONCE-{nonce}]'.encode()
         try:
             open(file_path + '.src', 'wb').write(open(file_path, 'rb').read())
         except FileNotFoundError:
             pass
-        open(file_path, 'wb').write(content)
+        open(file_path, 'wb').write(bad_bytes)
 
     def repair():
-        src     = file_path + '.src'
-        default = file_path + '.default'
-        if os.path.exists(src):
-            content = open(src, 'rb').read()
-        elif os.path.exists(default):
-            content = open(default, 'rb').read()
-        else:
-            return
-        open(file_path, 'wb').write(content)
+        for src in (file_path + '.src', file_path + '.default'):
+            if os.path.exists(src):
+                open(file_path, 'wb').write(open(src, 'rb').read())
+                return
 
     def reset():
-        orig    = file_path + '.original'
-        default = file_path + '.default'
-        if os.path.exists(orig):
-            content = open(orig, 'rb').read()
-        elif os.path.exists(default):
-            content = open(default, 'rb').read()
-        else:
-            return
-        open(file_path, 'wb').write(content)
-        # Restore original golden so compliance check passes after reset
-        orig_golden = file_path + f'.{proto_id}.original_golden.json'
-        if os.path.exists(orig_golden):
-            from evidence_slice import store_target_golden
-            try:
-                entry = json.loads(open(orig_golden).read())
-                store_target_golden(
-                    asp_id, asp_args,
-                    entry['golden_b64'],
-                    entry.get('protocol_id', ''),
-                    entry.get('evidence_bundle_path', entry.get('evidence_bundle', '')),
-                    entry.get('timestamp', ''),
-                )
-            except Exception:
-                pass
+        for src in (file_path + '.original', file_path + '.default'):
+            if os.path.exists(src):
+                open(file_path, 'wb').write(open(src, 'rb').read())
+                return
 
     def get_state():
-        golden_hash = _get_golden_hash()
-        if golden_hash is None:
-            return {'compliant': None}
-        try:
-            current = hashlib.sha256(open(file_path, 'rb').read()).digest()
-            return {'compliant': current == golden_hash}
-        except Exception:
-            return {'compliant': None}
+        return {'compliant': None}
 
     def inspect():
         try:
-            current_bytes = open(file_path, 'rb').read()
+            data = open(file_path, 'rb').read()
         except FileNotFoundError:
             return {'error': f'Target file not found: {label}'}
-        result = {
+        return {
             'type':           'file',
-            'current':        current_bytes.decode('utf-8', errors='replace'),
-            'current_sha256': hashlib.sha256(current_bytes).hexdigest(),
+            'current':        data.decode('utf-8', errors='replace'),
+            'current_sha256': hashlib.sha256(data).hexdigest(),
+            'error':          'No golden — protocol does not support provisioning',
         }
-        from evidence_slice import load_target_golden
-        entry = load_target_golden(asp_id, asp_args, proto_id)
-        if entry is None:
-            return {**result, 'error': 'No golden evidence — run Provision first'}
-        import base64
-        try:
-            expected = base64.b64decode(entry['golden_b64'])
-            result.update({
-                'golden_sha256':   expected.hex(),
-                'compliant':       hashlib.sha256(current_bytes).digest() == expected,
-                'golden_timestamp': entry['timestamp'],
-                'golden_protocol': entry['protocol_id'],
-                'evidence_bundle': entry['evidence_bundle'],
-            })
-        except Exception as e:
-            result['evidence_slice_error'] = str(e)
-        src = file_path + '.src'
-        if os.path.exists(src):
-            result['pre_tamper'] = open(src, 'rb').read().decode('utf-8', errors='replace')
-        orig = file_path + '.original'
-        if os.path.exists(orig):
-            result['original'] = open(orig, 'rb').read().decode('utf-8', errors='replace')
-        return result
 
-    return {
-        'label':     label,
-        'tamper':    tamper,
-        'repair':    repair,
-        'reset':     reset,
-        'get_state': get_state,
-        'inspect':   inspect,
-    }
+    return {'label': label, 'tamper': tamper, 'repair': repair,
+            'reset': reset, 'get_state': get_state, 'inspect': inspect}
 
 
 def tamper_hsh_golden():
@@ -525,14 +186,6 @@ def inspect_hsh_golden():
         'actual_sha256':   golden.hex(),
     }
 
-def _make_prepare(proto_id):
-    """Return a prepare() function that injects golden_b64 for the given protocol."""
-    def _prepare(req):
-        from protocol_builder import inject_golden_b64
-        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}), proto_id)}
-    return _prepare
-
-
 _TAMPER_TARGET_HSH = {
     'label':     'hsh golden',
     'tamper':    tamper_hsh_golden,
@@ -561,17 +214,8 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_single_hashfile_appr,
-        'provision':      provision_single_hashfile_appr,
-        'golden_state':   golden_state_single_hashfile_appr,
-        'prepare':        _make_prepare('single_hashfile_appr'),
         'tamper_targets': {
-            'file1': _make_builtin_file_target(
-                'file1', 'file1.txt',
-                f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin',
-                'single_hashfile_appr', 'hashfile',
-                _hf_args(f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin'),
-                {},
-            ),
+            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
         },
     },
     'hsh_sig_appr': {
@@ -587,8 +231,6 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_hsh_sig_appr,
-        'provision':      provision_hsh_sig_appr,
-        'golden_state':   golden_state_hsh_sig_appr,
         'tamper_targets': {'hsh_golden': _TAMPER_TARGET_HSH},
     },
     'dual_hashfile_sig_appr': {
@@ -605,24 +247,9 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_dual_hashfile_sig_appr,
-        'provision':      provision_dual_hashfile_sig_appr,
-        'golden_state':   golden_state_dual_hashfile_sig_appr,
-        'prepare':        _make_prepare('dual_hashfile_sig_appr'),
         'tamper_targets': {
-            'file1': _make_builtin_file_target(
-                'file1', 'file1.txt',
-                f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin',
-                'dual_hashfile_sig_appr', 'hashfile',
-                _hf_args(f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin'),
-                {},
-            ),
-            'file2': _make_builtin_file_target(
-                'file2', 'file2.txt',
-                f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin',
-                'dual_hashfile_sig_appr', 'hashfile',
-                _hf_args(f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin'),
-                {},
-            ),
+            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
+            'file2': _simple_file_target('file2', 'file2.txt', f'{EXAMPLES}/file2.txt'),
         },
     },
     'bpar_dual_hashfile': {
@@ -643,24 +270,9 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_bpar_dual_hashfile,
-        'provision':      provision_bpar_dual_hashfile,
-        'golden_state':   golden_state_bpar_dual_hashfile,
-        'prepare':        _make_prepare('bpar_dual_hashfile'),
         'tamper_targets': {
-            'file1': _make_builtin_file_target(
-                'file1', 'file1.txt',
-                f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin',
-                'bpar_dual_hashfile', 'hashfile',
-                _hf_args(f'{EXAMPLES}/file1.txt', f'{EXAMPLES}/golden_file1.bin'),
-                {},
-            ),
-            'file2': _make_builtin_file_target(
-                'file2', 'file2.txt',
-                f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin',
-                'bpar_dual_hashfile', 'hashfile',
-                _hf_args(f'{EXAMPLES}/file2.txt', f'{EXAMPLES}/golden_file2.bin'),
-                {},
-            ),
+            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
+            'file2': _simple_file_target('file2', 'file2.txt', f'{EXAMPLES}/file2.txt'),
         },
     },
 }
@@ -827,21 +439,27 @@ def _corrupt_marker_range(filepath, begin_marker, end_marker, label):
 
 # ── Generic per-contract tamper target factory ────────────────────────────────
 
-def _make_contract_target(label, filepath, asp_id, args_fn, proto_id, extract_fn):
+def _make_contract_target(label, filepath, asp_id, args_fn, proto_id, extract_fn,
+                          golden_lookup_fn=None):
     """
     Build a tamper target dict for a per-contract range measurement.
 
-    args_fn:    callable() -> dict   returns current ASP args (called live so
-                line-number resolution is always up to date)
-    extract_fn: callable(filepath) -> bytes   extracts current contract content
+    args_fn:          callable() -> dict   returns current ASP args (called live
+                      so line-number resolution is always up to date)
+    extract_fn:       callable(filepath) -> bytes   extracts current contract content
+    golden_lookup_fn: callable() -> str|None   returns golden base64 string or None
     """
     def _get_golden_bytes():
-        from evidence_slice import load_target_golden
         import base64
-        entry = load_target_golden(asp_id, args_fn(), proto_id)
-        if entry is None:
+        if golden_lookup_fn is None:
             return None
-        return base64.b64decode(entry['golden_b64'])
+        b64 = golden_lookup_fn()
+        if b64 is None:
+            return None
+        try:
+            return base64.b64decode(b64)
+        except Exception:
+            return None
 
     def tamper():
         try:
@@ -924,48 +542,23 @@ def build_gumbo_l1():
     )
     sc = {
         'ASP_Types': {
-            'hashfile':      ASP_REPLACE1,
-            'sig':           ASP_EXTEND1,
-            'sig_appr':      ASP_REPLACE1,
-            'hashfile_appr': ASP_REPLACE1,
+            'hashfile':         ASP_REPLACE1,
+            'sig':              ASP_EXTEND1,
+            'sig_appr':         ASP_REPLACE1,
+            'goldenbytes_appr': ASP_REPLACE1,
         },
-        'ASP_Comps': {'hashfile': 'hashfile_appr', 'sig': 'sig_appr'},
+        'ASP_Comps': {'hashfile': 'goldenbytes_appr', 'sig': 'sig_appr'},
     }
     manifest = cvm.build_manifest(
-        asps=['hashfile', 'sig', 'sig_appr', 'hashfile_appr'], asp_fs_map={}, policy=[])
+        asps=['hashfile', 'sig', 'sig_appr', 'goldenbytes_appr'], asp_fs_map={}, policy=[])
     request = cvm.build_run_request(
         session_plc='P0', req_plc='P0', term=term, session_context=sc)
     return manifest, request
 
 
-def provision_gumbo_l1(golden_path=None):
-    file_snapshots = [(fp, '') for fp, _, _ in _GUMBO_L1_FILES]
-    ev_path, ts = _provision_builtin(
-        'gumbo_l1', build_gumbo_l1, build_gumbo_l1,
-        file_snapshots, golden_path=golden_path,
-    )
-    ev_name = os.path.basename(ev_path)
-    return [
-        {'target': label, 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': tid}
-        for _, label, tid in _GUMBO_L1_FILES
-    ]
-
-
-def golden_state_gumbo_l1():
-    return _golden_state_builtin('gumbo_l1', [
-        {'target': label, 'tamper_id': tid, 'filepath': fp}
-        for fp, label, tid in _GUMBO_L1_FILES
-    ])
-
-
 def _gumbo_l1_tamper_targets():
-    targets = {}
-    for fp, label, tid in _GUMBO_L1_FILES:
-        args = _hf_args(fp, '')
-        targets[tid] = _make_builtin_file_target(
-            tid, label, fp, '', 'gumbo_l1', 'hashfile', args, {})
-    return targets
+    return {tid: _simple_file_target(tid, label, fp)
+            for fp, label, tid in _GUMBO_L1_FILES}
 
 
 # ── Level 2: per-contract range measurements ──────────────────────────────────
@@ -1221,44 +814,37 @@ def build_gumbo_l2():
     return manifest, request
 
 
-def provision_gumbo_l2(golden_path=None):
-    seen = set()
-    file_snapshots = []
-    for _, _, fp, _ in _GUMBO_L2_CONTRACTS:
-        if fp not in seen:
-            seen.add(fp)
-            file_snapshots.append((fp, ''))
-    ev_path, ts = _provision_builtin(
-        'gumbo_l2', build_gumbo_l2, build_gumbo_l2,
-        file_snapshots, golden_path=golden_path,
-    )
-    ev_name = os.path.basename(ev_path)
-    return [
-        {'target': label, 'golden': ev_name, 'sha256': None,
-         'timestamp': ts, 'tamper_id': tid}
-        for label, tid, _, _ in _GUMBO_L2_CONTRACTS
-    ]
+_GUMBO_L2_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'protocol_dirs', 'gumbo_l2')
+_GUMBO_GOLDEN_SKIP = frozenset(
+    {'asp_id_appr', 'env_var_golden', 'filepath_golden', 'golden_b64', 'golden_ts'})
 
 
-def golden_state_gumbo_l2():
-    from evidence_slice import load_target_golden
-    result = []
-    for label, tid, fp, spec in _GUMBO_L2_CONTRACTS:
-        asp_id = _asp_id_for_spec(spec)
+def _gumbo_l2_golden_lookup(asp_id, filepath, spec):
+    """Return a callable() -> golden_b64 | None for a single gumbo_l2 contract.
+
+    Matches by comparing cleaned ASP args (stripped of bookkeeping keys) against
+    the entries in protocol_dirs/gumbo_l2/asp_args.json.  For readfile_range
+    contracts the line numbers are resolved live so the lookup stays accurate as
+    long as the file has not shifted since provisioning.
+    """
+    def _lookup():
         try:
-            args = _resolve_args(fp, spec)
+            with open(os.path.join(_GUMBO_L2_DIR, 'asp_args.json')) as f:
+                all_args = json.load(f)
+            stored_targets = all_args.get(asp_id, {})
+            live_args   = _resolve_args(filepath, spec)
+            clean_query = {k: v for k, v in live_args.items()
+                           if k not in _GUMBO_GOLDEN_SKIP}
+            for _tid, tdata in stored_targets.items():
+                clean_stored = {k: v for k, v in tdata.items()
+                                if k not in _GUMBO_GOLDEN_SKIP}
+                if clean_stored == clean_query:
+                    return tdata.get('golden_b64') or None
         except Exception:
-            args = {}
-        entry = load_target_golden(asp_id, args, 'gumbo_l2')
-        result.append({
-            'target':      label,
-            'golden':      entry['evidence_bundle'] if entry else None,
-            'golden_path': entry.get('evidence_bundle_path') if entry else None,
-            'sha256':      None,
-            'timestamp':   entry['timestamp'] if entry else None,
-            'tamper_id':   tid,
-        })
-    return result
+            pass
+        return None
+    return _lookup
 
 
 def _gumbo_l2_tamper_targets():
@@ -1266,11 +852,11 @@ def _gumbo_l2_tamper_targets():
     for label, tid, fp, spec in _GUMBO_L2_CONTRACTS:
         asp_id     = _asp_id_for_spec(spec)
         extract_fn = _resolve_extract_fn(fp, spec)
-        # args_fn resolves line numbers live each time it is called
-        def make_args_fn(filepath, s):
+        def _make_args_fn(filepath, s):
             return lambda: _resolve_args(filepath, s)
         targets[tid] = _make_contract_target(
-            label, fp, asp_id, make_args_fn(fp, spec), 'gumbo_l2', extract_fn)
+            label, fp, asp_id, _make_args_fn(fp, spec), 'gumbo_l2', extract_fn,
+            golden_lookup_fn=_gumbo_l2_golden_lookup(asp_id, fp, spec))
     return targets
 
 
@@ -1297,9 +883,6 @@ REGISTRY['gumbo_l1'] = {
         {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
     ],
     'build':          build_gumbo_l1,
-    'provision':      provision_gumbo_l1,
-    'golden_state':   golden_state_gumbo_l1,
-    'prepare':        _make_prepare('gumbo_l1'),
     'tamper_targets': _gumbo_l1_tamper_targets(),
 }
 
@@ -1324,9 +907,6 @@ REGISTRY['gumbo_l2'] = {
         {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
     ],
     'build':          build_gumbo_l2,
-    'provision':      provision_gumbo_l2,
-    'golden_state':   golden_state_gumbo_l2,
-    'prepare':        _make_prepare('gumbo_l2'),
     'tamper_targets': _gumbo_l2_tamper_targets(),
 }
 
@@ -1622,6 +1202,41 @@ REGISTRY['gumbo_validation_full_par'] = {
     'build':  build_gumbo_validation_full_par,
     'tamper_targets': {},
 }
+
+
+# ── Provision capabilities for protocol-dir-based built-in protocols ──────────
+#
+# Protocols whose golden evidence is stored in protocol_dirs/<proto_id>/ need
+# provision / golden_state / prepare registered by register_protocol_dir.  We
+# call it here (after REGISTRY is fully built) and then restore the richer
+# inline metadata (name / description / copland / flow / build / tamper_targets)
+# so the dashboard shows the correct display while also having a Provision button.
+
+_BUILTIN_PROTOCOL_DIRS = [
+    'gumbo_l2',
+]
+
+for _pid in _BUILTIN_PROTOCOL_DIRS:
+    _local_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'protocol_dirs', _pid)
+    if not os.path.isdir(_local_dir):
+        continue
+    try:
+        import sys as _sys
+        from protocol_loader import register_protocol_dir as _rpd
+        _saved = REGISTRY.get(_pid, {}).copy()
+        _rpd(_pid, local_dir=_local_dir)
+        # Restore rich inline metadata that register_protocol_dir would overwrite
+        for _k in ('name', 'description', 'copland', 'flow', 'build', 'tamper_targets'):
+            if _k in _saved:
+                REGISTRY[_pid][_k] = _saved[_k]
+        # Built-in protocol dirs are not editable via the single-file spec editor;
+        # remove custom_source so the Edit button does not appear.
+        REGISTRY[_pid].pop('custom_source', None)
+    except Exception as _e:
+        import sys as _sys
+        print(f'[protocols] WARNING: could not merge protocol-dir provision '
+              f"for '{_pid}': {_e}", file=_sys.stderr)
 
 
 # Load any protocol JSON files that were previously added via the dashboard

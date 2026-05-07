@@ -20,13 +20,6 @@
         },
         "ATTRS": []
       },
-      "readfile_appr": {
-        "FWD": {
-          "FWD": "REPLACE",
-          "_BODY": 1
-        },
-        "ATTRS": []
-      },
       "sig": {
         "FWD": {
           "FWD": "EXTEND",
@@ -41,11 +34,18 @@
           "_BODY": 1
         },
         "ATTRS": []
+      },
+      "goldenbytes_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
       }
     },
     "ASP_Comps": {
-      "readfile_range": "readfile_appr",
-      "readfile_marker_range": "readfile_appr",
+      "readfile_range": "goldenbytes_appr",
+      "readfile_marker_range": "goldenbytes_appr",
       "sig": "sig_appr"
     }
   }

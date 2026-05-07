@@ -113,10 +113,22 @@ def inject_asp_args(term, asp_args_map):
                 asp_body = body.get('ASP_BODY', {})
                 asp_id   = asp_body.get('ASP_ID', '')
                 targ_id  = asp_body.get('ASP_TARG_ID', '')
+                mapped   = None
                 if asp_id and targ_id:
+                    # Primary: match by explicit ASP_TARG_ID
                     mapped = asp_args_map.get(asp_id, {}).get(targ_id)
-                    if mapped:
-                        asp_body['ASP_ARGS'] = {**mapped, **asp_body.get('ASP_ARGS', {})}
+                elif asp_id:
+                    # Fallback: when terms were generated without ASP_TARG_ID
+                    # (e.g. gumbo_l1 uses the legacy filepath-in-args format),
+                    # match the stored entry whose 'filepath' equals the node's.
+                    node_fp = asp_body.get('ASP_ARGS', {}).get('filepath', '')
+                    if node_fp:
+                        for entry in asp_args_map.get(asp_id, {}).values():
+                            if entry.get('filepath') == node_fp:
+                                mapped = entry
+                                break
+                if mapped:
+                    asp_body['ASP_ARGS'] = {**mapped, **asp_body.get('ASP_ARGS', {})}
             return
         if isinstance(body, list):
             for child in body:
@@ -192,6 +204,17 @@ def _load_asp_args(proto_id):
     """Return the asp_args.json dict for a protocol dir, or {} if absent/empty."""
     try:
         data = _read_dir_json(proto_id, 'asp_args.json')
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _load_asp_args_from_dir(local_dir):
+    """Return the asp_args.json dict for an absolute protocol dir path, or {}."""
+    try:
+        path = os.path.join(local_dir, 'asp_args.json')
+        with open(path) as f:
+            data = json.load(f)
         return data if isinstance(data, dict) else {}
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
@@ -510,7 +533,7 @@ def import_protocol_dir(source_path, proto_id=None):
     return proto_id
 
 
-def _build_tamper_targets_from_config(proto_id, tamper_config):
+def _build_tamper_targets_from_config(proto_id, tamper_config, local_dir=None):
     """
     Build a tamper_targets dict from a tamper_config dict
     (as loaded from tamper_config.json).
@@ -530,6 +553,7 @@ def _build_tamper_targets_from_config(proto_id, tamper_config):
             asp_args=asp_args,
             asp_types={},
             proto_id=proto_id,
+            local_dir=local_dir,
         )
     return targets
 
@@ -561,7 +585,7 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
     except (FileNotFoundError, json.JSONDecodeError):
         tamper_config = {}
 
-    tamper_targets = _build_tamper_targets_from_config(proto_id, tamper_config)
+    tamper_targets = _build_tamper_targets_from_config(proto_id, tamper_config, local_dir=local_dir)
 
     # Determine effective term file (prefer term_local.json when stubs exist),
     # then inject ASP_ARGS from asp_args.json for any ASP_TARG_ID nodes.
@@ -636,13 +660,18 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         # Fields stored in asp_args.json for dashboard bookkeeping only —
         # must NOT appear in the ASPC ASP_ARGS sent to the CVM (they would
         # vary between provision runs and break do_EvidenceSlice matching).
-        _PROVISION_BOOKKEEPING_KEYS = {'golden_b64', 'golden_ts'}
+        # filepath_golden / env_var_golden are legacy hashfile_appr fields that
+        # may appear in asp_args.json entries but are irrelevant for goldenbytes_appr;
+        # they must be stripped so the evidence-tree args match what
+        # extract_golden_slice reconstructs from asp_args.json.
+        _PROVISION_BOOKKEEPING_KEYS = {'golden_b64', 'golden_ts',
+                                       'filepath_golden', 'env_var_golden'}
 
         def _inject_asp_id_appr(term, goldenbytes_ids):
             """
             Walk term (in-place) for every ASPC whose ASP_ID is in
             goldenbytes_ids:
-              - Strip bookkeeping keys (golden_b64, golden_ts) from ASP_ARGS
+              - Strip bookkeeping keys (golden_b64, golden_ts, filepath_golden, env_var_golden) from ASP_ARGS
               - Inject asp_id_appr: <asp_id>
 
             This mirrors rust-am-lib::add_provisioning_args_asp so that the
@@ -777,144 +806,11 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         # (called by build()). No additional run-time injection is needed.
         return req
 
-    # ── Legacy (non-goldenbytes_appr) provision flow ──────────────────────────
-    # Protocols whose appraiser is NOT goldenbytes_appr (e.g. goldenevidence_appr,
-    # readfile_appr, etc.) keep the old tamper_config-driven flow that stores
-    # golden slices in target_goldens.json via do_evidence_slice (Python).
-    def _legacy_provision(golden_path=None):
-        from cvm_client import run_cvm
-        from evidence_slice import (
-            store_golden_evidence, load_golden_evidence,
-            do_evidence_slice, store_target_golden, store_provision_path,
-        )
-        from protocol_builder import _make_measurement_term
-
-        asp_bin = os.environ.get(
-            'CVM_ASP_BIN',
-            os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
-        )
-
-        manifest_obj = json.load(open(os.path.join(local_dir, 'manifest.json')))
-        session_obj  = json.load(open(os.path.join(local_dir, 'session.json')))
-        term_obj     = _effective_term()
-        asp_types    = session_obj.get('Session_Context', {}).get('ASP_Types', {})
-
-        golden_evidence_path = os.path.join(local_dir, f'{proto_id}_evidence.json')
-        actual_ev_path = (
-            os.path.abspath(os.path.expanduser(golden_path))
-            if golden_path else golden_evidence_path
-        )
-
-        _, _, _, owner = load_golden_evidence(actual_ev_path)
-        if owner and owner != proto_id:
-            raise RuntimeError(
-                f"Bundle '{os.path.basename(actual_ev_path)}' was provisioned by "
-                f"'{owner}', not '{proto_id}'. Choose a different path."
-            )
-
-        ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        for cfg in tamper_config.values():
-            fp = cfg.get('target_file', '')
-            if fp:
-                orig = fp + '.original'
-                if not os.path.exists(orig):
-                    try:
-                        open(orig, 'wb').write(open(fp, 'rb').read())
-                    except FileNotFoundError:
-                        pass
-
-        request_obj = {
-            'TYPE':    'REQUEST',
-            'ACTION':  'RUN',
-            'REQ_PLC': session_obj.get('Session_Plc', 'P0'),
-            'TO_PLC':  session_obj.get('Session_Plc', 'P0'),
-            'TERM':    term_obj,
-            'EVIDENCE': [{'RawEv': []}, {'EvidenceT_CONSTRUCTOR': 'mt_evt'}],
-            'ATTESTATION_SESSION': session_obj,
-        }
-        meas_term    = _make_measurement_term(term_obj)
-        meas_request = {**request_obj, 'TERM': meas_term}
-
-        response = run_cvm(manifest_obj, meas_request, asp_bin)
-        if not response.get('SUCCESS'):
-            raise RuntimeError(
-                f"CVM provision run failed: {response.get('PAYLOAD', 'unknown error')}"
-            )
-
-        payload = response['PAYLOAD']
-        store_golden_evidence(actual_ev_path, payload, proto_id)
-
-        raw_ev_list = payload[0].get('RawEv', [])
-        et          = payload[1]
-        resolved    = []
-
-        for tid, cfg in tamper_config.items():
-            asp_id   = cfg.get('asp_id')
-            asp_args = cfg.get('asp_args')
-            label    = cfg.get('label', tid)
-            fp       = cfg.get('target_file', '')
-            if asp_id and asp_args is not None:
-                ev_slice = do_evidence_slice(et, raw_ev_list, asp_types, asp_id, asp_args)
-                if ev_slice:
-                    store_target_golden(asp_id, asp_args, ev_slice[0],
-                                        proto_id, actual_ev_path, ts)
-                    orig_golden = fp + f'.{proto_id}.original_golden.json' if fp else None
-                    if orig_golden and not os.path.exists(orig_golden):
-                        import base64
-                        with open(orig_golden, 'w') as _f:
-                            json.dump({
-                                'golden_b64':           ev_slice[0],
-                                'timestamp':            ts,
-                                'asp_id':               asp_id,
-                                'asp_args':             asp_args,
-                                'protocol_id':          proto_id,
-                                'evidence_bundle':      os.path.basename(actual_ev_path),
-                                'evidence_bundle_path': actual_ev_path,
-                            }, _f)
-            resolved.append({'target': label, 'golden': os.path.basename(actual_ev_path),
-                              'timestamp': ts, 'tamper_id': tid})
-
-        store_provision_path(proto_id, actual_ev_path)
-        return resolved
-
-    def _legacy_golden_state():
-        result = []
-        for tid, cfg in tamper_config.items():
-            asp_id   = cfg.get('asp_id')
-            asp_args = cfg.get('asp_args')
-            label    = cfg.get('label', tid)
-            ts = golden = golden_path = None
-            if asp_id and asp_args is not None:
-                from evidence_slice import load_target_golden
-                entry = load_target_golden(asp_id, asp_args, proto_id)
-                if entry:
-                    ts          = entry.get('timestamp', '')
-                    golden      = entry.get('evidence_bundle')
-                    golden_path = entry.get('evidence_bundle_path') or None
-            result.append({
-                'target':      label,
-                'golden':      golden,
-                'golden_path': golden_path,
-                'sha256':      None,
-                'timestamp':   ts,
-                'tamper_id':   tid,
-            })
-        return result
-
-    def _legacy_prepare(req):
-        from protocol_builder import inject_golden_b64
-        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}), proto_id)}
-
     # Select provision strategy and build REGISTRY entry
     if _has_goldenbytes_appr:
         _provision_fn    = provision
         _golden_state_fn = golden_state
         _prepare_fn      = prepare
-    elif tamper_config:
-        _provision_fn    = _legacy_provision
-        _golden_state_fn = _legacy_golden_state
-        _prepare_fn      = _legacy_prepare
     else:
         _provision_fn = _golden_state_fn = _prepare_fn = None
 
@@ -1108,26 +1004,49 @@ def _tamper_file(file_path, golden_path, bad_bytes):
 
 def _make_file_tamper_target(target_id, label, file_path, golden_path,
                               golden_evidence_path=None, asp_id=None,
-                              asp_args=None, asp_types=None, proto_id=None):
+                              asp_args=None, asp_types=None, proto_id=None,
+                              local_dir=None, golden_lookup_fn=None):
     """
     Create a generic file-based tamper_targets entry for a loaded protocol.
 
-    asp_id / asp_args: the measurement ASP and its exact args for this target,
-                       used to look up the golden from the shared target store.
+    asp_id / asp_args: the measurement ASP and its exact args for this target.
+    local_dir: protocol_dir path; when provided golden_b64 is looked up from
+               local_dir/asp_args.json by matching measurement args.
     golden_evidence_path / asp_types: kept for API compatibility, not used.
     """
     bad_bytes = f"[TAMPERED] {label} - modified to fail appraisal.".encode()
 
+    # Keys present in tamper_config asp_args that are NOT measurement args and
+    # must be stripped when matching against asp_args.json entries.
+    _SKIP = {'asp_id_appr', 'env_var_golden', 'filepath_golden', 'golden_b64', 'golden_ts'}
+
+    def _lookup_golden_b64():
+        """Return (golden_b64_str, targ_id) from asp_args.json or sidecar, or (None, None)."""
+        if golden_lookup_fn is not None:
+            return golden_lookup_fn()
+        if not (local_dir and asp_id and asp_args is not None):
+            return None, None
+        try:
+            all_args = _load_asp_args_from_dir(local_dir)
+            targets  = all_args.get(asp_id, {})
+            clean_lookup = {k: v for k, v in asp_args.items() if k not in _SKIP}
+            for targ_id, targ_data in targets.items():
+                clean_stored = {k: v for k, v in targ_data.items() if k not in _SKIP}
+                if clean_stored == clean_lookup:
+                    b64 = targ_data.get('golden_b64') or None
+                    return b64, targ_id
+        except Exception:
+            pass
+        return None, None
+
     def _get_golden_hash():
-        if asp_id and asp_args is not None:
-            from evidence_slice import load_target_golden
-            import base64
-            entry = load_target_golden(asp_id, asp_args, proto_id)
-            if entry:
-                try:
-                    return base64.b64decode(entry['golden_b64'])
-                except Exception:
-                    pass
+        import base64
+        b64, _ = _lookup_golden_b64()
+        if b64:
+            try:
+                return base64.b64decode(b64)
+            except Exception:
+                pass
         return None
 
     def tamper():
@@ -1163,38 +1082,23 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
         else:
             return   # no restore point — provision first
         open(file_path, 'wb').write(content)
-        # Restore original golden so compliance check passes after reset
-        orig_golden = file_path + (f'.{proto_id}.original_golden.json' if proto_id else '.original_golden.json')
-        if os.path.exists(orig_golden) and asp_id and asp_args is not None:
-            from evidence_slice import store_target_golden
-            try:
-                entry = json.loads(open(orig_golden).read())
-                store_target_golden(
-                    asp_id, asp_args,
-                    entry['golden_b64'],
-                    entry.get('protocol_id', ''),
-                    entry.get('evidence_bundle_path', entry.get('evidence_bundle', '')),
-                    entry.get('timestamp', ''),
-                )
-            except Exception:
-                pass
 
     def get_state():
-        if asp_id and asp_args is not None:
-            from evidence_slice import load_target_golden
-            import base64
-            entry = load_target_golden(asp_id, asp_args, proto_id)
-            if entry is None:
-                return {'compliant': None}   # not yet provisioned
+        import base64
+        b64, _ = _lookup_golden_b64()
+        if b64 is None and local_dir:
+            return {'compliant': None}   # not yet provisioned
+        if b64:
             try:
                 current  = hashlib.sha256(open(file_path, 'rb').read()).digest()
-                expected = base64.b64decode(entry['golden_b64'])
+                expected = base64.b64decode(b64)
                 return {'compliant': current == expected}
             except Exception:
                 return {'compliant': None}
         return {'compliant': _file_compliant(file_path, golden_path)}
 
     def inspect():
+        import base64
         try:
             current_bytes = open(file_path, 'rb').read()
         except FileNotFoundError:
@@ -1213,26 +1117,19 @@ def _make_file_tamper_target(target_id, label, file_path, golden_path,
         if os.path.exists(orig):
             result['original'] = open(orig, 'rb').read().decode('utf-8', errors='replace')
 
-        if asp_id and asp_args is not None:
-            from evidence_slice import load_target_golden
-            import base64
-            entry = load_target_golden(asp_id, asp_args, proto_id)
-            if entry is None:
-                return {**result, 'error': 'No golden evidence — run Provision first'}
-            result['evidence_timestamp'] = entry.get('timestamp', '')
-            result['golden_protocol']    = entry.get('protocol_id', '')
-            result['evidence_bundle']    = entry.get('evidence_bundle', '')
-            try:
-                expected = base64.b64decode(entry['golden_b64'])
-                result['golden_sha256'] = expected.hex()
-                result['compliant']     = (
-                    hashlib.sha256(current_bytes).digest() == expected
-                )
-            except Exception as e:
-                result['evidence_slice_error'] = str(e)
-            return result
-
-        return {**result, 'error': 'No golden evidence — run Provision first'}
+        b64, _ = _lookup_golden_b64()
+        if b64 is None:
+            return {**result, 'error': 'No golden evidence — run Provision first'}
+        result['evidence_bundle'] = 'provision_bundle.json'
+        try:
+            expected = base64.b64decode(b64)
+            result['golden_sha256'] = expected.hex()
+            result['compliant']     = (
+                hashlib.sha256(current_bytes).digest() == expected
+            )
+        except Exception as e:
+            result['evidence_slice_error'] = str(e)
+        return result
 
     return {
         'label':     label,
@@ -1264,6 +1161,8 @@ def load_protocol_from_file(path):
 
     # Evidence bundle stored alongside the spec file: <proto_id>_evidence.json
     golden_evidence_path = os.path.splitext(path)[0] + '_evidence.json'
+    # Per-target golden state sidecar: <proto_id>_golden_state.json (replaces target_goldens.json)
+    golden_state_path = os.path.splitext(path)[0] + '_golden_state.json'
 
     # ASP_Types from the session context — needed by do_evidence_slice
     asp_types = (
@@ -1271,6 +1170,16 @@ def load_protocol_from_file(path):
                    .get('Session_Context', {})
                    .get('ASP_Types', {})
     )
+
+    def _load_golden_state_sidecar():
+        try:
+            return json.load(open(golden_state_path))
+        except Exception:
+            return {}
+
+    def _save_golden_state_sidecar(store):
+        with open(golden_state_path, 'w') as f:
+            json.dump(store, f, indent=2)
 
     resolved_targets = [
         {
@@ -1330,34 +1239,26 @@ def load_protocol_from_file(path):
         payload = response['PAYLOAD']
         store_golden_evidence(actual_ev_path, payload, proto_id)
 
-        # Populate shared target golden store
-        from evidence_slice import do_evidence_slice, store_target_golden
+        # Populate per-target golden state sidecar
+        from evidence_slice import do_evidence_slice, store_provision_path
         raw_ev_list = payload[0].get('RawEv', [])
         et          = payload[1]
+        store       = _load_golden_state_sidecar()
         for t in resolved_targets:
             if t.get('asp_id') and t.get('asp_args') is not None:
                 ev_slice = do_evidence_slice(et, raw_ev_list, asp_types,
                                              t['asp_id'], t['asp_args'])
                 if ev_slice:
-                    store_target_golden(t['asp_id'], t['asp_args'], ev_slice[0],
-                                        proto_id, actual_ev_path, ts)
-                    # Save original-golden sidecar for reset semantics (never overwritten)
-                    orig_golden = t['file'] + f'.{proto_id}.original_golden.json'
-                    if not os.path.exists(orig_golden):
-                        with open(orig_golden, 'w') as _f:
-                            # Always use the default bundle path in the sidecar so reset()
-                            # shows the protocol's canonical bundle name, not a custom path.
-                            json.dump({
-                                'golden_b64':           ev_slice[0],
-                                'timestamp':            ts,
-                                'asp_id':               t['asp_id'],
-                                'asp_args':             t['asp_args'],
-                                'protocol_id':          proto_id,
-                                'evidence_bundle':      os.path.basename(golden_evidence_path),
-                                'evidence_bundle_path': golden_evidence_path,
-                            }, _f)
-
-        from evidence_slice import store_provision_path
+                    store[t['id']] = {
+                        'golden_b64':           ev_slice[0],
+                        'timestamp':            ts,
+                        'asp_id':               t['asp_id'],
+                        'asp_args':             t['asp_args'],
+                        'protocol_id':          proto_id,
+                        'evidence_bundle':      os.path.basename(actual_ev_path),
+                        'evidence_bundle_path': actual_ev_path,
+                    }
+        _save_golden_state_sidecar(store)
         store_provision_path(proto_id, actual_ev_path)
 
         return [
@@ -1371,22 +1272,19 @@ def load_protocol_from_file(path):
         ]
 
     def golden_state():
-        from evidence_slice import load_target_golden, load_golden_evidence
+        from evidence_slice import load_golden_evidence
+        store  = _load_golden_state_sidecar()
         result = []
         for t in resolved_targets:
-            ts, golden, golden_path = None, None, None
-            if t.get('asp_id') and t.get('asp_args') is not None:
-                # Source of truth is target_goldens.json — don't fall back to the
-                # bundle file, which may exist from a prior provision/different protocol.
-                entry = load_target_golden(t['asp_id'], t['asp_args'], proto_id)
-                if entry:
-                    ts          = entry.get('timestamp', '')
-                    golden      = entry.get('evidence_bundle')
-                    golden_path = entry.get('evidence_bundle_path') or None
-            else:
+            ts = golden = golden_path = None
+            entry = store.get(t['id'])
+            if entry:
+                ts          = entry.get('timestamp', '')
+                golden      = entry.get('evidence_bundle')
+                golden_path = entry.get('evidence_bundle_path') or None
+            elif not (t.get('asp_id') and t.get('asp_args') is not None):
                 # No asp_id/args — fall back to bundle file timestamp
-                if not ts:
-                    _, _, ts, _ = load_golden_evidence(golden_evidence_path)
+                _, _, ts, _ = load_golden_evidence(golden_evidence_path)
             result.append({
                 'target':      t['label'],
                 'golden':      golden,
@@ -1397,6 +1295,15 @@ def load_protocol_from_file(path):
             })
         return result
 
+    def _make_sidecar_lookup(targ_id):
+        """Return a golden_b64 lookup function that reads from the sidecar keyed by targ_id."""
+        def _lookup():
+            entry = _load_golden_state_sidecar().get(targ_id)
+            if entry:
+                return entry.get('golden_b64') or None, targ_id
+            return None, None
+        return _lookup
+
     tamper_targets = {
         t['id']: _make_file_tamper_target(
             t['id'], t['label'], t['file'], t['golden'],
@@ -1405,6 +1312,7 @@ def load_protocol_from_file(path):
             asp_args=t.get('asp_args'),
             asp_types=asp_types,
             proto_id=proto_id,
+            golden_lookup_fn=_make_sidecar_lookup(t['id']),
         )
         for t in resolved_targets
     }
@@ -1423,9 +1331,32 @@ def load_protocol_from_file(path):
     ] or None
 
     def prepare(req):
-        """Inject golden_b64 into ASPC ASP_ARGS from the shared target golden store."""
-        from protocol_builder import inject_golden_b64
-        return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}), proto_id)}
+        """Inject golden_b64 into ASPC ASP_ARGS from the per-target golden state sidecar."""
+        store = _load_golden_state_sidecar()
+        term  = req.get('TERM', {})
+        import copy
+        term = copy.deepcopy(term)
+
+        def _walk(node):
+            if not isinstance(node, dict):
+                return
+            ctor = node.get('TERM_CONSTRUCTOR')
+            body = node.get('TERM_BODY')
+            if ctor == 'asp' and isinstance(body, dict):
+                if body.get('ASP_CONSTRUCTOR') == 'ASPC':
+                    ab      = body.get('ASP_BODY', {})
+                    targ_id = ab.get('ASP_TARG_ID', '')
+                    if targ_id and targ_id in store:
+                        b64 = store[targ_id].get('golden_b64', '')
+                        if b64:
+                            ab.setdefault('ASP_ARGS', {})['golden_b64'] = b64
+                return
+            if isinstance(body, list):
+                for child in body:
+                    _walk(child)
+
+        _walk(term)
+        return {**req, 'TERM': term}
 
     entry = {
         'id':             proto_id,

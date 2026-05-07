@@ -71,6 +71,7 @@ def run_cvm(
         ]
         result = subprocess.run(
             cmd,
+            stdin=subprocess.DEVNULL,   # prevent stdin inheritance that can cause hangs
             capture_output=True,
             text=True,
             timeout=1200,  # 20 min — sequential gumbo_validation runs 5 Sireum tools
