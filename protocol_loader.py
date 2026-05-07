@@ -633,8 +633,46 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
                     except FileNotFoundError:
                         pass
 
+        # Fields stored in asp_args.json for dashboard bookkeeping only —
+        # must NOT appear in the ASPC ASP_ARGS sent to the CVM (they would
+        # vary between provision runs and break do_EvidenceSlice matching).
+        _PROVISION_BOOKKEEPING_KEYS = {'golden_b64', 'golden_ts'}
+
+        def _inject_asp_id_appr(term, goldenbytes_ids):
+            """
+            Walk term (in-place) for every ASPC whose ASP_ID is in
+            goldenbytes_ids:
+              - Strip bookkeeping keys (golden_b64, golden_ts) from ASP_ARGS
+              - Inject asp_id_appr: <asp_id>
+
+            This mirrors rust-am-lib::add_provisioning_args_asp so that the
+            evidence tree produced by the CVM stores the same stable ASP_ARGS
+            that extract_golden_slice will reconstruct for matching.
+            """
+            if not isinstance(term, dict):
+                return
+            ctor = term.get('TERM_CONSTRUCTOR')
+            body = term.get('TERM_BODY')
+            if ctor == 'asp' and isinstance(body, dict):
+                if body.get('ASP_CONSTRUCTOR') == 'ASPC':
+                    ab = body.get('ASP_BODY', {})
+                    asp_id = ab.get('ASP_ID', '')
+                    if asp_id in goldenbytes_ids:
+                        args = {k: v for k, v in ab.get('ASP_ARGS', {}).items()
+                                if k not in _PROVISION_BOOKKEEPING_KEYS}
+                        args['asp_id_appr'] = asp_id
+                        ab['ASP_ARGS'] = args
+                return
+            if isinstance(body, list):
+                for child in body:
+                    _inject_asp_id_appr(child, goldenbytes_ids)
+
         # Run CVM with measurement-only term (APPR → NULL) so it always succeeds
         meas_term = _make_measurement_term(term_obj)
+        # Inject asp_id_appr into goldenbytes_appr ASPC nodes so the evidence tree
+        # stores the same args that extract_golden_slice will use for matching.
+        goldenbytes_ids = {k for k, v in comps.items() if v == 'goldenbytes_appr'}
+        _inject_asp_id_appr(meas_term, goldenbytes_ids)
         request_obj = {
             'TYPE':    'REQUEST',
             'ACTION':  'RUN',
