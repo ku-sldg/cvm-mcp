@@ -594,7 +594,156 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         }
         return json.dumps(manifest), json.dumps(request)
 
-    def provision(golden_path=None):
+    # Determine which ASP_IDs use goldenbytes_appr in this session.
+    # Only these protocols support the new provision flow.
+    try:
+        _session_for_init = json.load(open(os.path.join(local_dir, 'session.json')))
+    except Exception:
+        _session_for_init = {}
+    _comps_for_init = (_session_for_init
+                       .get('Session_Context', {})
+                       .get('ASP_Comps', {}))
+    _has_goldenbytes_appr = any(v == 'goldenbytes_appr' for v in _comps_for_init.values())
+
+    def provision(golden_path=None):  # golden_path ignored in new flow
+        import subprocess
+        from cvm_client import run_cvm
+        from protocol_builder import _make_measurement_term
+
+        asp_bin = os.environ.get(
+            'CVM_ASP_BIN',
+            os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
+        )
+        extract_bin = os.path.join(asp_bin, 'extract_golden_slice')
+
+        manifest_obj = json.load(open(os.path.join(local_dir, 'manifest.json')))
+        session_obj  = json.load(open(os.path.join(local_dir, 'session.json')))
+        term_obj     = _effective_term()
+        session_ctx  = session_obj.get('Session_Context', {})
+        comps        = session_ctx.get('ASP_Comps', {})
+
+        # Save .original snapshots of any tamper target files before running
+        for cfg in tamper_config.values():
+            fp = cfg.get('target_file', '')
+            if fp:
+                orig = fp + '.original'
+                if not os.path.exists(orig):
+                    try:
+                        open(orig, 'wb').write(open(fp, 'rb').read())
+                    except FileNotFoundError:
+                        pass
+
+        # Run CVM with measurement-only term (APPR → NULL) so it always succeeds
+        meas_term = _make_measurement_term(term_obj)
+        request_obj = {
+            'TYPE':    'REQUEST',
+            'ACTION':  'RUN',
+            'REQ_PLC': session_obj.get('Session_Plc', 'P0'),
+            'TO_PLC':  session_obj.get('Session_Plc', 'P0'),
+            'TERM':    meas_term,
+            'EVIDENCE': [{'RawEv': []}, {'EvidenceT_CONSTRUCTOR': 'mt_evt'}],
+            'ATTESTATION_SESSION': session_obj,
+        }
+
+        response = run_cvm(manifest_obj, request_obj, asp_bin)
+        if not response.get('SUCCESS'):
+            raise RuntimeError(
+                f"CVM provision run failed: {response.get('PAYLOAD', 'unknown error')}"
+            )
+
+        payload = response['PAYLOAD']  # [rawev_dict, evidencet_dict]
+
+        # Build GlobalContext from session (ASP_Types + ASP_Comps) for the bundle.
+        # do_EvidenceSlice only uses ASP_Types (to look up EvCombSig body size),
+        # so the session's ASP_Types is the authoritative source.
+        global_context = {
+            'ASP_Types': session_ctx.get('ASP_Types', {}),
+            'ASP_Comps': comps,
+        }
+
+        # Write provision_bundle.json as [[rawev, evidencet], global_context].
+        # This is the format expected by extract_golden_slice / do_EvidenceSlice.
+        bundle_path = os.path.join(local_dir, 'provision_bundle.json')
+        with open(bundle_path, 'w') as _bf:
+            json.dump([payload, global_context], _bf)
+
+        # Load asp_args.json and populate golden_b64 for each goldenbytes_appr target
+        asp_args_path = os.path.join(local_dir, 'asp_args.json')
+        try:
+            with open(asp_args_path) as _f:
+                asp_args = json.load(_f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            asp_args = {}
+
+        ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        resolved = []
+        changed  = False
+
+        for asp_id, targets in asp_args.items():
+            if comps.get(asp_id) != 'goldenbytes_appr':
+                continue
+            for targ_id in list(targets.keys()):
+                result = subprocess.run(
+                    [extract_bin, local_dir, asp_id, targ_id],
+                    capture_output=True, text=True,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(
+                        f"extract_golden_slice failed for {asp_id}/{targ_id}: "
+                        f"{result.stderr.strip()}"
+                    )
+                golden_b64 = result.stdout.strip()
+                asp_args[asp_id][targ_id]['golden_b64'] = golden_b64
+                asp_args[asp_id][targ_id]['golden_ts']  = ts
+                changed = True
+                resolved.append({
+                    'target':    targ_id,
+                    'golden':    'provision_bundle.json',
+                    'timestamp': ts,
+                    'tamper_id': targ_id,
+                })
+
+        if changed:
+            with open(asp_args_path, 'w') as _f:
+                json.dump(asp_args, _f, indent=2)
+                _f.write('\n')
+
+        return resolved
+
+    def golden_state():
+        """Return provision state for each goldenbytes_appr target from asp_args.json."""
+        asp_args    = _load_asp_args(proto_id)
+        session_obj = json.load(open(os.path.join(local_dir, 'session.json')))
+        comps       = session_obj.get('Session_Context', {}).get('ASP_Comps', {})
+        bundle_path = os.path.join(local_dir, 'provision_bundle.json')
+        result = []
+        for asp_id, targets in asp_args.items():
+            if comps.get(asp_id) != 'goldenbytes_appr':
+                continue
+            for targ_id, args in targets.items():
+                golden_b64 = args.get('golden_b64', '')
+                ts         = args.get('golden_ts') if golden_b64 else None
+                result.append({
+                    'target':      targ_id,
+                    'golden':      'provision_bundle.json' if golden_b64 else None,
+                    'golden_path': bundle_path if golden_b64 else None,
+                    'sha256':      None,
+                    'timestamp':   ts,
+                    'tamper_id':   targ_id,
+                })
+        return result
+
+    def prepare(req):
+        # golden_b64 is already written to asp_args.json at provision time and
+        # injected into the term via inject_asp_args() inside _effective_term()
+        # (called by build()). No additional run-time injection is needed.
+        return req
+
+    # ── Legacy (non-goldenbytes_appr) provision flow ──────────────────────────
+    # Protocols whose appraiser is NOT goldenbytes_appr (e.g. goldenevidence_appr,
+    # readfile_appr, etc.) keep the old tamper_config-driven flow that stores
+    # golden slices in target_goldens.json via do_evidence_slice (Python).
+    def _legacy_provision(golden_path=None):
         from cvm_client import run_cvm
         from evidence_slice import (
             store_golden_evidence, load_golden_evidence,
@@ -627,7 +776,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
 
         ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        # Save .original snapshots before running
         for cfg in tamper_config.values():
             fp = cfg.get('target_file', '')
             if fp:
@@ -661,8 +809,8 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
 
         raw_ev_list = payload[0].get('RawEv', [])
         et          = payload[1]
+        resolved    = []
 
-        resolved = []
         for tid, cfg in tamper_config.items():
             asp_id   = cfg.get('asp_id')
             asp_args = cfg.get('asp_args')
@@ -692,7 +840,7 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         store_provision_path(proto_id, actual_ev_path)
         return resolved
 
-    def golden_state():
+    def _legacy_golden_state():
         result = []
         for tid, cfg in tamper_config.items():
             asp_id   = cfg.get('asp_id')
@@ -716,9 +864,21 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
             })
         return result
 
-    def prepare(req):
+    def _legacy_prepare(req):
         from protocol_builder import inject_golden_b64
         return {**req, 'TERM': inject_golden_b64(req.get('TERM', {}), proto_id)}
+
+    # Select provision strategy and build REGISTRY entry
+    if _has_goldenbytes_appr:
+        _provision_fn    = provision
+        _golden_state_fn = golden_state
+        _prepare_fn      = prepare
+    elif tamper_config:
+        _provision_fn    = _legacy_provision
+        _golden_state_fn = _legacy_golden_state
+        _prepare_fn      = _legacy_prepare
+    else:
+        _provision_fn = _golden_state_fn = _prepare_fn = None
 
     entry = {
         'id':             proto_id,
@@ -727,14 +887,15 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         'copland':        meta.get('copland', ''),
         'flow':           meta.get('flow', []),
         'build':          build,
-        'provision':      provision,
-        'golden_state':   golden_state,
-        'prepare':        prepare,
         'tamper_targets': tamper_targets,
         'places':         {},
         'custom_source':  source_path or local_dir,
         'imported_dir':   local_dir,
     }
+    if _provision_fn:
+        entry['provision']    = _provision_fn
+        entry['golden_state'] = _golden_state_fn
+        entry['prepare']      = _prepare_fn
     _get_registry()[proto_id] = entry
     return proto_id
 
