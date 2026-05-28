@@ -1003,6 +1003,25 @@ DETAIL_TMPL = """
 {% endif %}
 
 <div class="card">
+  <div class="card-title">Metadata
+    <span style="text-transform:none;letter-spacing:0;color:#6e7681;font-weight:normal;font-size:0.7rem;margin-left:6px;">editable</span>
+  </div>
+  <div class="aae-row">
+    <label class="aae-key">name</label>
+    <input class="aae-val" id="meta-name-input" type="text" value="{{ proto.name }}" autocomplete="off">
+  </div>
+  <div class="aae-row" style="align-items:flex-start;">
+    <label class="aae-key" style="padding-top:6px;">description</label>
+    <textarea class="aae-val" id="meta-desc-input" rows="2"
+              style="resize:vertical;font-family:inherit;line-height:1.4;">{{ proto.description }}</textarea>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+    <button class="prov-btn" onclick="saveMeta('{{ proto.id }}')">💾 Save Metadata</button>
+    <span id="meta-status" style="font-size:0.78rem;"></span>
+  </div>
+</div>
+
+<div class="card">
   <div class="card-title">Copland Protocol</div>
   <div class="flow">
     {% for node in proto.flow %}
@@ -1357,6 +1376,28 @@ async function saveAspArgs(id) {
   }
 }
 
+async function saveMeta(id) {
+  const name = document.getElementById('meta-name-input').value;
+  const desc = document.getElementById('meta-desc-input').value;
+  const status = document.getElementById('meta-status');
+  if (status) { status.style.color = '#8b949e'; status.textContent = 'Saving…'; }
+  try {
+    const res  = await fetch('/api/protocol_dir/' + encodeURIComponent(id) + '/meta', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: name, description: desc}),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (status) { status.style.color = '#f85149'; status.textContent = data.error || 'Save failed'; }
+      return;
+    }
+    location.reload();
+  } catch(e) {
+    if (status) { status.style.color = '#f85149'; status.textContent = 'Error: ' + e; }
+  }
+}
+
 {{ base_js | safe }}
 
 {% if proto.imported_dir %}
@@ -1486,6 +1527,42 @@ def api_save_asp_args(protocol_id):
     with store_lock:
         results_store.pop(protocol_id, None)
     return jsonify({'ok': True, 'id': protocol_id})
+
+
+@app.route('/api/protocol_dir/<protocol_id>/meta', methods=['POST'])
+def api_save_meta(protocol_id):
+    """
+    Update the display name / description in protocol_dirs/<id>/meta.json.
+
+    Body (optional fields): { "name": "...", "description": "..." }
+    Other meta keys (copland, flow, dynamic, …) are preserved. Re-registers the
+    protocol so the in-memory entry reflects the edit.
+    """
+    if protocol_id not in REGISTRY:
+        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    if not protocol_loader.has_protocol_dir(protocol_id):
+        return jsonify({'error': 'Protocol has no directory to edit'}), 400
+    data = flask_request.get_json(silent=True) or {}
+
+    path = os.path.join(protocol_loader._protocol_dir(protocol_id), 'meta.json')
+    try:
+        with open(path) as f:
+            meta = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        meta = {}
+
+    if 'name' in data:
+        meta['name'] = (data.get('name') or '').strip() or protocol_id
+    if 'description' in data:
+        meta['description'] = (data.get('description') or '').strip()
+
+    with open(path, 'w') as f:
+        json.dump(meta, f, indent=2)
+        f.write('\n')
+
+    protocol_loader.register_protocol_dir(protocol_id)
+    return jsonify({'ok': True, 'id': protocol_id,
+                    'name': meta.get('name', protocol_id)})
 
 
 @app.route('/protocol/<protocol_id>')
