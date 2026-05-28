@@ -11,6 +11,7 @@ note explaining where config lives.
 
 import json
 import os
+import shlex
 import datetime
 
 # ── Low-level term-tree renderer ──────────────────────────────────────────────
@@ -392,33 +393,37 @@ def generate_run_summary(protocol_id: str,
         except Exception:
             req_path = None
 
+    def _cvm_cmd(manifest_arg, req_arg):
+        # Single line (no backslash continuations) so it pastes atomically.
+        # If the trailing "\" of a multi-line command is lost on copy, the bare
+        # `cvm` runs with no args, enters stdin mode, and silently swallows the
+        # remaining pasted lines — producing blank output. One line avoids that.
+        parts = [cvm_bin,
+                 '--manifest_file', manifest_arg,
+                 '--req_file',      req_arg,
+                 '--asp_bin',       asp_bin,
+                 '--log_level',     'Info',
+                 '--cvm_binary',    cvm_bin]
+        return ' '.join(shlex.quote(p) for p in parts)
+
     if req_path and manifest_path:
         md.append('The exact request sent to the CVM — the Copland term with any '
                   'provisioned `golden_b64` injected — has been written to '
-                  '`cvm_request.json`. Copy this command into a terminal to '
-                  'reproduce the attestation independently of the dashboard:')
+                  '`cvm_request.json`. Copy this single-line command into a '
+                  'terminal to reproduce the attestation independently of the '
+                  'dashboard (it must stay on one line):')
         md.append('')
         md.append('```bash')
-        md.append(f'{cvm_bin} \\')
-        md.append(f'  --manifest_file {manifest_path} \\')
-        md.append(f'  --req_file      {req_path} \\')
-        md.append(f'  --asp_bin       {asp_bin} \\')
-        md.append(f'  --log_level     Info \\')
-        md.append(f'  --cvm_binary    {cvm_bin}')
+        md.append(_cvm_cmd(manifest_path, req_path))
         md.append('```')
         md.append('')
         md.append('*The CVM writes the JSON evidence response to stdout.*')
     else:
-        md.append('*(No protocol directory — fill in concrete manifest/request '
+        md.append('*(No protocol directory — substitute concrete manifest/request '
                   'file paths to run.)*')
         md.append('')
         md.append('```bash')
-        md.append(f'{cvm_bin} \\')
-        md.append(f'  --manifest_file <manifest.json> \\')
-        md.append(f'  --req_file      <request.json> \\')
-        md.append(f'  --asp_bin       {asp_bin} \\')
-        md.append(f'  --log_level     Info \\')
-        md.append(f'  --cvm_binary    {cvm_bin}')
+        md.append(_cvm_cmd('<manifest.json>', '<request.json>'))
         md.append('```')
     md.append('')
 
