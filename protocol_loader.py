@@ -436,7 +436,8 @@ def import_protocol_dir(source_path, proto_id=None):
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(local_dir, fname))
 
-    register_protocol_dir(proto_id, local_dir=local_dir, source_path=source_path)
+    register_protocol_dir(proto_id, local_dir=local_dir, source_path=source_path,
+                          builtin=False)
     return proto_id
 
 
@@ -820,6 +821,101 @@ def add_protocol_dir(source_path):
         dirs.append(entry)
         _save_config(config)
     return proto_id
+
+
+def unique_protocol_id(base_id):
+    """Return 'copy_of_<base_id>' if unused, else '..._2', '..._3', … — checking
+    both the registry and existing protocol_dirs/ so no on-disk dir is clobbered."""
+    def _used(pid):
+        return pid in _get_registry() or has_protocol_dir(pid)
+    candidate = f'copy_of_{base_id}'
+    if not _used(candidate):
+        return candidate
+    n = 2
+    while _used(f'{candidate}_{n}'):
+        n += 1
+    return f'{candidate}_{n}'
+
+
+# Runtime/provisioned artifacts that must NOT be carried into a fresh copy —
+# the copy starts unprovisioned and is re-provisioned from scratch.
+_COPY_SKIP_FILES = {'provision_bundle.json'}
+_COPY_SKIP_SUFFIXES = ('_evidence.json', '_evidence.json.ts')
+
+
+def copy_protocol_dir(src_id, new_id=None, new_name=None):
+    """
+    Duplicate protocol_dirs/<src_id>/ into a new protocol directory, register it
+    as a user (non-built-in) protocol, and persist it to the config.
+
+    The copy starts UNPROVISIONED: golden_b64 / golden_ts are cleared from
+    asp_args.json and provisioning bundles/evidence sidecars are not copied, so
+    the user must re-provision it before running.
+
+    Returns the new proto_id.
+    """
+    import shutil
+
+    if not has_protocol_dir(src_id):
+        raise ValueError(f"'{src_id}' has no protocol directory to copy")
+
+    if not new_id:
+        new_id = unique_protocol_id(src_id)
+    if new_id in _get_registry() or has_protocol_dir(new_id):
+        raise ValueError(f"Protocol id '{new_id}' already exists")
+
+    src_dir = _protocol_dir(src_id)
+    dst_dir = _protocol_dir(new_id)
+
+    # Copy the canonical config files, skipping runtime/provisioned artifacts.
+    os.makedirs(dst_dir, exist_ok=True)
+    for fname in os.listdir(src_dir):
+        if fname in _COPY_SKIP_FILES or fname.endswith(_COPY_SKIP_SUFFIXES):
+            continue
+        src = os.path.join(src_dir, fname)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(dst_dir, fname))
+
+    # Clear provisioned goldens so the copy must be re-provisioned.
+    asp_args_path = os.path.join(dst_dir, 'asp_args.json')
+    try:
+        with open(asp_args_path) as f:
+            asp_args = json.load(f)
+        for targets in asp_args.values():
+            if isinstance(targets, dict):
+                for entry in targets.values():
+                    if isinstance(entry, dict):
+                        entry.pop('golden_b64', None)
+                        entry.pop('golden_ts', None)
+        with open(asp_args_path, 'w') as f:
+            json.dump(asp_args, f, indent=2)
+            f.write('\n')
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+
+    # Update display name in meta.json (id is the directory name).
+    meta_path = os.path.join(dst_dir, 'meta.json')
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        meta = {}
+    if new_name:
+        meta['name'] = new_name
+    elif meta.get('name'):
+        meta['name'] = f"Copy of {meta['name']}"
+    with open(meta_path, 'w') as f:
+        json.dump(meta, f, indent=2)
+        f.write('\n')
+
+    # Register as a user protocol and persist to config so it survives restarts.
+    register_protocol_dir(new_id, local_dir=dst_dir, builtin=False)
+    config = _load_config()
+    dirs = config.setdefault('dirs', [])
+    if not any(d.get('proto_id') == new_id for d in dirs):
+        dirs.append({'source': dst_dir, 'proto_id': new_id})
+        _save_config(config)
+    return new_id
 
 
 def load_saved_protocol_dirs():

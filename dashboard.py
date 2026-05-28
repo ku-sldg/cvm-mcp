@@ -563,7 +563,6 @@ HOME_TMPL = """
   <span class="live-dot"></span>
   <div><h1>CVM Attestation Dashboard</h1>
        <div class="sub">{{ protocols|length }} protocol{{ 's' if protocols|length != 1 }} registered</div></div>
-  <a href="/build" class="run-btn" style="margin-left:auto;">⊕ Build Protocol</a>
 </div>
 
 <div class="proto-grid" id="proto-grid">
@@ -634,7 +633,7 @@ HOME_TMPL = """
           {% endif %}
         {% endif %}
         <button class="copy-btn"
-                onclick="location.href='/build?copy={{ p.id }}'">⎘ Copy</button>
+                onclick="copyProtocol('{{ p.id }}', '{{ p.name }}')">⎘ Copy</button>
         {% if not p.builtin %}
           <button class="remove-btn" id="rmbtn-{{ p.id }}"
                   onclick="removeProtocol('{{ p.id }}')">× Remove</button>
@@ -798,6 +797,25 @@ async function provisionProtocol(id, customPath) {
     location.reload();
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
+  }
+}
+
+async function copyProtocol(id, name) {
+  const suggested = 'Copy of ' + (name || id);
+  const newName = prompt('Name for the copy:', suggested);
+  if (newName === null) return;   // cancelled
+  try {
+    const res = await fetch('/api/copy_protocol/' + encodeURIComponent(id), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: newName.trim()}),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Copy failed'); return; }
+    // Land on the new copy's detail page so the user can edit / provision it.
+    location.href = '/protocol/' + encodeURIComponent(data.id);
+  } catch(e) {
+    alert('Copy failed: ' + e);
   }
 }
 
@@ -2700,7 +2718,10 @@ def api_results():
 
 @app.route('/build')
 def build_page():
-    return render_template_string(BUILD_TMPL, style=BASE_STYLE, base_js=BASE_JS)
+    # Free-form protocol authoring has been retired. New protocols are created by
+    # copying an existing one (⎘ Copy) and editing its directory. Redirect home.
+    from flask import redirect
+    return redirect('/')
 
 
 @app.route('/api/provision_history/<protocol_id>')
@@ -2823,62 +2844,24 @@ def api_derive_term():
     })
 
 
-def _unique_copy_id(base_id):
-    """Return 'copy_of_<base_id>' if unused, else 'copy_of_<base_id>_2', '_3', …"""
-    candidate = f'copy_of_{base_id}'
-    if candidate not in REGISTRY:
-        return candidate
-    n = 2
-    while f'{candidate}_{n}' in REGISTRY:
-        n += 1
-    return f'{candidate}_{n}'
+@app.route('/api/copy_protocol/<protocol_id>', methods=['POST'])
+def api_copy_protocol(protocol_id):
+    """
+    Duplicate a protocol's directory into a new user (non-built-in) protocol.
 
-
-@app.route('/api/protocol_copy_spec/<protocol_id>')
-def api_protocol_copy_spec(protocol_id):
-    """Return a spec dict for any protocol (built-in or custom) for use by the copy page."""
+    Body (optional JSON): { "name": "<display name>" }
+    Returns: { "id": "<new_id>", "name": "<display name>" }
+    """
     if protocol_id not in REGISTRY:
         return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    entry = REGISTRY[protocol_id]
-    from flask import Response
-
-    # Custom protocol backed by a single JSON file — return raw file bytes so
-    # key order is preserved exactly, but inject a unique suggested_copy_id field.
-    # (Dir-backed protocols also carry a custom_source, but it points at a
-    # directory, so guard on isfile() and let them fall through to the
-    # build_from_dir reconstruction branch below.)
-    source = entry.get('custom_source')
-    if source and os.path.isfile(source):
-        try:
-            raw = open(source).read()
-            spec = json.loads(raw)
-        except FileNotFoundError:
-            return jsonify({'error': f'Source file not found: {source}'}), 404
-        except json.JSONDecodeError as e:
-            return jsonify({'error': f'Malformed source file: {e}'}), 400
-        spec['_suggested_copy_id'] = _unique_copy_id(spec.get('id', protocol_id))
-        return Response(json.dumps(spec), mimetype='application/json')
-
-    # Built-in protocol — reconstruct spec from protocol_dirs/ or build()
-    if protocol_loader.has_protocol_dir(entry['id']):
-        manifest_obj, request_obj = protocol_loader.build_from_dir(entry['id'])
-    else:
-        manifest_str, request_str = entry['build']()
-        manifest_obj = json.loads(manifest_str) if isinstance(manifest_str, str) else manifest_str
-        request_obj  = json.loads(request_str)  if isinstance(request_str,  str) else request_str
-    meta = protocol_loader.get_protocol_dir_meta(entry['id'])
-    spec = {
-        'id':                  entry['id'],
-        'name':                meta.get('name',        entry.get('name', entry['id'])),
-        'description':         meta.get('description', entry.get('description', '')),
-        'copland':             meta.get('copland',     entry.get('copland', '')),
-        'flow':                meta.get('flow',        entry.get('flow', [])),
-        'manifest':            manifest_obj,
-        'request':             request_obj,
-        'targets':             [],
-        '_suggested_copy_id':  _unique_copy_id(entry['id']),
-    }
-    return Response(json.dumps(spec), mimetype='application/json')
+    data     = flask_request.get_json(silent=True) or {}
+    new_name = (data.get('name') or '').strip() or None
+    try:
+        new_id = protocol_loader.copy_protocol_dir(protocol_id, new_name=new_name)
+    except (ValueError, OSError) as e:
+        return jsonify({'error': str(e)}), 400
+    entry = REGISTRY.get(new_id, {})
+    return jsonify({'id': new_id, 'name': entry.get('name', new_id)})
 
 
 @app.route('/api/proto_overwrite_check')
