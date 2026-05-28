@@ -4,8 +4,8 @@ CVM Attestation Dashboard  —  multi-protocol with live push
 import json, sys, os, base64, datetime, threading
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import server as cvm_server
-from protocols import REGISTRY
 import protocol_loader
+from protocol_loader import REGISTRY
 import protocol_builder
 import place_manager
 from flask import Flask, render_template_string, request as flask_request, jsonify
@@ -3066,32 +3066,8 @@ def api_import_info(protocol_id):
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 
-# Auto-register every protocol_dirs/<id>/ directory at startup.
-# This ensures that protocol_dir-backed protocols (which may use a different
-# provision strategy than the code-defined REGISTRY entries in protocols.py)
-# always override any stale builtin REGISTRY entries.
-import sys as _sys
-for _pid in protocol_loader.list_protocol_dir_ids():
-    try:
-        protocol_loader.register_protocol_dir(_pid)
-    except Exception as _e:
-        print(f'[dashboard] WARNING: could not auto-register protocol_dir {_pid!r}: {_e}',
-              file=_sys.stderr)
-
-# Re-register any protocol directories that were imported in previous sessions.
-try:
-    protocol_loader.load_saved_protocol_dirs()
-except Exception as _e:
-    print(f'[dashboard] WARNING: load_saved_protocol_dirs failed: {_e}', file=_sys.stderr)
-
-# Re-register any protocol JSON files that were loaded in previous sessions.
-_cfg = protocol_loader._load_config()
-for _fpath in _cfg.get('files', []):
-    try:
-        protocol_loader.register_protocol_file(_fpath)
-    except Exception as _e:
-        import sys as _sys
-        print(f'[dashboard] WARNING: could not re-register {_fpath}: {_e}', file=_sys.stderr)
+# Populate REGISTRY from protocol_dirs/ (the single canonical storage mechanism).
+protocol_loader.load_all_protocols()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 {
   "name": "Verus Protocol",
-  "description": "",
+  "description": "Hash a file and run the Verus verifier over it in parallel (bseq/both_paths), then appraise both results.",
   "copland": "bseq({'split1': 'ALL', 'split2': 'ALL'})( hashfile, run_command_verus )",
   "flow": [
     {

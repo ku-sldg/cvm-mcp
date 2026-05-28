@@ -48,6 +48,15 @@ import datetime
 _CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loaded_protocols.json')
 
 
+# ── Canonical protocol registry ───────────────────────────────────────────────
+#
+# Single in-memory registry of all known protocols, keyed by protocol id.
+# Populated entirely from protocol_dirs/ via load_all_protocols(); there is no
+# longer a code-defined registry (the former protocols.py). Both the dashboard
+# and the MCP server import this object and call load_all_protocols() at startup.
+REGISTRY = {}
+
+
 # ── Protocol-directory helpers ────────────────────────────────────────────────
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -827,8 +836,28 @@ def load_saved_protocol_dirs():
                       f"imported dir '{proto_id}': {exc}", file=sys.stderr)
 
 
+def load_all_protocols():
+    """
+    Populate REGISTRY from protocol_dirs/. This is the single startup entry point
+    used by both the dashboard and the MCP server.
+
+      1. Auto-register every protocol_dirs/<id>/ directory.
+      2. Re-register any imported external directories saved in the config.
+
+    Safe to call more than once (registration is idempotent per id).
+    """
+    import sys
+    for proto_id in list_protocol_dir_ids():
+        try:
+            register_protocol_dir(proto_id)
+        except Exception as exc:
+            print(f"[protocol_loader] WARNING: could not auto-register "
+                  f"protocol_dir {proto_id!r}: {exc}", file=sys.stderr)
+    load_saved_protocol_dirs()
+    return REGISTRY
+
+
 def _get_registry():
-    from protocols import REGISTRY
     return REGISTRY
 
 

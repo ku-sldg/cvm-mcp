@@ -440,8 +440,10 @@ def list_protocols() -> str:
         JSON string with a list of protocol objects, each containing:
         id, name, description, and copland (the Copland term expression).
     """
-    from protocols import REGISTRY
     import protocol_loader
+    if not protocol_loader.REGISTRY:
+        protocol_loader.load_all_protocols()
+    REGISTRY = protocol_loader.REGISTRY
     result = []
     for p in REGISTRY.values():
         meta = protocol_loader.get_protocol_dir_meta(p['id'])
@@ -488,8 +490,10 @@ def run_protocol(
           "dashboard_pushed": bool
         }
     """
-    from protocols import REGISTRY
     import protocol_loader, base64, datetime
+    if not protocol_loader.REGISTRY:
+        protocol_loader.load_all_protocols()
+    REGISTRY = protocol_loader.REGISTRY
 
     if protocol_id not in REGISTRY:
         ids = list(REGISTRY.keys())
@@ -497,11 +501,8 @@ def run_protocol(
 
     proto = REGISTRY[protocol_id]
 
-    # Load manifest + request from protocol_dirs/ when available; fall back to build()
-    if protocol_loader.has_protocol_dir(protocol_id):
-        manifest, req = protocol_loader.build_from_dir(protocol_id)
-    else:
-        manifest, req = proto['build']()
+    # Load manifest + request from protocol_dirs/ (the canonical storage).
+    manifest, req = protocol_loader.build_from_dir(protocol_id)
 
     # Inject golden values (golden_b64) from the evidence bundle, just as the
     # dashboard does.  Without this, ASPs that compare against a golden file
@@ -1090,4 +1091,6 @@ def run_summary(protocol_id: str) -> str:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    import protocol_loader
+    protocol_loader.load_all_protocols()
     mcp.run()

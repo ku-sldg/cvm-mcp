@@ -176,7 +176,7 @@ def _golden_refs(proto_id: str, term: dict) -> list[dict]:
     bundle_name = '—'
 
     try:
-        from protocols import REGISTRY
+        from protocol_loader import REGISTRY
         local_dir = REGISTRY.get(proto_id, {}).get('imported_dir', '')
         if not local_dir:
             return []
