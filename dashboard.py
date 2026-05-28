@@ -577,7 +577,7 @@ HOME_TMPL = """
           {% else %}<span class="dot-r"></span>{% endif %}
         {% else %}<span class="dot-d"></span>{% endif %}
         <span class="proto-name">{{ p.name }}</span>
-        {% if p.custom_source %}
+        {% if not p.builtin %}
           <span class="badge-custom" style="margin-left:auto;">⊕ custom</span>
         {% endif %}
       </div>
@@ -635,7 +635,7 @@ HOME_TMPL = """
         {% endif %}
         <button class="copy-btn"
                 onclick="location.href='/build?copy={{ p.id }}'">⎘ Copy</button>
-        {% if p.custom_source %}
+        {% if not p.builtin %}
           <button class="remove-btn" id="rmbtn-{{ p.id }}"
                   onclick="removeProtocol('{{ p.id }}')">× Remove</button>
         {% endif %}
@@ -1136,9 +1136,9 @@ DETAIL_TMPL = """
 </div>
 {% endif %}
 
-{% if proto.imported_dir %}
+{% if not proto.builtin %}
 <div id="import-info-banner" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;color:#8b949e;">
-  <span style="color:#58a6ff;">⊕ Imported protocol</span>
+  <span style="color:#58a6ff;">⊕ Custom protocol</span>
   — source: <code style="color:#c9d1d9;">{{ proto.custom_source }}</code>
   <span id="stub-warning-area"></span>
 </div>
@@ -2891,135 +2891,20 @@ def api_proto_overwrite_check():
     if not proto_id:
         return jsonify({'would_overwrite': False})
 
-    # Check whether the built_protocols JSON file already exists
-    built_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'built_protocols', f'{proto_id}.json',
-    )
-    file_exists = os.path.exists(built_path)
-
-    # Check registry membership (catches both custom and built-in collisions)
-    in_registry  = proto_id in REGISTRY
-    is_custom    = in_registry and bool(REGISTRY[proto_id].get('custom_source'))
-    is_builtin   = in_registry and not is_custom
+    # A collision is either a registry entry or an existing protocol_dirs/ tree.
+    in_registry   = proto_id in REGISTRY
+    has_dir       = protocol_loader.has_protocol_dir(proto_id)
+    is_builtin    = in_registry and bool(REGISTRY[proto_id].get('builtin'))
     existing_name = REGISTRY[proto_id].get('name', proto_id) if in_registry else None
 
     return jsonify({
-        'would_overwrite': file_exists or in_registry,
-        'file_exists':     file_exists,
-        'file_path':       built_path if file_exists else None,
+        'would_overwrite': in_registry or has_dir,
         'in_registry':     in_registry,
         'is_builtin':      is_builtin,
         'existing_name':   existing_name,
+        'file_path':       protocol_loader._protocol_dir(proto_id) if has_dir else None,
     })
 
-
-@app.route('/api/register_builder', methods=['POST'])
-def api_register_builder():
-    data = flask_request.get_json(force=True) or {}
-
-    proto_id         = data.get('id', '').strip()
-    name             = data.get('name', '').strip() or proto_id
-    description      = data.get('description', '').strip()
-    copland          = data.get('copland', '').strip()
-    term_json        = data.get('term_json', '').strip()
-    manifest_json    = data.get('manifest_json', '').strip()
-    attestation_json = data.get('session_json', '').strip()
-    evidence_json    = data.get('evidence_json', '').strip()
-    places_json      = data.get('places_json', '').strip()
-    copy_source      = data.get('copy_source', '').strip()
-
-    if not proto_id:
-        return jsonify({'error': 'Protocol ID is required'}), 400
-    if not term_json:
-        return jsonify({'error': 'Term JSON is required'}), 400
-
-    try:
-        term_dict = json.loads(term_json)
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Invalid term JSON: {e}'}), 400
-
-    try:
-        manifest_obj = json.loads(manifest_json) if manifest_json else None
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Invalid manifest JSON: {e}'}), 400
-
-    try:
-        attestation_obj = json.loads(attestation_json) if attestation_json else None
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Invalid attestation session JSON: {e}'}), 400
-
-    try:
-        evidence_obj = json.loads(evidence_json) if evidence_json else \
-                       [{"RawEv": []}, {"EvidenceT_CONSTRUCTOR": "mt_evt"}]
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Invalid evidence JSON: {e}'}), 400
-
-    try:
-        places_obj = json.loads(places_json) if places_json else None
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Invalid places JSON: {e}'}), 400
-
-    # Always re-derive targets and flow from the term
-    derived = protocol_builder.derive_from_term(term_dict)
-
-    # Fall back to derived values if user left sections blank
-    if manifest_obj is None:
-        manifest_obj = {'ASPS': derived['asps'], 'ASP_FS_MAP': {}, 'POLICY': []}
-    if attestation_obj is None:
-        attestation_obj = {
-            'Session_Plc':    'P0',
-            'Plc_Mapping':    {},
-            'PubKey_Mapping': {},
-            'Session_Context': {
-                'ASP_Types': derived['asp_types'],
-                'ASP_Comps': derived['asp_comps'],
-            },
-        }
-
-    if not copland:
-        copland = term_json[:80] + ('…' if len(term_json) > 80 else '')
-
-    # If overwriting an existing custom protocol, deregister the old entry first
-    # so the config file doesn't accumulate stale paths.
-    if proto_id in REGISTRY and REGISTRY[proto_id].get('custom_source'):
-        protocol_loader.remove_protocol(proto_id)
-
-    # If this is a copy of a stepped protocol, carry the steps forward.
-    source_steps = None
-    if copy_source and copy_source in REGISTRY:
-        source_steps = REGISTRY[copy_source].get('steps') or None
-
-    try:
-        _, saved_path = protocol_builder.save_and_register(
-            proto_id, name, description, copland,
-            term_dict, manifest_obj, attestation_obj,
-            evidence_obj, derived['targets'], derived['flow'],
-            places=places_obj,
-            steps=source_steps,
-        )
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-    # Detect port conflicts with other registered protocols
-    port_conflicts = []
-    if places_obj:
-        for existing_id, existing_entry in REGISTRY.items():
-            if existing_id == proto_id:
-                continue
-            for ex_pid, ex_cfg in existing_entry.get('places', {}).items():
-                for new_pid, new_cfg in places_obj.items():
-                    if (int(ex_cfg.get('port', 0)) == int(new_cfg.get('port', 0)) and
-                            ex_cfg.get('host', 'localhost') == new_cfg.get('host', 'localhost') and
-                            ex_cfg != new_cfg):
-                        port_conflicts.append({
-                            'place_id':       new_pid,
-                            'port':           new_cfg['port'],
-                            'conflicts_with': existing_id,
-                        })
-
-    return jsonify({'ok': True, 'id': proto_id, 'name': name,
-                    'saved_path': saved_path, 'port_conflicts': port_conflicts})
 
 
 # ── Import-protocol-directory API ────────────────────────────────────────────

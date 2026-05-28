@@ -11,11 +11,6 @@ Public API:
         'flow':       [flow_item, ...]
     }
 
-    save_and_register(proto_id, name, description, copland,
-                      term_dict, manifest_obj, session_context,
-                      evidence_obj, targets_spec, flow)
-        → proto_id   (registers in REGISTRY + persists to a JSON file)
-
 Term JSON structure (TERM_CONSTRUCTOR values and their TERM_BODY shapes):
     lseq  → [child1, child2]
     bseq  → [split_str, child1, child2]
@@ -86,9 +81,6 @@ def _make_measurement_term(term):
 # ── ASP type templates ────────────────────────────────────────────────────────
 _ASP_REPLACE = {'FWD': {'FWD': 'REPLACE', '_BODY': 1}, 'ATTRS': []}
 _ASP_EXTEND  = {'FWD': {'FWD': 'EXTEND',  '_BODY': 1, 'EvInSig': 'ALL'}, 'ATTRS': []}
-
-# Directory where builder-registered protocols are persisted as JSON files
-_BUILT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'built_protocols')
 
 
 # ── Term walking ──────────────────────────────────────────────────────────────
@@ -257,69 +249,3 @@ def _walk(term, ctx, path=None):
             return [{'type': 'att', 'label': f'att({place}, …)', 'style': 'att', 'place': place}]
 
     return []
-
-
-# ── Protocol persistence + registration ───────────────────────────────────────
-
-def save_and_register(proto_id, name, description, copland,
-                      term_dict, manifest_obj, attestation_session,
-                      evidence_obj, targets_spec, flow, places=None, steps=None):
-    """
-    Assemble a complete protocol JSON spec, write it to built_protocols/,
-    then register it via protocol_loader (which also persists it to
-    loaded_protocols.json so it survives restarts).
-
-    attestation_session is the full ATTESTATION_SESSION object:
-        {"Session_Plc": "P0", "Plc_Mapping": {}, "PubKey_Mapping": {},
-         "Session_Context": {"ASP_Types": {...}, "ASP_Comps": {...}}}
-
-    Returns the proto_id on success.
-    """
-    from protocol_loader import add_protocol_file
-
-    spec = {
-        'id':          proto_id,
-        'name':        name,
-        'description': description,
-        'copland':     copland,
-        'flow':        flow,
-        'manifest':    manifest_obj,
-        'request': {
-            'TYPE':               'REQUEST',
-            'ACTION':             'RUN',
-            'ATTESTATION_SESSION': attestation_session,
-            'REQ_PLC':            'P0',
-            'TERM':               term_dict,
-            'EVIDENCE':           evidence_obj,
-        },
-        'targets': targets_spec,
-    }
-    if places:
-        spec['places'] = places
-
-    # Serialize stepped-check definitions so copies retain the Check button.
-    # Each step stores its own manifest + request so the loader can reconstruct
-    # the (step_id, label, build_fn) tuples without any runtime dependencies.
-    if steps:
-        serialized_steps = []
-        for sid, label, build_fn in steps:
-            try:
-                mf, rq = build_fn()
-                serialized_steps.append({
-                    'id':       sid,
-                    'label':    label,
-                    'manifest': json.loads(mf),
-                    'request':  json.loads(rq),
-                })
-            except Exception:
-                pass   # skip un-serializable steps rather than failing
-        if serialized_steps:
-            spec['steps'] = serialized_steps
-
-    os.makedirs(_BUILT_DIR, exist_ok=True)
-    path = os.path.join(_BUILT_DIR, f'{proto_id}.json')
-    with open(path, 'w') as f:
-        json.dump(spec, f, indent=2)
-
-    add_protocol_file(path)
-    return proto_id, os.path.abspath(path)

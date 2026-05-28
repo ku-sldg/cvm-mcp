@@ -408,7 +408,7 @@ def import_protocol_dir(source_path, proto_id=None):
 
     # Guard against clobbering built-in protocols
     registry = _get_registry()
-    if proto_id in registry and 'custom_source' not in registry[proto_id]:
+    if proto_id in registry and registry[proto_id].get('builtin'):
         raise ValueError(
             f"'{proto_id}' is a built-in protocol and cannot be replaced by import."
         )
@@ -440,13 +440,17 @@ def import_protocol_dir(source_path, proto_id=None):
     return proto_id
 
 
-def register_protocol_dir(proto_id, local_dir=None, source_path=None):
+def register_protocol_dir(proto_id, local_dir=None, source_path=None, builtin=True):
     """
     Build a REGISTRY entry backed by protocol_dirs/<proto_id>/ and insert it.
 
     Reads meta.json from *local_dir* (defaults to _protocol_dir(proto_id)).
     Creates provision / golden_state closures compatible with the rest of the
     dashboard.
+
+    *builtin* marks shipped protocols (protected from deletion/editing). User
+    protocols created by copying or importing pass builtin=False, which makes
+    them editable and removable in the dashboard.
 
     Returns proto_id.
     """
@@ -704,6 +708,7 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         'places':         {},
         'custom_source':  source_path or local_dir,
         'imported_dir':   local_dir,
+        'builtin':        builtin,
     }
     if _provision_fn:
         entry['provision']    = _provision_fn
@@ -777,7 +782,7 @@ def preview_protocol_dir(source_path):
 
     warnings = []
     registry = _get_registry()
-    if proto_id in registry and 'custom_source' not in registry[proto_id]:
+    if proto_id in registry and registry[proto_id].get('builtin'):
         warnings.append(
             f"'{proto_id}' is a built-in protocol — import will be rejected. "
             "Rename the directory first."
@@ -829,7 +834,8 @@ def load_saved_protocol_dirs():
         if proto_id and os.path.isdir(local_dir):
             try:
                 register_protocol_dir(proto_id, local_dir=local_dir,
-                                      source_path=entry.get('source'))
+                                      source_path=entry.get('source'),
+                                      builtin=False)
             except Exception as exc:
                 import sys
                 print(f"[protocol_loader] WARNING: could not re-register "
@@ -861,225 +867,15 @@ def _get_registry():
     return REGISTRY
 
 
-def load_protocol_from_file(path):
-    """
-    Parse a protocol JSON file and return (proto_id, registry_entry).
-    Raises on missing required fields or file errors.
-    """
-    path = os.path.abspath(os.path.expanduser(path))
-    with open(path) as f:
-        spec = json.load(f)
-
-    for required in ('id', 'manifest', 'request'):
-        if required not in spec:
-            raise ValueError(f"Protocol JSON missing required field: '{required}'")
-
-    proto_id     = spec['id']
-    manifest_obj = spec['manifest']
-    request_obj  = spec['request']
-    targets_spec = spec.get('targets', [])
-
-    # Evidence bundle stored alongside the spec file: <proto_id>_evidence.json
-    golden_evidence_path = os.path.splitext(path)[0] + '_evidence.json'
-    # Per-target golden state sidecar: <proto_id>_golden_state.json (replaces target_goldens.json)
-    golden_state_path = os.path.splitext(path)[0] + '_golden_state.json'
-
-    # ASP_Types from the session context — needed by do_evidence_slice
-    asp_types = (
-        request_obj.get('ATTESTATION_SESSION', {})
-                   .get('Session_Context', {})
-                   .get('ASP_Types', {})
-    )
-
-    def _load_golden_state_sidecar():
-        try:
-            return json.load(open(golden_state_path))
-        except Exception:
-            return {}
-
-    def _save_golden_state_sidecar(store):
-        with open(golden_state_path, 'w') as f:
-            json.dump(store, f, indent=2)
-
-    resolved_targets = [
-        {
-            'id':      t['id'],
-            'label':   t['label'],
-            'file':    os.path.abspath(os.path.expanduser(t['file'])),
-            'golden':  os.path.abspath(os.path.expanduser(t['golden'])),
-            'asp_id':  t.get('asp_id'),
-            'asp_args': t.get('asp_args'),
-        }
-        for t in targets_spec
-    ]
-
-    def build():
-        return json.dumps(manifest_obj), json.dumps(request_obj)
-
-    def provision(golden_path=None):
-        from cvm_client import run_cvm
-        from evidence_slice import store_golden_evidence, load_golden_evidence
-        from protocol_builder import _make_measurement_term
-
-        actual_ev_path = (os.path.abspath(os.path.expanduser(golden_path))
-                          if golden_path else golden_evidence_path)
-
-        # Conflict check: refuse to overwrite a bundle owned by a different protocol
-        _, _, _, owner = load_golden_evidence(actual_ev_path)
-        if owner and owner != proto_id:
-            raise RuntimeError(
-                f"Bundle '{os.path.basename(actual_ev_path)}' was provisioned by "
-                f"'{owner}', not '{proto_id}'. Choose a different path."
-            )
-        ts      = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        asp_bin = os.environ.get(
-            'CVM_ASP_BIN',
-            os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
-        )
-
-        # Run CVM with a measurement-only term (APPR → NULL) so it always succeeds
-        meas_term    = _make_measurement_term(request_obj.get('TERM', {}))
-        meas_request = {**request_obj, 'TERM': meas_term}
-
-        response = run_cvm(manifest_obj, meas_request, asp_bin)
-        if not response.get('SUCCESS'):
-            raise RuntimeError(
-                f"CVM provision run failed: {response.get('PAYLOAD', 'unknown error')}"
-            )
-
-        payload = response['PAYLOAD']
-        store_golden_evidence(actual_ev_path, payload, proto_id)
-
-        # Populate per-target golden state sidecar
-        from evidence_slice import do_evidence_slice, store_provision_path
-        raw_ev_list = payload[0].get('RawEv', [])
-        et          = payload[1]
-        store       = _load_golden_state_sidecar()
-        for t in resolved_targets:
-            if t.get('asp_id') and t.get('asp_args') is not None:
-                ev_slice = do_evidence_slice(et, raw_ev_list, asp_types,
-                                             t['asp_id'], t['asp_args'])
-                if ev_slice:
-                    store[t['id']] = {
-                        'golden_b64':           ev_slice[0],
-                        'timestamp':            ts,
-                        'asp_id':               t['asp_id'],
-                        'asp_args':             t['asp_args'],
-                        'protocol_id':          proto_id,
-                        'evidence_bundle':      os.path.basename(actual_ev_path),
-                        'evidence_bundle_path': actual_ev_path,
-                    }
-        _save_golden_state_sidecar(store)
-        store_provision_path(proto_id, actual_ev_path)
-
-        return [
-            {
-                'target':    t['label'],
-                'golden':    os.path.basename(actual_ev_path),
-                'timestamp': ts,
-            }
-            for t in resolved_targets
-        ]
-
-    def golden_state():
-        from evidence_slice import load_golden_evidence
-        store  = _load_golden_state_sidecar()
-        result = []
-        for t in resolved_targets:
-            ts = golden = golden_path = None
-            entry = store.get(t['id'])
-            if entry:
-                ts          = entry.get('timestamp', '')
-                golden      = entry.get('evidence_bundle')
-                golden_path = entry.get('evidence_bundle_path') or None
-            elif not (t.get('asp_id') and t.get('asp_args') is not None):
-                # No asp_id/args — fall back to bundle file timestamp
-                _, _, ts, _ = load_golden_evidence(golden_evidence_path)
-            result.append({
-                'target':      t['label'],
-                'golden':      golden,
-                'golden_path': golden_path,
-                'sha256':      None,
-                'timestamp':   ts,
-            })
-        return result
-
-    flow = spec.get('flow') or [
-        {'type': 'asp', 'label': spec.get('copland', proto_id), 'style': 'default'}
-    ]
-
-    # Reconstruct step builders from the serialized steps array (if present).
-    # Each step was stored as {id, label, manifest, request} by save_and_register.
-    _spec_steps = spec.get('steps', [])
-    reconstructed_steps = [
-        (s['id'], s['label'],
-         (lambda m=s['manifest'], r=s['request']: (json.dumps(m), json.dumps(r))))
-        for s in _spec_steps
-    ] or None
-
-    def prepare(req):
-        """Inject golden_b64 into ASPC ASP_ARGS from the per-target golden state sidecar."""
-        store = _load_golden_state_sidecar()
-        term  = req.get('TERM', {})
-        import copy
-        term = copy.deepcopy(term)
-
-        def _walk(node):
-            if not isinstance(node, dict):
-                return
-            ctor = node.get('TERM_CONSTRUCTOR')
-            body = node.get('TERM_BODY')
-            if ctor == 'asp' and isinstance(body, dict):
-                if body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                    ab      = body.get('ASP_BODY', {})
-                    targ_id = ab.get('ASP_TARG_ID', '')
-                    if targ_id and targ_id in store:
-                        b64 = store[targ_id].get('golden_b64', '')
-                        if b64:
-                            ab.setdefault('ASP_ARGS', {})['golden_b64'] = b64
-                return
-            if isinstance(body, list):
-                for child in body:
-                    _walk(child)
-
-        _walk(term)
-        return {**req, 'TERM': term}
-
-    entry = {
-        'id':             proto_id,
-        'name':           spec.get('name', proto_id),
-        'description':    spec.get('description', ''),
-        'copland':        spec.get('copland', ''),
-        'flow':           flow,
-        'build':          build,
-        'provision':      provision,
-        'golden_state':   golden_state,
-        'prepare':        prepare,
-        'places':         spec.get('places', {}),
-        'custom_source':  path,          # marks this as a dynamically-loaded protocol
-    }
-    if reconstructed_steps:
-        entry['steps'] = reconstructed_steps
-    return proto_id, entry
-
-
-def register_protocol_file(path):
-    """Load a protocol JSON file and insert it into the REGISTRY. Returns proto_id."""
-    proto_id, entry = load_protocol_from_file(path)
-    _get_registry()[proto_id] = entry
-    return proto_id
-
-
 # ── Config persistence ────────────────────────────────────────────────────────
 
 def _load_config():
     try:
         cfg = json.load(open(_CONFIG_FILE))
-        cfg.setdefault('files', [])
-        cfg.setdefault('dirs',  [])
+        cfg.setdefault('dirs', [])
         return cfg
     except (FileNotFoundError, json.JSONDecodeError):
-        return {'files': [], 'dirs': []}
+        return {'dirs': []}
 
 
 def _save_config(config):
@@ -1087,74 +883,33 @@ def _save_config(config):
         json.dump(config, f, indent=2)
 
 
-def add_protocol_file(path):
-    """Register a protocol file, persist it to config, and return its proto_id."""
-    proto_id = register_protocol_file(path)
-    path = os.path.abspath(os.path.expanduser(path))
-    config = _load_config()
-    if path not in config['files']:
-        config['files'].append(path)
-        _save_config(config)
-    return proto_id
-
-
 def list_cleanup_files(proto_id):
     """
-    Return an ordered list of file paths that exist on disk and would be
-    deleted when this protocol is removed.  Called by the dashboard before
+    Return an ordered list of paths that exist on disk and would be deleted
+    when this protocol is removed. For the dir-only model this is simply the
+    protocol's directory under protocol_dirs/. Called by the dashboard before
     showing the confirmation dialog.
     """
     registry = _get_registry()
     entry = registry.get(proto_id)
-    if not entry or 'custom_source' not in entry:
+    if not entry or entry.get('builtin'):
         return []
-
-    source_file = entry['custom_source']
-    seen = set()
-    files = []
-
-    def _add(path):
-        if path and path not in seen and os.path.exists(path):
-            seen.add(path)
-            files.append(path)
-
-    # Protocol JSON file
-    _add(source_file)
-
-    # Evidence bundles from provision history + the default bundle path
-    from evidence_slice import load_provision_history, _EXAMPLES_DIR
-    default_bundle = os.path.splitext(source_file)[0] + '_evidence.json'
-    for p in list(dict.fromkeys(load_provision_history(proto_id) + [default_bundle])):
-        _add(p)
-
-    # .{proto_id}.original_golden.json sidecars
-    suffix = f'.{proto_id}.original_golden.json'
-    for search_dir in dict.fromkeys([_EXAMPLES_DIR, os.path.dirname(source_file)]):
-        try:
-            for fname in os.listdir(search_dir):
-                if fname.endswith(suffix):
-                    _add(os.path.join(search_dir, fname))
-        except Exception:
-            pass
-
-    return files
+    local_dir = entry.get('imported_dir') or entry.get('custom_source')
+    return [local_dir] if local_dir and os.path.isdir(local_dir) else []
 
 
 def remove_protocol(proto_id, delete_files=False):
     """
-    Remove a dynamically-loaded protocol from the REGISTRY and config.
-    If delete_files=True, also deletes the protocol JSON, evidence bundles,
-    and sidecar files returned by list_cleanup_files().
+    Remove a user (non-built-in) protocol from the REGISTRY and config.
+    If delete_files=True, also deletes the protocol's protocol_dirs/<id>/ tree.
+    Built-in protocols are protected and cannot be removed.
     Returns True if removed, False if not found or built-in.
     """
     registry = _get_registry()
     entry = registry.get(proto_id)
-    if not entry or 'custom_source' not in entry:
+    if not entry or entry.get('builtin'):
         return False
-    source_file = entry['custom_source']
-
-    # Collect files before modifying registry (list_cleanup_files reads registry)
-    files_to_delete = list_cleanup_files(proto_id) if delete_files else []
+    local_dir = entry.get('imported_dir') or entry.get('custom_source')
 
     # Stop any running am_place subprocesses for this protocol
     try:
@@ -1165,48 +920,17 @@ def remove_protocol(proto_id, delete_files=False):
 
     del registry[proto_id]
     config = _load_config()
-    config['files'] = [f for f in config['files'] if f != source_file]
-    config['dirs']  = [d for d in config.get('dirs', []) if d.get('proto_id') != proto_id]
+    config['dirs'] = [d for d in config.get('dirs', []) if d.get('proto_id') != proto_id]
     _save_config(config)
 
     # Clear all persisted state so a re-registration starts fresh
     from evidence_slice import clear_protocol_state
     clear_protocol_state(proto_id)
 
-    # Also delete sidecars in the directory where the protocol file lives,
-    # in case targets point to files outside the examples/ dir
-    try:
-        proto_dir = os.path.dirname(source_file)
-        suffix = f'.{proto_id}.original_golden.json'
-        for fname in os.listdir(proto_dir):
-            if fname.endswith(suffix):
-                try:
-                    os.remove(os.path.join(proto_dir, fname))
-                except Exception:
-                    pass
-    except Exception:
-        pass
-
-    # Delete provisioning files if requested
-    for fpath in files_to_delete:
-        try:
-            os.remove(fpath)
-        except Exception:
-            pass
+    # Delete the protocol directory if requested
+    if delete_files and local_dir and os.path.isdir(local_dir):
+        import shutil
+        shutil.rmtree(local_dir, ignore_errors=True)
 
     return True
 
-
-def load_saved_protocols():
-    """
-    Load all previously-added protocol files on startup.
-    Returns list of (path, error_string) for any that failed.
-    """
-    config = _load_config()
-    errors = []
-    for path in config.get('files', []):
-        try:
-            register_protocol_file(path)
-        except Exception as e:
-            errors.append((path, str(e)))
-    return errors
