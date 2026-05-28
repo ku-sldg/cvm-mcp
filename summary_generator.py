@@ -379,7 +379,13 @@ def generate_run_summary(protocol_id: str,
     md.append('')
 
     def _cvm_cmd_lines(manifest_arg, req_arg):
-        """Readable multi-line invocation. Safe inside a script file (no copy)."""
+        """Readable multi-line invocation. Safe inside a script file (no copy).
+
+        stdin is redirected from /dev/null: with no args the CVM reads stdin,
+        and even with --req_file it inherits the parent's stdin, so in an
+        interactive terminal it blocks on the TTY and produces no output. This
+        mirrors the dashboard client's stdin=DEVNULL.
+        """
         q = shlex.quote
         return [
             f'{q(cvm_bin)} \\',
@@ -387,7 +393,8 @@ def generate_run_summary(protocol_id: str,
             f'  --req_file      {q(req_arg)} \\',
             f'  --asp_bin       {q(asp_bin)} \\',
             f'  --log_level     Info \\',
-            f'  --cvm_binary    {q(cvm_bin)}',
+            f'  --cvm_binary    {q(cvm_bin)} \\',
+            f'  < /dev/null',
         ]
 
     # Materialize the exact request the dashboard/MCP send to the CVM

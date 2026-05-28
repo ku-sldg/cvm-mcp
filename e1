@@ -1,0 +1,10 @@
+Error in CVM Execution: /Users/adampetz/Claude_workspace/cvm/_build/default/theories/cvm [--log_level VAL] [--manifest VAL] [--manifest_file VAL] --asp_bin VAL [--req VAL] [--req_file VAL] [--cvm_binary VAL]
+--log_level   The logging level to use.   (default: Debug)
+--manifest   The JSON value of the manifest to use for the CVM.  
+--manifest_file   The file path to the manifest JSON file to use for the CVM.  
+--asp_bin   The ASP binary file location.  (required) 
+--req   The JSON value of the request for the CVM to execute  
+--req_file   The file path to the request JSON file to use for the CVM.  
+--cvm_binary   Path to this CVM binary, used to spawn subprocess CVM instances for parallel (bpar) terms.  
+
+
