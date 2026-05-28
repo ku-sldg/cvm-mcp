@@ -1,25 +1,24 @@
 {
-    "verus_compare": {
-        "verus_compare_targ": {
-            "original": "/Users/adampetz/Documents/Summer_2025/rust-am-clients/testing/repair_targets/linear_search_unverified.rs",
-            "modified": "/Users/adampetz/Documents/Summer_2025/rust-am-clients/testing/repair_outputs/linear_search_candidate.rs"
-        }
-    },
-    "hashfile": {
-        "verus_exe_targ": {
-            "env_var": "",
-            "filepath": "/Users/adampetz/Documents/Summer_2025/verus/source/target-verus/release/verus",
-            "env_var_golden": "",
-            "filepath_golden": "/Users/adampetz/Documents/Summer_2025/rust-am-clients/goldenFiles/verus_evidence_golden.json",
-            "asp_id_appr": "goldenevidence_appr"
-        }
-    },
-    "run_command_verus": {
-        "run_verus_targ": {
-            "exe_args": [
-                "/Users/adampetz/Claude_workspace/rust-am-clients/testing/repair_targets/linear_search_candidate.rs",
-                "--output-json"
-            ]
-        }
+  "verus_compare": {
+    "verus_compare_targ": {
+      "original": "/Users/adampetz/Claude_workspace/rust-am-clients/testing/repair_targets/linear_search_unverified.rs",
+      "modified": "/Users/adampetz/Claude_workspace/rust-am-clients/testing/repair_outputs/linear_search_candidate.rs"
     }
+  },
+  "hashfile": {
+    "verus_exe_targ": {
+      "env_var": "",
+      "filepath": "/Users/adampetz/Claude_workspace/verus-arm64-macos/verus",
+      "golden_b64": "6YFdT4PzWgJhB5/Xc9I0tffcA5vn9HOU8YFaNqDYSu0=",
+      "golden_ts": "2026-05-20 12:28:41"
+    }
+  },
+  "run_command_verus": {
+    "run_verus_targ": {
+      "exe_args": [
+        "/Users/adampetz/Claude_workspace/rust-am-clients/testing/repair_targets/linear_search_candidate.rs",
+        "--output-json"
+      ]
+    }
+  }
 }

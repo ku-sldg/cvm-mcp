@@ -3,7 +3,7 @@ CVM Protocol Registry
 Each entry defines a named Copland protocol with its term, session context,
 manifest, and display metadata. Add new protocols here.
 """
-import hashlib, datetime, json, os, sys
+import datetime, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import server as cvm
 
@@ -107,94 +107,6 @@ def build_single_hashfile_appr():
     return manifest, request
 
 
-# ── Tamper / Repair helpers ───────────────────────────────────────────────────
-
-_ORIG_HSH_GOLDEN = hashlib.sha256(b'').digest()
-_BAD_HSH_GOLDEN  = bytes([0xff] * 32)
-
-
-def _simple_file_target(target_id, label, file_path):
-    """File tamper target for protocols that do not support provisioning.
-
-    Provides tamper/repair/reset operations but always returns compliant=None
-    because there is no golden to compare against.
-    """
-    bad_bytes = f'[TAMPERED] {label} - modified to fail appraisal.'.encode()
-
-    def tamper():
-        try:
-            open(file_path + '.src', 'wb').write(open(file_path, 'rb').read())
-        except FileNotFoundError:
-            pass
-        open(file_path, 'wb').write(bad_bytes)
-
-    def repair():
-        for src in (file_path + '.src', file_path + '.default'):
-            if os.path.exists(src):
-                open(file_path, 'wb').write(open(src, 'rb').read())
-                return
-
-    def reset():
-        for src in (file_path + '.original', file_path + '.default'):
-            if os.path.exists(src):
-                open(file_path, 'wb').write(open(src, 'rb').read())
-                return
-
-    def get_state():
-        return {'compliant': None}
-
-    def inspect():
-        try:
-            data = open(file_path, 'rb').read()
-        except FileNotFoundError:
-            return {'error': f'Target file not found: {label}'}
-        return {
-            'type':           'file',
-            'current':        data.decode('utf-8', errors='replace'),
-            'current_sha256': hashlib.sha256(data).hexdigest(),
-            'error':          'No golden — protocol does not support provisioning',
-        }
-
-    return {'label': label, 'tamper': tamper, 'repair': repair,
-            'reset': reset, 'get_state': get_state, 'inspect': inspect}
-
-
-def tamper_hsh_golden():
-    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_BAD_HSH_GOLDEN)
-
-def repair_hsh_golden():
-    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_ORIG_HSH_GOLDEN)
-
-def reset_hsh_golden():
-    open(f'{EXAMPLES}/hsh_golden.bin', 'wb').write(_ORIG_HSH_GOLDEN)
-
-def get_state_hsh_golden():
-    try:
-        return {'compliant': open(f'{EXAMPLES}/hsh_golden.bin', 'rb').read() == _ORIG_HSH_GOLDEN}
-    except FileNotFoundError:
-        return {'compliant': False}
-
-def inspect_hsh_golden():
-    try:
-        golden = open(f'{EXAMPLES}/hsh_golden.bin', 'rb').read()
-    except FileNotFoundError:
-        return {'error': 'Golden file not found — run Provision first'}
-    return {
-        'type':            'hsh',
-        'compliant':       golden == _ORIG_HSH_GOLDEN,
-        'expected_sha256': _ORIG_HSH_GOLDEN.hex(),
-        'actual_sha256':   golden.hex(),
-    }
-
-_TAMPER_TARGET_HSH = {
-    'label':     'hsh golden',
-    'tamper':    tamper_hsh_golden,
-    'repair':    repair_hsh_golden,
-    'reset':     reset_hsh_golden,
-    'get_state': get_state_hsh_golden,
-    'inspect':   inspect_hsh_golden,
-}
-
 
 # ── Registry ──────────────────────────────────────────────────────────────────
 # Flow entries:
@@ -214,9 +126,6 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_single_hashfile_appr,
-        'tamper_targets': {
-            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
-        },
     },
     'hsh_sig_appr': {
         'id':          'hsh_sig_appr',
@@ -231,7 +140,6 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_hsh_sig_appr,
-        'tamper_targets': {'hsh_golden': _TAMPER_TARGET_HSH},
     },
     'dual_hashfile_sig_appr': {
         'id':          'dual_hashfile_sig_appr',
@@ -247,10 +155,6 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_dual_hashfile_sig_appr,
-        'tamper_targets': {
-            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
-            'file2': _simple_file_target('file2', 'file2.txt', f'{EXAMPLES}/file2.txt'),
-        },
     },
     'bpar_dual_hashfile': {
         'id':          'bpar_dual_hashfile',
@@ -270,10 +174,6 @@ REGISTRY = {
             {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
         ],
         'build':          build_bpar_dual_hashfile,
-        'tamper_targets': {
-            'file1': _simple_file_target('file1', 'file1.txt', f'{EXAMPLES}/file1.txt'),
-            'file2': _simple_file_target('file2', 'file2.txt', f'{EXAMPLES}/file2.txt'),
-        },
     },
 }
 
@@ -289,7 +189,7 @@ REGISTRY = {
 #
 #   gumbo_l2  (Level 2 — attribution)
 #     Per-contract range measurements that identify WHICH specific contract
-#     was tampered when Level 1 fails (or as a standalone invariant check).
+#     failed attestation when Level 1 fails (or as a standalone invariant check).
 #     Uses readfile_range for AADL clauses and GumboX predicates (stable line
 #     numbers in "do not edit" files) and readfile_marker_range for component
 #     BEGIN/END contract blocks (stable marker strings despite shifting line
@@ -407,119 +307,6 @@ def _extract_marker_range(filepath, begin_marker, end_marker):
     return b''.join(result)
 
 
-# ── Per-contract tamper helpers ────────────────────────────────────────────────
-
-def _corrupt_lines(filepath, start_index, end_index, label):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-    for i in range(start_index - 1, min(end_index, len(lines))):
-        indent = len(lines[i]) - len(lines[i].lstrip())
-        lines[i] = ' ' * indent + f'// [TAMPERED: {label}]\n'
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
-
-
-def _corrupt_marker_range(filepath, begin_marker, end_marker, label):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-    in_range = False
-    for i, line in enumerate(lines):
-        stripped = line.rstrip('\n')
-        if not in_range and _marker_matches_comment(stripped, begin_marker):
-            in_range = True
-            continue
-        if in_range:
-            if _marker_matches_comment(stripped, end_marker):
-                break
-            indent = len(line) - len(line.lstrip())
-            lines[i] = ' ' * indent + f'// [TAMPERED: {label}]\n'
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
-
-
-# ── Generic per-contract tamper target factory ────────────────────────────────
-
-def _make_contract_target(label, filepath, asp_id, args_fn, proto_id, extract_fn,
-                          golden_lookup_fn=None):
-    """
-    Build a tamper target dict for a per-contract range measurement.
-
-    args_fn:          callable() -> dict   returns current ASP args (called live
-                      so line-number resolution is always up to date)
-    extract_fn:       callable(filepath) -> bytes   extracts current contract content
-    golden_lookup_fn: callable() -> str|None   returns golden base64 string or None
-    """
-    def _get_golden_bytes():
-        import base64
-        if golden_lookup_fn is None:
-            return None
-        b64 = golden_lookup_fn()
-        if b64 is None:
-            return None
-        try:
-            return base64.b64decode(b64)
-        except Exception:
-            return None
-
-    def tamper():
-        try:
-            open(filepath + '.src', 'wb').write(open(filepath, 'rb').read())
-        except FileNotFoundError:
-            pass
-        args = args_fn()
-        if asp_id == 'readfile_range':
-            _corrupt_lines(filepath, args['start_index'], args['end_index'], label)
-        elif asp_id == 'readfile_marker_range':
-            _corrupt_marker_range(filepath, args['begin_marker'],
-                                  args['end_marker'], label)
-
-    def repair():
-        src = filepath + '.src'
-        if os.path.exists(src):
-            open(filepath, 'wb').write(open(src, 'rb').read())
-
-    def reset():
-        orig = filepath + '.original'
-        if os.path.exists(orig):
-            open(filepath, 'wb').write(open(orig, 'rb').read())
-
-    def get_state():
-        golden = _get_golden_bytes()
-        if golden is None:
-            return {'compliant': None}
-        try:
-            current = extract_fn(filepath)
-            return {'compliant': current == golden}
-        except Exception:
-            return {'compliant': None}
-
-    def inspect():
-        try:
-            current_bytes = extract_fn(filepath)
-        except Exception as e:
-            return {'error': str(e)}
-        result = {
-            'type':           'contract_range',
-            'current_sha256': hashlib.sha256(current_bytes).hexdigest(),
-            'current':        current_bytes.decode('utf-8', errors='replace'),
-        }
-        golden = _get_golden_bytes()
-        if golden is None:
-            return {**result, 'error': 'No golden — run Provision first'}
-        result['compliant']      = current_bytes == golden
-        result['golden_sha256']  = hashlib.sha256(golden).hexdigest()
-        return result
-
-    return {
-        'label':     label,
-        'tamper':    tamper,
-        'repair':    repair,
-        'reset':     reset,
-        'get_state': get_state,
-        'inspect':   inspect,
-    }
-
-
 # ── Level 1: whole-file hashfile measurements ─────────────────────────────────
 
 _GUMBO_L1_FILES = [
@@ -556,11 +343,6 @@ def build_gumbo_l1():
     return manifest, request
 
 
-def _gumbo_l1_tamper_targets():
-    return {tid: _simple_file_target(tid, label, fp)
-            for fp, label, tid in _GUMBO_L1_FILES}
-
-
 # ── Level 2: per-contract range measurements ──────────────────────────────────
 #
 # Contract spec types:
@@ -572,7 +354,7 @@ def _gumbo_l1_tamper_targets():
 #   marker       — uses stable BEGIN/END marker strings (readfile_marker_range).
 #                  Immune to line number drift; intended for component files.
 #
-# Rows: (label, tamper_id, filepath, spec_dict)
+# Rows: (label, contract_id, filepath, spec_dict)
 
 _GUMBO_L2_CONTRACTS = [
     # ── AADL TempControlSystem.aadl data invariant ───────────────────────────
@@ -774,7 +556,7 @@ def _resolve_extract_fn(filepath, spec):
         return _extract
 
 
-# ── build / provision / golden_state / tamper_targets ────────────────────────
+# ── build / provision / golden_state ─────────────────────────────────────────
 
 def build_gumbo_l2():
     """lseq( lseq( bseq_chain( 28 per-contract measurements ), SIG ), APPR )
@@ -847,19 +629,6 @@ def _gumbo_l2_golden_lookup(asp_id, filepath, spec):
     return _lookup
 
 
-def _gumbo_l2_tamper_targets():
-    targets = {}
-    for label, tid, fp, spec in _GUMBO_L2_CONTRACTS:
-        asp_id     = _asp_id_for_spec(spec)
-        extract_fn = _resolve_extract_fn(fp, spec)
-        def _make_args_fn(filepath, s):
-            return lambda: _resolve_args(filepath, s)
-        targets[tid] = _make_contract_target(
-            label, fp, asp_id, _make_args_fn(fp, spec), 'gumbo_l2', extract_fn,
-            golden_lookup_fn=_gumbo_l2_golden_lookup(asp_id, fp, spec))
-    return targets
-
-
 # ── Register both protocols ────────────────────────────────────────────────────
 
 REGISTRY['gumbo_l1'] = {
@@ -883,7 +652,6 @@ REGISTRY['gumbo_l1'] = {
         {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
     ],
     'build':          build_gumbo_l1,
-    'tamper_targets': _gumbo_l1_tamper_targets(),
 }
 
 REGISTRY['gumbo_l2'] = {
@@ -892,7 +660,7 @@ REGISTRY['gumbo_l2'] = {
     'description': (
         'Per-contract range measurements linking AADL GUMBO clauses to '
         'GumboX oracle predicates and component BEGIN/END contract blocks. '
-        'Identifies which specific contract was tampered. '
+        'Identifies which specific contract failed attestation. '
         'AADL and GumboX contracts measured by line range; '
         'component contracts measured by BEGIN/END marker strings (stable '
         'regardless of implementation code growth).'
@@ -907,7 +675,6 @@ REGISTRY['gumbo_l2'] = {
         {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
     ],
     'build':          build_gumbo_l2,
-    'tamper_targets': _gumbo_l2_tamper_targets(),
 }
 
 
@@ -1052,7 +819,6 @@ REGISTRY['gumbo_validation'] = {
         for sid, label, args in _GUMBO_VALIDATION_STEPS
     ],
     # No provision / golden_state / prepare — the appraiser is self-contained.
-    'tamper_targets': {},
 }
 
 
@@ -1132,7 +898,6 @@ REGISTRY['gumbo_validation_bpar'] = {
     ],
     'build':  build_gumbo_validation_bpar,
     # No provision / golden_state / prepare — appraiser is self-contained.
-    'tamper_targets': {},
 }
 
 
@@ -1200,7 +965,6 @@ REGISTRY['gumbo_validation_full_par'] = {
         {'type': 'asp', 'label': 'APPR', 'style': 'appr'},
     ],
     'build':  build_gumbo_validation_full_par,
-    'tamper_targets': {},
 }
 
 
@@ -1209,7 +973,7 @@ REGISTRY['gumbo_validation_full_par'] = {
 # Protocols whose golden evidence is stored in protocol_dirs/<proto_id>/ need
 # provision / golden_state / prepare registered by register_protocol_dir.  We
 # call it here (after REGISTRY is fully built) and then restore the richer
-# inline metadata (name / description / copland / flow / build / tamper_targets)
+# inline metadata (name / description / copland / flow / build)
 # so the dashboard shows the correct display while also having a Provision button.
 
 _BUILTIN_PROTOCOL_DIRS = [
@@ -1227,7 +991,7 @@ for _pid in _BUILTIN_PROTOCOL_DIRS:
         _saved = REGISTRY.get(_pid, {}).copy()
         _rpd(_pid, local_dir=_local_dir)
         # Restore rich inline metadata that register_protocol_dir would overwrite
-        for _k in ('name', 'description', 'copland', 'flow', 'build', 'tamper_targets'):
+        for _k in ('name', 'description', 'copland', 'flow', 'build'):
             if _k in _saved:
                 REGISTRY[_pid][_k] = _saved[_k]
         # Built-in protocol dirs are not editable via the single-file spec editor;

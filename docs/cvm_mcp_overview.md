@@ -1,6 +1,6 @@
 # cvm-mcp
 
-A Python server that wraps the **Copland Virtual Machine (CVM)** — an OCaml binary that executes attestation protocols. It exposes the CVM as an **MCP tool server**, letting AI agents build and run attestation workflows via structured tool calls.
+A Python server that wraps the **Copland Virtual Machine (CVM)** — a verified CakeML binary (verified and extracted from Rocq) that executes Copland attestation protocols. It exposes the CVM as an **MCP tool server**, letting AI agents build and run attestation workflows via structured tool calls.
 
 ## Features
 

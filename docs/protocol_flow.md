@@ -13,8 +13,7 @@
 ## Provisioning
 
 1. User clicks **Provision** → browser calls `GET /api/provision/<id>`.
-2. Target files are snapshotted (`.original` sidecar) for later repair/reset.
-3. The full Copland term is transformed into a measurement-only term (`APPR` → `NULL`) so the CVM always succeeds.
+2. The full Copland term is transformed into a measurement-only term (`APPR` → `NULL`) so the CVM always succeeds.
 4. **CVM binary** is invoked via `cvm_client.run_cvm()` with the measurement-only term.
    - CVM fork/execs each measurement ASP (e.g. `hashfile`) from `asp-libs/target/release/`.
    - Returns a JSON evidence payload (`RawEv` + `EvidenceT` tree).

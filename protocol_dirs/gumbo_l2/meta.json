@@ -1,5 +1,5 @@
 {
   "name": "GUMBO Contract Attribution (Level 2)",
-  "description": "Per-contract range measurements linking AADL GUMBO clauses to GumboX oracle predicates and component BEGIN/END contract blocks. Identifies which specific contract was tampered. AADL and GumboX contracts measured by line range; component contracts measured by BEGIN/END marker strings.",
+  "description": "Per-contract range measurements linking AADL GUMBO clauses to GumboX oracle predicates and component BEGIN/END contract blocks. Identifies which specific contract failed attestation. AADL and GumboX contracts measured by line range; component contracts measured by BEGIN/END marker strings.",
   "copland": "lseq( lseq( bseq_chain( readfile_range×22 + readfile_marker_range×6 ), SIG ), APPR )"
 }

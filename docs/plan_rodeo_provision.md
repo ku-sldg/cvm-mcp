@@ -58,8 +58,7 @@ Replace the existing `provision()` closure body with:
 
 1. **Resolve binary paths:** `rodeo_bin` from `RODEO_CLIENT_BIN`, `cvm_bin` from `CVM_BINARY`, `asp_bin` from `CVM_ASP_BIN`.
 2. **Resolve input files:** `term_no_appr.json`, `session.json`, `manifest_provision.json` from `local_dir` — see Section 5 for fallbacks when absent.
-3. **Snapshot target files** (`.original` sidecars) — keep the existing block unchanged.
-4. **Write cleaned `asp_args.json` temp file** — see Section 4.
+3. **Write cleaned `asp_args.json` temp file** — see Section 4.
 5. **Invoke `rust-rodeo-client`:**
    ```python
    cmd = [
@@ -169,8 +168,6 @@ Consider extracting both fallbacks into a helper `_resolve_provision_inputs(loca
 
 5. **Re-provision idempotency:** call `provision()` a second time. Confirm `golden_b64` is updated (same value if file unchanged) and no error is raised.
 
-6. **Tamper/appraise cycle via dashboard:** tamper target → run (expect FAIL) → repair → provision → run (expect PASS).
-
-7. **Fallback path test:** rename `term_no_appr.json` and `manifest_provision.json` in one protocol dir, call `provision()`, confirm fallback succeeds with warnings.
+6. **Fallback path test:** rename `term_no_appr.json` and `manifest_provision.json` in one protocol dir, call `provision()`, confirm fallback succeeds with warnings.
 
 8. **Multi-target test:** provision a protocol with multiple `goldenbytes_appr` targets. Confirm all `targ_id` entries in `asp_args.json` are populated.

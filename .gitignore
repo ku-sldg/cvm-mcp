@@ -26,6 +26,7 @@ examples/dashboard.html
 loaded_protocols.json
 session-export.md
 *-export.md
+dashboard.log
 
 # Test run outputs
 testing/

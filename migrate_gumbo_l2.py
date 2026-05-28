@@ -8,7 +8,6 @@ Changes:
   term.json         replace inline ASP_ARGS with ASP_TARG_ID on every
                     readfile_range / readfile_marker_range ASPC node
   asp_args.json     populate with measurement args for every ASPC node
-  tamper_config.json  asp_id_appr: "readfile_appr" -> "goldenbytes_appr"
 """
 import copy, json, os, re, sys
 
@@ -142,18 +141,6 @@ def migrate_manifest(manifest):
     return manifest
 
 
-# ── tamper_config.json ────────────────────────────────────────────────────────
-
-def migrate_tamper_config(tc):
-    tc = copy.deepcopy(tc)
-    for entry in tc.values():
-        if isinstance(entry, dict) and 'asp_args' in entry:
-            aa = entry['asp_args']
-            if aa.get('asp_id_appr') == 'readfile_appr':
-                aa['asp_id_appr'] = 'goldenbytes_appr'
-    return tc
-
-
 # ── asp_args.json ─────────────────────────────────────────────────────────────
 
 def build_asp_args(collected):
@@ -189,7 +176,6 @@ def run(dry_run=False):
     term        = json.load(open(os.path.join(PROTO_DIR, 'term.json')))
     session     = json.load(open(os.path.join(PROTO_DIR, 'session.json')))
     manifest    = json.load(open(os.path.join(PROTO_DIR, 'manifest.json')))
-    tamper_cfg  = json.load(open(os.path.join(PROTO_DIR, 'tamper_config.json')))
 
     # Transform term + collect measurement args
     term_copy = copy.deepcopy(term)
@@ -207,7 +193,6 @@ def run(dry_run=False):
     # Build updated configs
     new_session     = migrate_session(session)
     new_manifest    = migrate_manifest(manifest)
-    new_tamper_cfg  = migrate_tamper_config(tamper_cfg)
     new_asp_args    = build_asp_args(collected)
 
     # Verify uniqueness
@@ -218,7 +203,7 @@ def run(dry_run=False):
 
     if dry_run:
         print("\n[DRY RUN] Would write:")
-        print("  term.json, session.json, manifest.json, tamper_config.json, asp_args.json")
+        print("  term.json, session.json, manifest.json, asp_args.json")
         print(f"\n  asp_args.json preview:")
         print(json.dumps(new_asp_args, indent=2)[:800])
         return
@@ -229,11 +214,10 @@ def run(dry_run=False):
             f.write('\n')
         print(f"  Wrote {os.path.basename(path)}")
 
-    _write(os.path.join(PROTO_DIR, 'term.json'),         term_copy)
-    _write(os.path.join(PROTO_DIR, 'session.json'),      new_session)
-    _write(os.path.join(PROTO_DIR, 'manifest.json'),     new_manifest)
-    _write(os.path.join(PROTO_DIR, 'tamper_config.json'),new_tamper_cfg)
-    _write(os.path.join(PROTO_DIR, 'asp_args.json'),     new_asp_args)
+    _write(os.path.join(PROTO_DIR, 'term.json'),     term_copy)
+    _write(os.path.join(PROTO_DIR, 'session.json'),  new_session)
+    _write(os.path.join(PROTO_DIR, 'manifest.json'), new_manifest)
+    _write(os.path.join(PROTO_DIR, 'asp_args.json'), new_asp_args)
     print("Done.")
 
 

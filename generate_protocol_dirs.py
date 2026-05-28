@@ -12,7 +12,6 @@ Each protocol produces:
     manifest.json      CVM Manifest  (→ rust-rodeo-client -m)
     asp_args.json      ASP args map  (→ rust-rodeo-client -g); empty until provisioned
     meta.json          UI / display fields (name, description, copland, flow)
-    tamper_config.json Declarative tamper-target metadata
 
 Usage:
     python generate_protocol_dirs.py                         # → ./protocol_dirs/
@@ -128,52 +127,6 @@ def _normalize_session(session):
     return session
 
 
-def _infer_tamper_config_from_term(term):
-    """
-    Walk the term tree and return a dict of tamper-target metadata keyed by
-    "<asp_id>::<filepath>" for every ASPC node whose ASP_ARGS contain 'filepath'.
-
-    Returned format per entry:
-      {
-        "label":       "<basename of filepath>",
-        "asp_id":      "<asp_id>",
-        "target_file": "<filepath>",
-        "asp_args":    {<ASP_ARGS dict without golden_b64>}
-      }
-    """
-    result = {}
-
-    def _walk(node):
-        if not isinstance(node, dict):
-            return
-        constructor = node.get('TERM_CONSTRUCTOR')
-        body        = node.get('TERM_BODY')
-
-        if constructor == 'asp':
-            if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                asp_body = body.get('ASP_BODY', {})
-                asp_id   = asp_body.get('ASP_ID', '')
-                asp_args = asp_body.get('ASP_ARGS', {})
-                filepath = asp_args.get('filepath', '')
-                if asp_id and filepath:
-                    tid = f'{asp_id}::{filepath}'
-                    clean_args = {k: v for k, v in asp_args.items() if k != 'golden_b64'}
-                    result[tid] = {
-                        'label':       os.path.basename(filepath) or filepath,
-                        'asp_id':      asp_id,
-                        'target_file': filepath,
-                        'asp_args':    clean_args,
-                    }
-            return
-
-        if isinstance(body, list):
-            for child in body:
-                if isinstance(child, dict):
-                    _walk(child)
-
-    _walk(term)
-    return result
-
 
 def _write_json(path, data, overwrite=True):
     """Write *data* as pretty-printed JSON to *path*. Skips if overwrite=False and file exists."""
@@ -262,23 +215,6 @@ def export_protocol(proto_id, proto, out_dir, overwrite_asp_args=False):
     if proto_id in ('gumbo_l2', 'gumbo_l1'):
         meta['dynamic'] = True
     _w('meta.json', meta)
-
-    # ── tamper_config.json ────────────────────────────────────────────────────
-    # Primary source: infer from term (captures asp_id, target_file, asp_args)
-    tamper_cfg = _infer_tamper_config_from_term(term) if term is not None else {}
-    # Apply label overrides from REGISTRY tamper_targets where labels differ from filename
-    for _tid, _t in proto.get('tamper_targets', {}).items():
-        _label = _t.get('label', '')
-        # Try to match by label (registry uses short names like "file1.txt")
-        for _inf_tid, _inf_t in tamper_cfg.items():
-            if _inf_t.get('label') == _label or _inf_tid == _tid:
-                _inf_t['label'] = _label
-                break
-        else:
-            # No match from term inference; add a label-only stub for completeness
-            if _label:
-                tamper_cfg.setdefault(_tid, {'label': _label})
-    _w('tamper_config.json', tamper_cfg)
 
     return {'written': written, 'skipped': skipped, 'errors': errors}
 

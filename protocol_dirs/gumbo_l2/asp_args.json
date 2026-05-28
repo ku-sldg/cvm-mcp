@@ -5,154 +5,154 @@
       "start_index": 305,
       "end_index": 308,
       "golden_b64": "CQkJCWludiBTZXRQb2ludF9EYXRhX0ludmFyaWFudDoJCQkJCShsb3cuZGVncmVlcyA+PSBmMzIiNTAuMCIpICYgCQkJCQkoaGlnaC5kZWdyZWVzIDw9IGYzMiIxMTAuMCIpICYJCQkJCShsb3cuZGVncmVlcyA8IGhpZ2guZGVncmVlcyk7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_140_141_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 140,
       "end_index": 141,
       "golden_b64": "CQlhc3N1bWUgY3VycmVudFRlbXBJbnB1dFJhbmdlOgkJCShjdXJyZW50VGVtcC5kZWdyZWVzID49IGYzMiItNzAuMCIpICYgKGN1cnJlbnRUZW1wLmRlZ3JlZXMgPD0gZjMyIjE4MC4wIik7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_145_146_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 145,
       "end_index": 146,
       "golden_b64": "ICAgICAgICAgZ3VhcmFudGVlIGluaXRMYXRlc3RGYW5DbWQgIkluaXRpYWxpemUgc3RhdGUgdmFyaWFibGUiOiAgICAgICAgIAlsYXRlc3RGYW5DbWQgPT0gQ29vbGluZ0Zhbjo6RmFuQ21kLk9mZjs=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_148_149_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 148,
       "end_index": 149,
       "golden_b64": "ICAgICAgICAgZ3VhcmFudGVlIGluaXRGYW5DbWQgIkluaXRpYWwgZmFuIGNvbW1hbmQiOiAgICAgICAgIAlmYW5DbWQgPT0gQ29vbGluZ0Zhbjo6RmFuQ21kLk9mZjs=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_154_157_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 154,
       "end_index": 157,
       "golden_b64": "ICAgICAgICAgIGd1YXJhbnRlZSBhbHRDdXJyZW50VGVtcExUU2V0UG9pbnQgIklmIGN1cnJlbnQgdGVtcGVyYXR1cmUgaXMgbGVzcyB0aGFuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfHRoZSBjdXJyZW50IGxvdyBzZXQgcG9pbnQsIHRoZW4gdGhlIGZhbiBzdGF0ZSBzaGFsbCBiZSBPZmYiIDogICAgICAgICAgICAgKGN1cnJlbnRUZW1wLmRlZ3JlZXMgPCBzZXRQb2ludC5sb3cuZGVncmVlcykgLT46ICAgICAgICAgICAgICAgICAoKGxhdGVzdEZhbkNtZCA9PSBDb29saW5nRmFuOjpGYW5DbWQuT2ZmKSAmJiAoZmFuQ21kID09IENvb2xpbmdGYW46OkZhbkNtZC5PZmYpKTs=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_159_162_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 159,
       "end_index": 162,
       "golden_b64": "ICAgICAgICAgIGd1YXJhbnRlZSBhbHRDdXJyZW50VGVtcEdUU2V0UG9pbnQgIklmIGN1cnJlbnQgdGVtcGVyYXR1cmUgaXMgZ3JlYXRlciB0aGFuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfHRoZSBjdXJyZW50IGhpZ2ggc2V0IHBvaW50LCB0aGVuIHRoZSBmYW4gc3RhdGUgc2hhbGwgYmUgT24iOiAgICAgICAgICAgICAoY3VycmVudFRlbXAuZGVncmVlcyA+IHNldFBvaW50LmhpZ2guZGVncmVlcykgLT46ICAgICAgICAgICAgICAgKChsYXRlc3RGYW5DbWQgPT0gQ29vbGluZ0Zhbjo6RmFuQ21kLk9uKSAmIChmYW5DbWQgPT0gQ29vbGluZ0Zhbjo6RmFuQ21kLk9uKSk7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_sys_aadl_164_168_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempControlSystem.aadl",
       "start_index": 164,
       "end_index": 168,
       "golden_b64": "ICAgICAgICAgIGd1YXJhbnRlZSBhbHRDdXJyZW50VGVtcEluUmFuZ2UgIklmIGN1cnJlbnQgdGVtcGVyYXR1cmUgaXMgZ3JlYXRlciB0aGFuIG9yIGVxdWFsIHRvIHRoZSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8Y3VycmVudCBsb3cgc2V0IHBvaW50IGFuZCBsZXNzIHRoYW4gb3IgZXF1YWwgdG8gdGhlIGN1cnJlbnQgaGlnaCBzZXQgcG9pbnQsICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHx0aGVuIHRoZSBjdXJyZW50IGZhbiBzdGF0ZSBpcyBtYWludGFpbmVkLiIgOiAgICAgICAgICAgICgoY3VycmVudFRlbXAuZGVncmVlcyA+PSBzZXRQb2ludC5sb3cuZGVncmVlcykgJiAoY3VycmVudFRlbXAuZGVncmVlcyA8PSBzZXRQb2ludC5oaWdoLmRlZ3JlZXMpKSB+fj46ICAgICAgICAgICAgICAoKGxhdGVzdEZhbkNtZCA9PSBJbihsYXRlc3RGYW5DbWQpKSAmIChmYW5DbWQgPT0gbGF0ZXN0RmFuQ21kKSk7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_aadl_48_49_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
       "start_index": 48,
       "end_index": 49,
       "golden_b64": "CQkJZ3VhcmFudGVlIGN1cnJlbnRUZW1wT3V0cHV0UmFuZ2U6CQkJCShjdXJyZW50VGVtcC5kZWdyZWVzID49IGYzMiItNTAuMCIpICYgKGN1cnJlbnRUZW1wLmRlZ3JlZXMgPD0gZjMyIjE1MC4wIik7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_aadl_52_53_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/aadl/packages/TempSensor.aadl",
       "start_index": 52,
       "end_index": 53,
       "golden_b64": "CQkJZ3VhcmFudGVlIGN1cnJlbnRUZW1wSW5pdGlhbFZhbDoJCQkJY3VycmVudFRlbXAuZGVncmVlcyA9PSBmMzIiNzIuMCI7",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_14_16_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 14,
       "end_index": 16,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgSV9Bc3NtX2N1cnJlbnRUZW1wKGN1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2kpOiBCID0gICAgY3VycmVudFRlbXAuZGVncmVlcyA+PSAtNzAuMGYgJiAgICAgIGN1cnJlbnRUZW1wLmRlZ3JlZXMgPD0gODAuMGY=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_28_30_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 28,
       "end_index": 30,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgaW5pdGlhbGl6ZV9pbml0TGF0ZXN0RmFuQ21kICggICAgICBsYXRlc3RGYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUpOiBCID0gICAgbGF0ZXN0RmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9mZg==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_38_40_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 38,
       "end_index": 40,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgaW5pdGlhbGl6ZV9pbml0RmFuQ21kICggICAgICBhcGlfZmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlKTogQiA9ICAgIGFwaV9mYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT2Zm",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_113_120_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 113,
       "end_index": 120,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9zcGVjX2FsdEN1cnJlbnRUZW1wTFRTZXRQb2ludF9ndWFyYW50ZWUoICAgICAgbGF0ZXN0RmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlLCAgICAgIGFwaV9jdXJyZW50VGVtcDogVGVtcFNlbnNvci5UZW1wZXJhdHVyZV9pLCAgICAgIGFwaV9zZXRQb2ludDogVGVtcENvbnRyb2xTb2Z0d2FyZVN5c3RlbS5TZXRQb2ludF9pLCAgICAgIGFwaV9mYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUpOiBCID0gICAgYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPCBhcGlfc2V0UG9pbnQubG93LmRlZ3JlZXMgX18+OiAgICAgIGxhdGVzdEZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PZmYgJiYgICAgICAgIGFwaV9mYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT2Zm",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_132_139_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 132,
       "end_index": 139,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9zcGVjX2FsdEN1cnJlbnRUZW1wR1RTZXRQb2ludF9ndWFyYW50ZWUoICAgICAgbGF0ZXN0RmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlLCAgICAgIGFwaV9jdXJyZW50VGVtcDogVGVtcFNlbnNvci5UZW1wZXJhdHVyZV9pLCAgICAgIGFwaV9zZXRQb2ludDogVGVtcENvbnRyb2xTb2Z0d2FyZVN5c3RlbS5TZXRQb2ludF9pLCAgICAgIGFwaV9mYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUpOiBCID0gICAgYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPiBhcGlfc2V0UG9pbnQuaGlnaC5kZWdyZWVzIF9fPjogICAgICBsYXRlc3RGYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT24gJiAgICAgICAgYXBpX2ZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5Pbg==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_153_162_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 153,
       "end_index": 162,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9zcGVjX2FsdEN1cnJlbnRUZW1wSW5SYW5nZV9ndWFyYW50ZWUoICAgICAgSW5fbGF0ZXN0RmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlLCAgICAgIGxhdGVzdEZhbkNtZDogQ29vbGluZ0Zhbi5GYW5DbWQuVHlwZSwgICAgICBhcGlfY3VycmVudFRlbXA6IFRlbXBTZW5zb3IuVGVtcGVyYXR1cmVfaSwgICAgICBhcGlfc2V0UG9pbnQ6IFRlbXBDb250cm9sU29mdHdhcmVTeXN0ZW0uU2V0UG9pbnRfaSwgICAgICBhcGlfZmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlKTogQiA9ICAgIGFwaV9jdXJyZW50VGVtcC5kZWdyZWVzID49IGFwaV9zZXRQb2ludC5sb3cuZGVncmVlcyAmJiAgICAgIGFwaV9jdXJyZW50VGVtcC5kZWdyZWVzIDw9IGFwaV9zZXRQb2ludC5oaWdoLmRlZ3JlZXMgX19fPjogICAgICBsYXRlc3RGYW5DbWQgPT0gSW5fbGF0ZXN0RmFuQ21kICYgICAgICAgIGFwaV9mYW5DbWQgPT0gbGF0ZXN0RmFuQ21k",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_190_197_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 190,
       "end_index": 197,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9jYXNlX2N1cnJlbnRUZW1wTFRTZXRQb2ludCggICAgICBsYXRlc3RGYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUsICAgICAgYXBpX2N1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2ksICAgICAgYXBpX3NldFBvaW50OiBUZW1wQ29udHJvbFNvZnR3YXJlU3lzdGVtLlNldFBvaW50X2ksICAgICAgYXBpX2ZhbkNtZDogQ29vbGluZ0Zhbi5GYW5DbWQuVHlwZSk6IEIgPSAgICAoYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPCBhcGlfc2V0UG9pbnQubG93LmRlZ3JlZXMpIF9fXz46ICAgICAgKGxhdGVzdEZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PZmYgJiAgICAgICAgIGFwaV9mYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT2ZmKQ==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_207_214_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 207,
       "end_index": 214,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9jYXNlX2N1cnJlbnRUZW1wR1RTZXRQb2ludCggICAgICBsYXRlc3RGYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUsICAgICAgYXBpX2N1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2ksICAgICAgYXBpX3NldFBvaW50OiBUZW1wQ29udHJvbFNvZnR3YXJlU3lzdGVtLlNldFBvaW50X2ksICAgICAgYXBpX2ZhbkNtZDogQ29vbGluZ0Zhbi5GYW5DbWQuVHlwZSk6IEIgPSAgICAoYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPiBhcGlfc2V0UG9pbnQuaGlnaC5kZWdyZWVzKSBfX18+OiAgICAgIChsYXRlc3RGYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT24gJiAgICAgICAgIGFwaV9mYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT24p",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_gumbox_226_235_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl_GumboX.scala",
       "start_index": 226,
       "end_index": 235,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9jYXNlX2N1cnJlbnRUZW1wSW5SYW5nZSggICAgICBJbl9sYXRlc3RGYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUsICAgICAgbGF0ZXN0RmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlLCAgICAgIGFwaV9jdXJyZW50VGVtcDogVGVtcFNlbnNvci5UZW1wZXJhdHVyZV9pLCAgICAgIGFwaV9zZXRQb2ludDogVGVtcENvbnRyb2xTb2Z0d2FyZVN5c3RlbS5TZXRQb2ludF9pLCAgICAgIGFwaV9mYW5DbWQ6IENvb2xpbmdGYW4uRmFuQ21kLlR5cGUpOiBCID0gICAgKGFwaV9jdXJyZW50VGVtcC5kZWdyZWVzID49IGFwaV9zZXRQb2ludC5sb3cuZGVncmVlcyAmICAgICAgYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPD0gYXBpX3NldFBvaW50LmhpZ2guZGVncmVlcykgX19fPjogICAgICAobGF0ZXN0RmFuQ21kID09IEluX2xhdGVzdEZhbkNtZCAmICAgICAgICAgYXBpX2ZhbkNtZCA9PSBsYXRlc3RGYW5DbWQp",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_gumbox_14_15_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
       "start_index": 14,
       "end_index": 15,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgSV9HdWFyX2N1cnJlbnRUZW1wKGN1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2kpOiBCID0gICAgVGVtcFNlbnNvci5HVU1CT19fTGlicmFyeS5pblJhbmdlKGN1cnJlbnRUZW1wKQ==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_gumbox_26_28_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
       "start_index": 26,
       "end_index": 28,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgaW5pdGlhbGl6ZV9pbml0aWFsaXplcyAoICAgICAgYXBpX2N1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2kpOiBCID0gICAgYXBpX2N1cnJlbnRUZW1wLmRlZ3JlZXMgPT0gNzIuMGY=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_gumbox_42_45_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
       "start_index": 42,
       "end_index": 45,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgaW5pdGl0aWFsaXplX0lFUF9Qb3N0ICggICAgICBhcGlfY3VycmVudFRlbXA6IFRlbXBTZW5zb3IuVGVtcGVyYXR1cmVfaSk6IEIgPSAgICAoLy8gRC1JbnYtR3VhcmQ6IERhdGF0eXBlIGludmFyaWFudHMgZm9yIHRoZSB0eXBlcyBhc3NvY2lhdGVkIHdpdGggdGVtcFNlbnNvcidzIHN0YXRlIHZhcmlhYmxlcyBhbmQgb3V0Z29pbmcgcG9ydHMgICAgIFRlbXBTZW5zb3IuVGVtcGVyYXR1cmVfaS5EX0ludl9UZW1wZXJhdHVyZV9pKGFwaV9jdXJyZW50VGVtcCkgJiA=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_gumbox_65_68_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/bridge/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor_GumboX.scala",
       "start_index": 65,
       "end_index": 68,
       "golden_b64": "ICBAc3RyaWN0cHVyZSBkZWYgY29tcHV0ZV9DRVBfUG9zdCAoICAgICAgYXBpX2N1cnJlbnRUZW1wOiBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2kpOiBCID0gICAgKC8vIEQtSW52LUd1YXJkOiBEYXRhdHlwZSBpbnZhcmlhbnRzIGZvciB0aGUgdHlwZXMgYXNzb2NpYXRlZCB3aXRoIHRlbXBTZW5zb3IncyBzdGF0ZSB2YXJpYWJsZXMgYW5kIG91dGdvaW5nIHBvcnRzICAgICBUZW1wU2Vuc29yLlRlbXBlcmF0dXJlX2kuRF9JbnZfVGVtcGVyYXR1cmVfaShhcGlfY3VycmVudFRlbXApICYg",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     }
   },
   "readfile_marker_range": {
@@ -161,42 +161,42 @@
       "begin_marker": "BEGIN STATE VARS",
       "end_marker": "END STATE VARS",
       "golden_b64": "ICAvLyBCRUdJTiBTVEFURSBWQVJTICB2YXIgbGF0ZXN0RmFuQ21kOiBDb29saW5nRmFuLkZhbkNtZC5UeXBlID0gQ29vbGluZ0Zhbi5GYW5DbWQuT2ZmICAvLyBFTkQgU1RBVEUgVkFSUw==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_comp_compute_mod_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
       "begin_marker": "BEGIN COMPUTE MODIFIES timeTriggered",
       "end_marker": "END COMPUTE MODIFIES timeTriggered",
       "golden_b64": "ICAgICAgICAvLyBCRUdJTiBDT01QVVRFIE1PRElGSUVTIHRpbWVUcmlnZ2VyZWQgICAgICAgIGxhdGVzdEZhbkNtZCwgICAgICAgIC8vIEVORCBDT01QVVRFIE1PRElGSUVTIHRpbWVUcmlnZ2VyZWQ=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_comp_compute_ens_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
       "begin_marker": "BEGIN COMPUTE ENSURES timeTriggered",
       "end_marker": "END COMPUTE ENSURES timeTriggered",
       "golden_b64": "ICAgICAgICAvLyBCRUdJTiBDT01QVVRFIEVOU1VSRVMgdGltZVRyaWdnZXJlZCAgICAgICAgLy8gZ3VhcmFudGVlIGFsdEN1cnJlbnRUZW1wTFRTZXRQb2ludCAgICAgICAgLy8gICBJZiBjdXJyZW50IHRlbXBlcmF0dXJlIGlzIGxlc3MgdGhhbiAgICAgICAgLy8gICB0aGUgY3VycmVudCBsb3cgc2V0IHBvaW50LCB0aGVuIHRoZSBmYW4gc3RhdGUgc2hhbGwgYmUgT2ZmICAgICAgICBhcGkuY3VycmVudFRlbXAuZGVncmVlcyA8IGFwaS5zZXRQb2ludC5sb3cuZGVncmVlcyBfXz46ICAgICAgICAgIGxhdGVzdEZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PZmYgJiYgICAgICAgICAgICBhcGkuZmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9mZiwgICAgICAgIC8vIGd1YXJhbnRlZSBhbHRDdXJyZW50VGVtcEdUU2V0UG9pbnQgICAgICAgIC8vICAgSWYgY3VycmVudCB0ZW1wZXJhdHVyZSBpcyBncmVhdGVyIHRoYW4gICAgICAgIC8vICAgdGhlIGN1cnJlbnQgaGlnaCBzZXQgcG9pbnQsIHRoZW4gdGhlIGZhbiBzdGF0ZSBzaGFsbCBiZSBPbiAgICAgICAgYXBpLmN1cnJlbnRUZW1wLmRlZ3JlZXMgPiBhcGkuc2V0UG9pbnQuaGlnaC5kZWdyZWVzIF9fPjogICAgICAgICAgbGF0ZXN0RmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9uICYgICAgICAgICAgICBhcGkuZmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9uLCAgICAgICAgLy8gZ3VhcmFudGVlIGFsdEN1cnJlbnRUZW1wSW5SYW5nZSAgICAgICAgLy8gICBJZiBjdXJyZW50IHRlbXBlcmF0dXJlIGlzIGdyZWF0ZXIgdGhhbiBvciBlcXVhbCB0byB0aGUgICAgICAgIC8vICAgY3VycmVudCBsb3cgc2V0IHBvaW50IGFuZCBsZXNzIHRoYW4gb3IgZXF1YWwgdG8gdGhlIGN1cnJlbnQgaGlnaCBzZXQgcG9pbnQsICAgICAgICAvLyAgIHRoZW4gdGhlIGN1cnJlbnQgZmFuIHN0YXRlIGlzIG1haW50YWluZWQuICAgICAgICBhcGkuY3VycmVudFRlbXAuZGVncmVlcyA+PSBhcGkuc2V0UG9pbnQubG93LmRlZ3JlZXMgJiAgICAgICAgICBhcGkuY3VycmVudFRlbXAuZGVncmVlcyA8PSBhcGkuc2V0UG9pbnQuaGlnaC5kZWdyZWVzIF9fXz46ICAgICAgICAgIGxhdGVzdEZhbkNtZCA9PSBJbihsYXRlc3RGYW5DbWQpICYgICAgICAgICAgICBhcGkuZmFuQ21kID09IGxhdGVzdEZhbkNtZCwgICAgICAgIC8vIGNhc2UgY3VycmVudFRlbXBMVFNldFBvaW50ICAgICAgICAvLyAgIElmIGN1cnJlbnQgdGVtcGVyYXR1cmUgaXMgbGVzcyB0aGFuICAgICAgICAvLyAgIHRoZSBjdXJyZW50IGxvdyBzZXQgcG9pbnQsIHRoZW4gdGhlIGZhbiBzdGF0ZSBzaGFsbCBiZSBPZmYgICAgICAgIChhcGkuY3VycmVudFRlbXAuZGVncmVlcyA8IGFwaS5zZXRQb2ludC5sb3cuZGVncmVlcykgX19fPjogKGxhdGVzdEZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PZmYgJiAgICAgICAgICBhcGkuZmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9mZiksICAgICAgICAvLyBjYXNlIGN1cnJlbnRUZW1wR1RTZXRQb2ludCAgICAgICAgLy8gICBJZiBjdXJyZW50IHRlbXBlcmF0dXJlIGlzIGdyZWF0ZXIgdGhhbiAgICAgICAgLy8gICB0aGUgY3VycmVudCBoaWdoIHNldCBwb2ludCwgdGhlbiB0aGUgZmFuIHN0YXRlIHNoYWxsIGJlIE9uICAgICAgICAoYXBpLmN1cnJlbnRUZW1wLmRlZ3JlZXMgPiBhcGkuc2V0UG9pbnQuaGlnaC5kZWdyZWVzKSBfX18+OiAobGF0ZXN0RmFuQ21kID09IENvb2xpbmdGYW4uRmFuQ21kLk9uICYgICAgICAgICAgYXBpLmZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PbiksICAgICAgICAvLyBjYXNlIGN1cnJlbnRUZW1wSW5SYW5nZSAgICAgICAgLy8gICBJZiBjdXJyZW50IHRlbXBlcmF0dXJlIGlzIGdyZWF0ZXIgdGhhbiBvciBlcXVhbCB0byB0aGUgICAgICAgIC8vICAgY3VycmVudCBsb3cgc2V0IHBvaW50IGFuZCBsZXNzIHRoYW4gb3IgZXF1YWwgdG8gdGhlIGN1cnJlbnQgaGlnaCBzZXQgcG9pbnQsICAgICAgICAvLyAgIHRoZW4gdGhlIGN1cnJlbnQgZmFuIHN0YXRlIGlzIG1haW50YWluZWQuICAgICAgICAoYXBpLmN1cnJlbnRUZW1wLmRlZ3JlZXMgPj0gYXBpLnNldFBvaW50Lmxvdy5kZWdyZWVzICYgICAgICAgICAgYXBpLmN1cnJlbnRUZW1wLmRlZ3JlZXMgPD0gYXBpLnNldFBvaW50LmhpZ2guZGVncmVlcykgX19fPjogKGxhdGVzdEZhbkNtZCA9PSBJbihsYXRlc3RGYW5DbWQpICYgICAgICAgICAgYXBpLmZhbkNtZCA9PSBsYXRlc3RGYW5DbWQpICAgICAgICAvLyBFTkQgQ09NUFVURSBFTlNVUkVTIHRpbWVUcmlnZ2VyZWQ=",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_comp_init_mod_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
       "begin_marker": "BEGIN INITIALIZES MODIFIES",
       "end_marker": "END INITIALIZES MODIFIES",
       "golden_b64": "ICAgICAgICAvLyBCRUdJTiBJTklUSUFMSVpFUyBNT0RJRklFUyAgICAgICAgbGF0ZXN0RmFuQ21kLCAgICAgICAgLy8gRU5EIElOSVRJQUxJWkVTIE1PRElGSUVT",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "tc_comp_init_ens_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempControlSoftwareSystem/TempControlPeriodic_p_tcproc_tempControl.scala",
       "begin_marker": "BEGIN INITIALIZES ENSURES",
       "end_marker": "END INITIALIZES ENSURES",
       "golden_b64": "ICAgICAgICAvLyBCRUdJTiBJTklUSUFMSVpFUyBFTlNVUkVTICAgICAgICAvLyBndWFyYW50ZWUgaW5pdExhdGVzdEZhbkNtZCAgICAgICAgLy8gICBJbml0aWFsaXplIHN0YXRlIHZhcmlhYmxlICAgICAgICBsYXRlc3RGYW5DbWQgPT0gQ29vbGluZ0Zhbi5GYW5DbWQuT2ZmLCAgICAgICAgLy8gZ3VhcmFudGVlIGluaXRGYW5DbWQgICAgICAgIC8vICAgSW5pdGlhbCBmYW4gY29tbWFuZCAgICAgICAgYXBpLmZhbkNtZCA9PSBDb29saW5nRmFuLkZhbkNtZC5PZmYgICAgICAgIC8vIEVORCBJTklUSUFMSVpFUyBFTlNVUkVT",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     },
     "ts_comp_init_ens_targ": {
       "filepath": "/Users/adampetz/Claude_workspace/temp-control-jvm/slang/src/main/component/tc/TempSensor/TempSensorPeriodic_p_tcproc_tempSensor.scala",
       "begin_marker": "BEGIN INITIALIZES ENSURES",
       "end_marker": "END INITIALIZES ENSURES",
       "golden_b64": "ICAgICAgICAvLyBCRUdJTiBJTklUSUFMSVpFUyBFTlNVUkVTICAgICAgICAvLyBndWFyYW50ZWUgaW5pdGlhbGl6ZXMgICAgICAgIGFwaS5jdXJyZW50VGVtcC5kZWdyZWVzID09IDcyLjBmICAgICAgICAvLyBFTkQgSU5JVElBTElaRVMgRU5TVVJFUw==",
-      "golden_ts": "2026-05-07 19:19:35"
+      "golden_ts": "2026-05-27 10:33:14"
     }
   }
 }

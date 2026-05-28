@@ -227,13 +227,6 @@ def check_protocol_dir_staleness(proto_id):
     return {'dynamic': True, 'stale': bool(stale_files), 'stale_files': stale_files}
 
 
-def protocol_any_tampered(protocol_id):
-    """Return True if any measurement target for this protocol is currently non-compliant."""
-    proto = REGISTRY.get(protocol_id)
-    if not proto:
-        return False
-    return any(not t['get_state']()['compliant'] for t in proto.get('tamper_targets', {}).values())
-
 
 # ── HTML templates ────────────────────────────────────────────────────────────
 BASE_STYLE = """
@@ -253,8 +246,6 @@ a { color:inherit; text-decoration:none; }
               padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600; }
 .badge-idle { background:#1c2128; color:#8b949e; border:1px solid #30363d;
               padding:3px 10px; border-radius:20px; font-size:0.72rem; }
-.badge-tampered { background:#3d1a00; color:#e3b341; border:1px solid #9e6a03;
-                  padding:2px 8px; border-radius:20px; font-size:0.68rem; font-weight:600; }
 .badge-compliant { background:#1a4731; color:#3fb950; border:1px solid #238636;
                    padding:2px 8px; border-radius:20px; font-size:0.68rem; font-weight:600; }
 
@@ -394,39 +385,6 @@ tr:hover td { background:#1c2128; }
 .proto-card-footer { display:flex;align-items:center;justify-content:space-between;
                      margin-top:10px;flex-wrap:wrap;gap:6px;min-width:0; }
 
-.tamper-btn { background:#1a0000;border:1px solid #da3633;color:#f85149;border-radius:6px;
-              padding:4px 10px;font-size:0.72rem;font-family:inherit;cursor:pointer;
-              transition:background .15s,opacity .15s;white-space:nowrap; }
-.tamper-btn:hover:not(:disabled) { background:#3d0000;color:#ff8080; }
-.tamper-btn:disabled { opacity:.5;cursor:not-allowed; }
-.repair-btn { background:#001a00;border:1px solid #238636;color:#3fb950;border-radius:6px;
-              padding:4px 10px;font-size:0.72rem;font-family:inherit;cursor:pointer;
-              transition:background .15s,opacity .15s;white-space:nowrap; }
-.repair-btn:hover:not(:disabled) { background:#003000;color:#5aff5a; }
-.repair-btn:disabled { opacity:.5;cursor:not-allowed; }
-.reset-btn  { background:#0d1117;border:1px solid #30363d;color:#8b949e;border-radius:6px;
-              padding:4px 10px;font-size:0.72rem;font-family:inherit;cursor:pointer;
-              transition:background .15s,opacity .15s;white-space:nowrap; }
-.reset-btn:hover:not(:disabled) { background:#21262d;color:#e6edf3; }
-.reset-btn:disabled { opacity:.5;cursor:not-allowed; }
-.tamper-action-group { display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0; }
-.inspect-btn { background:#0d1117;border:1px solid #30363d;color:#6e7681;border-radius:6px;
-               padding:3px 8px;font-size:0.68rem;font-family:inherit;cursor:pointer;
-               transition:border-color .15s,color .15s;white-space:nowrap; }
-.inspect-btn:hover { border-color:#8b949e;color:#e6edf3; }
-.inspect-btn.open { border-color:#79c0ff;color:#79c0ff; }
-.inspect-panel { background:#0d1117;border:1px solid #30363d;border-top:none;
-                 border-radius:0 0 6px 6px;padding:14px 16px;margin-bottom:4px; }
-.inspect-pre  { background:#161b22;border:1px solid #30363d;border-radius:4px;
-                padding:8px 10px;font-size:0.72rem;color:#e6edf3;white-space:pre-wrap;
-                word-break:break-all;margin:4px 0 0; font-family:'SF Mono','Fira Code',monospace; }
-.diff-block   { background:#161b22;border:1px solid #30363d;border-radius:4px;
-                padding:6px 10px;font-family:'SF Mono','Fira Code',monospace;font-size:0.72rem;margin-top:4px; }
-.diff-add  { color:#3fb950;display:block; }
-.diff-del  { color:#f85149;display:block; }
-.diff-hdr  { color:#79c0ff;display:block; }
-.diff-meta { color:#6e7681;display:block; }
-.diff-ctx  { color:#6e7681;display:block; }
 .badge-custom { background:#1a2340;color:#79c0ff;border:1px solid #1f4080;
                 padding:2px 7px;border-radius:20px;font-size:0.65rem;font-weight:600;letter-spacing:.04em; }
 .load-btn   { background:#1f4080;color:#79c0ff;border:1px solid #1f4080;border-radius:6px;
@@ -466,6 +424,23 @@ tr:hover td { background:#1c2128; }
                     border-radius:4px;padding:4px 7px;font-family:inherit;
                     font-size:0.75rem;outline:none;width:100%; }
 .places-row input:focus { border-color:#388bfd; }
+.dir-config-path { font-family:'SF Mono','Fira Code',monospace;font-size:0.72rem;
+                   color:#6e7681;margin-bottom:10px;word-break:break-all; }
+.dir-config-file { margin-bottom:8px;border:1px solid #21262d;border-radius:6px;
+                   background:#0d1117;overflow:hidden; }
+.dir-config-file > summary { list-style:none;cursor:pointer;padding:7px 12px;
+                             font-family:'SF Mono','Fira Code',monospace;font-size:0.78rem;
+                             color:#79c0ff;display:flex;align-items:center;gap:8px;
+                             user-select:none;transition:background .15s; }
+.dir-config-file > summary::-webkit-details-marker { display:none; }
+.dir-config-file > summary:hover { background:#161b22; }
+.dir-config-file > summary::before { content:'▸';color:#6e7681;font-size:0.7rem;
+                                     transition:transform .15s;display:inline-block; }
+.dir-config-file[open] > summary::before { transform:rotate(90deg); }
+.dir-config-pre { margin:0;padding:10px 14px;border-top:1px solid #21262d;
+                  background:#010409;color:#c9d1d9;font-family:'SF Mono','Fira Code',monospace;
+                  font-size:0.72rem;line-height:1.45;max-height:420px;overflow:auto;
+                  white-space:pre;word-break:normal; }
 """
 
 BASE_JS = """
@@ -594,7 +569,6 @@ HOME_TMPL = """
 <div class="proto-grid" id="proto-grid">
 {% for p in protocols %}
   {% set r = results.get(p.id) %}
-  {% set any_tampered = tamper_states.get(p.id, false) %}
   <div class="proto-card" id="card-{{ p.id }}">
     <a href="/protocol/{{ p.id }}" class="proto-card-body">
       <div class="proto-card-header">
@@ -605,11 +579,6 @@ HOME_TMPL = """
         <span class="proto-name">{{ p.name }}</span>
         {% if p.custom_source %}
           <span class="badge-custom" style="margin-left:auto;">⊕ custom</span>
-        {% elif any_tampered %}
-          <span class="badge-tampered" style="margin-left:auto;">⚠ TAMPERED</span>
-        {% endif %}
-        {% if any_tampered and p.custom_source %}
-          <span class="badge-tampered">⚠ TAMPERED</span>
         {% endif %}
       </div>
       <div class="proto-desc">{{ p.description }}</div>
@@ -1142,9 +1111,6 @@ DETAIL_TMPL = """
     <button class="check-btn check-btn-lg" id="check-btn-detail"
             onclick="checkProtocol('{{ proto.id }}')">⚡ Check</button>
     {% endif %}
-    {% if proto.custom_source %}
-    <a href="/build?edit={{ proto.id }}" class="run-btn run-btn-lg">✎ Edit</a>
-    {% endif %}
     {% if proto.id in proto_dir_ids %}
     <button class="copy-btn" id="summary-copy-btn-{{ proto.id }}"
             onclick="copySummary('{{ proto.id }}')" title="Copy Markdown summary to clipboard">⎘ Markdown</button>
@@ -1220,13 +1186,28 @@ DETAIL_TMPL = """
   </div>
 </div>
 
+{% if dir_files %}
+<div class="card">
+  <div class="card-title">Protocol Directory Configuration</div>
+  {% if proto.imported_dir %}
+  <div class="dir-config-path">{{ proto.imported_dir }}</div>
+  {% endif %}
+  {% for fn, raw in dir_files %}
+  <details class="dir-config-file">
+    <summary>{{ fn }}</summary>
+    <pre class="dir-config-pre">{{ raw }}</pre>
+  </details>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="card" style="border-color:#9e6a03;">
   <div class="card-title" style="color:#e3b341;">Golden Evidence — Last Provisioned</div>
   {% if prov %}
   <div>
     {% for e in prov %}
     <div>
-      <div class="prov-row" id="prov-row-{{ e.tamper_id or loop.index }}">
+      <div class="prov-row" id="prov-row-{{ loop.index }}">
         <span class="prov-label">{{ e.target }}</span>
         {% if e.timestamp %}
         <span class="prov-file" title="{{ e.golden_path or e.golden }}">{{ e.golden }}</span>
@@ -1236,30 +1217,7 @@ DETAIL_TMPL = """
         {% else %}
           <span style="color:#8b949e;font-size:0.75rem;font-style:italic;">not provisioned</span>
         {% endif %}
-        {% if e.tamper_id and e.tamper_state and e.timestamp %}
-          <div class="tamper-action-group">
-            {% if e.tamper_state.compliant %}
-              <span class="badge-compliant">✓ COMPLIANT</span>
-              <button class="tamper-btn" id="tamper-btn-{{ e.tamper_id }}"
-                      onclick="tamperTarget('{{ proto.id }}', '{{ e.tamper_id }}')">⚡ Tamper</button>
-            {% elif e.tamper_state.compliant is none %}
-              <span style="color:#8b949e;font-size:0.75rem;font-style:italic;">unknown</span>
-            {% else %}
-              <span class="badge-tampered">⚠ TAMPERED</span>
-              <button class="repair-btn" id="repair-btn-{{ e.tamper_id }}"
-                      onclick="repairTarget('{{ proto.id }}', '{{ e.tamper_id }}')">⚕ Repair</button>
-            {% endif %}
-            <button class="reset-btn" id="reset-btn-{{ e.tamper_id }}"
-                    onclick="resetTarget('{{ proto.id }}', '{{ e.tamper_id }}')">↺ Reset</button>
-            <span style="border-left:1px solid #30363d;height:14px;"></span>
-            <button class="inspect-btn" id="inspect-btn-{{ e.tamper_id }}"
-                    onclick="toggleInspect('{{ proto.id }}', '{{ e.tamper_id }}')">⊞ Inspect</button>
-          </div>
-        {% endif %}
       </div>
-      {% if e.tamper_id %}
-      <div class="inspect-panel" id="inspect-panel-{{ e.tamper_id }}" style="display:none;"></div>
-      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -1372,39 +1330,6 @@ DETAIL_TMPL = """
 
 <script>
 const PROTOCOL_ID = '{{ proto.id }}';
-const _PANELS_KEY = 'cvm_open_panels_' + PROTOCOL_ID;
-const _inspectIntervals = {};
-
-function _getOpenPanels() {
-  try { return JSON.parse(sessionStorage.getItem(_PANELS_KEY) || '{}'); } catch { return {}; }
-}
-function _saveOpenPanels(obj) { sessionStorage.setItem(_PANELS_KEY, JSON.stringify(obj)); }
-
-async function _loadInspectPanel(protocolId, targetId) {
-  const panel = document.getElementById('inspect-panel-' + targetId);
-  if (!panel || panel.style.display === 'none') return;
-  try {
-    const res  = await fetch('/api/inspect/' + protocolId + '/' + targetId);
-    const data = await res.json();
-    panel.innerHTML = renderInspect(data);
-  } catch(e) {
-    panel.innerHTML = `<span style="color:#f85149;font-size:0.75rem;">Error: ${escHtml(e.message)}</span>`;
-  }
-}
-
-async function _restoreInspectPanels() {
-  for (const [targetId, protocolId] of Object.entries(_getOpenPanels())) {
-    const panel = document.getElementById('inspect-panel-' + targetId);
-    const btn   = document.getElementById('inspect-btn-'   + targetId);
-    if (!panel) continue;
-    panel.style.display = 'block';
-    if (btn) { btn.textContent = '⊟ Inspect'; btn.classList.add('open'); }
-    panel.innerHTML = '<span style="color:#8b949e;font-size:0.75rem;font-style:italic;">Loading…</span>';
-    await _loadInspectPanel(protocolId, targetId);
-    _inspectIntervals[targetId] = setInterval(() => _loadInspectPanel(protocolId, targetId), 2000);
-  }
-}
-document.addEventListener('DOMContentLoaded', _restoreInspectPanels);
 
 function _renderProgressTable(r) {
   const done  = (r.results || []).length;
@@ -1580,103 +1505,6 @@ async function provisionProtocol(id, customPath) {
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '⚙ Provision'; }
   }
-}
-
-async function tamperTarget(protocolId, targetId) {
-  const btn = document.getElementById('tamper-btn-' + targetId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Tampering…'; }
-  try {
-    const res = await fetch('/api/tamper/' + protocolId + '/' + targetId, {method: 'POST'});
-    if (res.ok) { location.reload(); return; }
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '⚡ Tamper'; }
-}
-
-async function repairTarget(protocolId, targetId) {
-  const btn = document.getElementById('repair-btn-' + targetId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Repairing…'; }
-  try {
-    const res = await fetch('/api/repair/' + protocolId + '/' + targetId, {method: 'POST'});
-    if (res.ok) { location.reload(); return; }
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '⚕ Repair'; }
-}
-
-async function resetTarget(protocolId, targetId) {
-  const btn = document.getElementById('reset-btn-' + targetId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Resetting…'; }
-  try {
-    const res = await fetch('/api/reset/' + protocolId + '/' + targetId, {method: 'POST'});
-    if (res.ok) { location.reload(); return; }
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '↺ Reset'; }
-}
-
-function renderInspect(data) {
-  if (data.error) return `<span style="color:#f85149;font-size:0.75rem;">${escHtml(data.error)}</span>`;
-
-  const hdr = (t) => `<div style="color:#8b949e;font-size:0.68rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t}</div>`;
-
-  if (data.type === 'hsh') {
-    const match = data.compliant;
-    return hdr('Evidence Hash (SHA-256 of empty input)') + `
-      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:0.75rem;">
-        <div><div style="color:#8b949e;font-size:0.68rem;margin-bottom:2px;">Expected</div>
-             <code style="color:#79c0ff;">${data.expected_sha256}</code></div>
-        <div><div style="color:#8b949e;font-size:0.68rem;margin-bottom:2px;">Actual golden</div>
-             <code style="color:${match?'#3fb950':'#f85149'};">${data.actual_sha256}</code></div>
-      </div>`;
-  }
-
-  // file type
-  if (data.compliant) {
-    return hdr('File Content — matches golden') +
-      `<pre class="inspect-pre">${escHtml(data.current)}</pre>
-       <div style="color:#8b949e;font-size:0.68rem;margin-top:6px;">
-         SHA-256 <code style="color:#3fb950;">${data.current_sha256}</code>
-       </div>`;
-  }
-
-  if (data.diff && data.diff.length) {
-    const lines = data.diff.map(line => {
-      const e = escHtml(line.trimEnd());
-      if (line.startsWith('+++') || line.startsWith('---')) return `<span class="diff-meta">${e}</span>`;
-      if (line.startsWith('+'))  return `<span class="diff-add">${e}</span>`;
-      if (line.startsWith('-'))  return `<span class="diff-del">${e}</span>`;
-      if (line.startsWith('@@')) return `<span class="diff-hdr">${e}</span>`;
-      return `<span class="diff-ctx">${e}</span>`;
-    }).join('');
-    return hdr('Diff — pre-tamper → current') +
-      `<div class="diff-block">${lines}</div>`;
-  }
-
-  // No .src file — just show current vs golden hash mismatch
-  return hdr('Content — no pre-tamper snapshot available') +
-    `<pre class="inspect-pre" style="border-color:#da3633;">${escHtml(data.current)}</pre>
-     <div style="color:#8b949e;font-size:0.68rem;margin-top:6px;">
-       Current SHA-256 <code style="color:#f85149;">${data.current_sha256}</code><br>
-       Golden SHA-256&nbsp; <code style="color:#f85149;">${data.golden_sha256}</code>
-     </div>`;
-}
-
-async function toggleInspect(protocolId, targetId) {
-  const panel = document.getElementById('inspect-panel-' + targetId);
-  const btn   = document.getElementById('inspect-btn-'   + targetId);
-  if (!panel) return;
-  if (panel.style.display !== 'none') {
-    panel.style.display = 'none';
-    if (btn) { btn.textContent = '⊞ Inspect'; btn.classList.remove('open'); }
-    clearInterval(_inspectIntervals[targetId]);
-    delete _inspectIntervals[targetId];
-    const panels = _getOpenPanels(); delete panels[targetId]; _saveOpenPanels(panels);
-    return;
-  }
-  panel.style.display = 'block';
-  if (btn) { btn.textContent = '⊟ Inspect'; btn.classList.add('open'); }
-  panel.innerHTML = '<span style="color:#8b949e;font-size:0.75rem;font-style:italic;">Loading…</span>';
-  const panels = _getOpenPanels(); panels[targetId] = protocolId; _saveOpenPanels(panels);
-  await _loadInspectPanel(protocolId, targetId);
-  _inspectIntervals[targetId] = setInterval(() => _loadInspectPanel(protocolId, targetId), 2000);
 }
 
 async function copySummary(id) {
@@ -2150,10 +1978,9 @@ async function loadFromFile(pathInputId, textareaId, btnId, errId) {
 // Wire up the three path inputs
 const _loadBtnMap = {'term-file':'term-load-btn','manifest-file':'manifest-load-btn','session-file':'session-load-btn'};
 // Only restore saved file paths when opening a blank new-protocol form.
-// In copy/edit mode the form is pre-populated from the source protocol,
+// In copy mode the form is pre-populated from the source protocol,
 // so stale paths from a previous session must not bleed in.
-const _isBlankForm = !new URLSearchParams(window.location.search).get('copy') &&
-                     !new URLSearchParams(window.location.search).get('edit');
+const _isBlankForm = !new URLSearchParams(window.location.search).get('copy');
 ['term-file', 'manifest-file', 'session-file'].forEach(id => {
   setupPathComplete(id, () => document.getElementById(_loadBtnMap[id]).click());
   if (_isBlankForm) {
@@ -2206,69 +2033,6 @@ async function deriveFromTerm(silent) {
   }
   if (!silent) { btn.textContent = '▶ Derive'; btn.disabled = false; }
 }
-
-// ── Edit mode: pre-populate from existing protocol spec ──────────────────────
-async function maybeLoadEdit() {
-  const editId = new URLSearchParams(window.location.search).get('edit');
-  if (!editId) return;
-
-  document.querySelector('h1').textContent        = 'Edit Protocol';
-  document.querySelector('.sub').textContent      = 'Update the fields below and click Update Protocol';
-  document.getElementById('register-btn').textContent = '✎ Update Protocol';
-  document.getElementById('meta-id').readOnly     = true;
-  document.getElementById('meta-id').style.opacity = '0.6';
-
-  const banner = document.getElementById('banner');
-  try {
-    const res  = await fetch('/api/protocol_spec/' + encodeURIComponent(editId));
-    const spec = await res.json();
-    if (!res.ok) {
-      banner.innerHTML = `<div class="err-banner">${escHtml(spec.error || 'Could not load protocol spec')}</div>`;
-      return;
-    }
-
-    document.getElementById('meta-id').value      = spec.id          || editId;
-    document.getElementById('meta-name').value    = spec.name        || '';
-    document.getElementById('meta-desc').value    = spec.description || '';
-    document.getElementById('meta-copland').value = spec.copland     || '';
-
-    const term = spec.request && spec.request.TERM;
-    if (term)
-      document.getElementById('term-json').value = JSON.stringify(term, null, 2);
-
-    if (spec.manifest)
-      document.getElementById('manifest-json').value =
-        JSON.stringify(spec.manifest, null, 2);
-
-    const attest = spec.request && spec.request.ATTESTATION_SESSION;
-    if (attest)
-      document.getElementById('session-json').value =
-        JSON.stringify(attest, null, 2);
-
-    const evidence = spec.request && spec.request.EVIDENCE;
-    if (evidence)
-      document.getElementById('evidence-json').value =
-        JSON.stringify(evidence, null, 2);
-
-    // Populate previews from saved spec — no auto-derive so nothing gets overwritten.
-    // Silently re-derive to get term_path data so flow nodes are clickable.
-    if (spec.flow)
-      document.getElementById('flow-preview').innerHTML = renderFlow(spec.flow);
-    if (spec.targets)
-      document.getElementById('targets-preview').innerHTML = renderTargets(spec.targets);
-    deriveFromTerm(true);
-
-    if (spec.places && typeof spec.places === 'object') {
-      document.getElementById('places-list').innerHTML = '';
-      Object.entries(spec.places).forEach(([pid, cfg]) =>
-        addPlaceRow(pid, cfg.host||'localhost', cfg.port||'', cfg.manifest||'', cfg.asp_bin||''));
-    }
-
-  } catch(e) {
-    banner.innerHTML = `<div class="err-banner">Error loading spec: ${escHtml(e.message)}</div>`;
-  }
-}
-document.addEventListener('DOMContentLoaded', maybeLoadEdit);
 
 // ── Copy mode: pre-populate from any protocol, leave ID editable ──────────────
 async function maybeLoadCopy() {
@@ -2396,7 +2160,7 @@ function _clearOverwriteWarn() {
 
 async function _checkOverwrite() {
   const idEl = document.getElementById('meta-id');
-  if (!idEl || idEl.readOnly) return;   // skip in edit mode
+  if (!idEl) return;
   const id = idEl.value.trim();
   if (!id) return;
   try {
@@ -2424,22 +2188,19 @@ async function registerProtocol() {
   if (!id) { banner.innerHTML = '<div class="err-banner">Protocol ID is required.</div>'; return; }
 
   // Warn before overwriting an existing protocol file or registry entry.
-  const idEl = document.getElementById('meta-id');
-  if (!idEl.readOnly) {
-    try {
-      const chk  = await fetch('/api/proto_overwrite_check?id=' + encodeURIComponent(id));
-      const info = await chk.json();
-      if (info.would_overwrite) {
-        const who  = info.existing_name ? `"${info.existing_name}"` : `"${id}"`;
-        const kind = info.is_builtin ? 'built-in protocol' : 'existing protocol';
-        const file = info.file_path  ? `\n\nFile: ${info.file_path}` : '';
-        const ok   = confirm(
-          `Registering as "${id}" will overwrite the ${kind} ${who}.${file}\n\nContinue?`
-        );
-        if (!ok) return;
-      }
-    } catch(e) {}
-  }
+  try {
+    const chk  = await fetch('/api/proto_overwrite_check?id=' + encodeURIComponent(id));
+    const info = await chk.json();
+    if (info.would_overwrite) {
+      const who  = info.existing_name ? `"${info.existing_name}"` : `"${id}"`;
+      const kind = info.is_builtin ? 'built-in protocol' : 'existing protocol';
+      const file = info.file_path  ? `\n\nFile: ${info.file_path}` : '';
+      const ok   = confirm(
+        `Registering as "${id}" will overwrite the ${kind} ${who}.${file}\n\nContinue?`
+      );
+      if (!ok) return;
+    }
+  } catch(e) {}
 
   btn.disabled = true; btn.textContent = '⟳ Registering…';
   try {
@@ -2495,10 +2256,8 @@ def home():
                  'copland':     meta.get('copland',     p.get('copland', '')),
                  'flow':        meta.get('flow',        p.get('flow', []))}
         protocols.append(p)
-    tamper_states = {pid: protocol_any_tampered(pid) for pid in REGISTRY}
     return render_template_string(HOME_TMPL, style=BASE_STYLE, base_js=BASE_JS,
-                                  protocols=protocols, results=snap,
-                                  tamper_states=tamper_states)
+                                  protocols=protocols, results=snap)
 
 
 @app.route('/protocol/<protocol_id>')
@@ -2509,21 +2268,15 @@ def protocol_detail(protocol_id):
     with store_lock:
         r = results_store.get(protocol_id)
     prov = proto['golden_state']() if 'golden_state' in proto else []
-    # Augment prov entries with live tamper state
-    tamper_targets = proto.get('tamper_targets', {})
-    for entry in prov:
-        tid = entry.get('tamper_id')
-        if tid and tid in tamper_targets:
-            entry['tamper_state'] = tamper_targets[tid]['get_state']()
-        else:
-            entry['tamper_id'] = None
-            entry['tamper_state'] = None
     provisioned = any(e.get('timestamp') for e in prov) if prov else True
     staleness = check_protocol_dir_staleness(protocol_id)
     proto_dir_ids = set(protocol_loader.list_protocol_dir_ids())
+    dir_files = (protocol_loader.get_protocol_dir_files(protocol_id)
+                 if protocol_id in proto_dir_ids else [])
     return render_template_string(DETAIL_TMPL, style=BASE_STYLE, base_js=BASE_JS,
                                   proto=proto, r=r, prov=prov, provisioned=provisioned,
-                                  staleness=staleness, proto_dir_ids=proto_dir_ids)
+                                  staleness=staleness, proto_dir_ids=proto_dir_ids,
+                                  dir_files=dir_files)
 
 
 # Track which protocols are currently running so the UI can show a spinner.
@@ -2840,58 +2593,6 @@ def api_provision(protocol_id):
     return jsonify({'protocol_id': protocol_id, 'entries': entries})
 
 
-@app.route('/api/tamper/<protocol_id>/<target_id>', methods=['POST'])
-def api_tamper(protocol_id, target_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    tamper_targets = REGISTRY[protocol_id].get('tamper_targets', {})
-    if target_id not in tamper_targets:
-        return jsonify({'error': f'Unknown target: {target_id}'}), 404
-    tamper_targets[target_id]['tamper']()
-    return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id, 'tampered': True})
-
-
-@app.route('/api/repair/<protocol_id>/<target_id>', methods=['POST'])
-def api_repair(protocol_id, target_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    tamper_targets = REGISTRY[protocol_id].get('tamper_targets', {})
-    if target_id not in tamper_targets:
-        return jsonify({'error': f'Unknown target: {target_id}'}), 404
-    tamper_targets[target_id]['repair']()
-    return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id})
-
-
-@app.route('/api/inspect/<protocol_id>/<target_id>')
-def api_inspect(protocol_id, target_id):
-    import difflib
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    tamper_targets = REGISTRY[protocol_id].get('tamper_targets', {})
-    if target_id not in tamper_targets or 'inspect' not in tamper_targets[target_id]:
-        return jsonify({'error': f'Unknown target: {target_id}'}), 404
-    data = tamper_targets[target_id]['inspect']()
-    if (not data.get('compliant') and data.get('type') == 'file'
-            and data.get('pre_tamper') is not None):
-        data['diff'] = list(difflib.unified_diff(
-            data['pre_tamper'].splitlines(keepends=True),
-            data['current'].splitlines(keepends=True),
-            fromfile='pre-tamper',
-            tofile='current',
-        ))
-    return jsonify(data)
-
-
-@app.route('/api/reset/<protocol_id>/<target_id>', methods=['POST'])
-def api_reset(protocol_id, target_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    tamper_targets = REGISTRY[protocol_id].get('tamper_targets', {})
-    if target_id not in tamper_targets:
-        return jsonify({'error': f'Unknown target: {target_id}'}), 404
-    tamper_targets[target_id]['reset']()
-    return jsonify({'ok': True, 'protocol_id': protocol_id, 'target_id': target_id})
-
 
 
 @app.route('/api/run_summary/<protocol_id>')
@@ -3122,28 +2823,6 @@ def api_derive_term():
     })
 
 
-@app.route('/api/protocol_spec/<protocol_id>')
-def api_protocol_spec(protocol_id):
-    """Return the raw spec JSON for a custom protocol (used by the edit page)."""
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    entry = REGISTRY[protocol_id]
-    source = entry.get('custom_source')
-    if not source:
-        return jsonify({'error': 'Built-in protocols cannot be edited here'}), 400
-    try:
-        raw = open(source).read()
-        json.loads(raw)   # validate; raises JSONDecodeError if malformed
-    except FileNotFoundError:
-        return jsonify({'error': f'Source file not found: {source}'}), 404
-    except json.JSONDecodeError as e:
-        return jsonify({'error': f'Malformed source file: {e}'}), 400
-    # Return the raw bytes so key order is preserved exactly as saved —
-    # jsonify() would re-encode and sort keys, corrupting the displayed term.
-    from flask import Response
-    return Response(raw, mimetype='application/json')
-
-
 def _unique_copy_id(base_id):
     """Return 'copy_of_<base_id>' if unused, else 'copy_of_<base_id>_2', '_3', …"""
     candidate = f'copy_of_{base_id}'
@@ -3163,10 +2842,13 @@ def api_protocol_copy_spec(protocol_id):
     entry = REGISTRY[protocol_id]
     from flask import Response
 
-    # Custom protocol — return raw file bytes so key order is preserved exactly,
-    # but inject a unique suggested_copy_id field.
+    # Custom protocol backed by a single JSON file — return raw file bytes so
+    # key order is preserved exactly, but inject a unique suggested_copy_id field.
+    # (Dir-backed protocols also carry a custom_source, but it points at a
+    # directory, so guard on isfile() and let them fall through to the
+    # build_from_dir reconstruction branch below.)
     source = entry.get('custom_source')
-    if source:
+    if source and os.path.isfile(source):
         try:
             raw = open(source).read()
             spec = json.loads(raw)
@@ -3375,23 +3057,10 @@ def api_import_info(protocol_id):
     if 'imported_dir' not in entry:
         return jsonify({'imported': False})
     local_dir = entry['imported_dir']
-    try:
-        with open(os.path.join(local_dir, 'tamper_config.json')) as f:
-            tc = json.load(f)
-    except Exception:
-        tc = {}
-    stubs = [
-        {'tid': tid, 'label': cfg.get('label', tid),
-         'target_file': cfg.get('target_file', ''),
-         'original': cfg.get('target_file_original', '')}
-        for tid, cfg in tc.items()
-        if cfg.get('stub')
-    ]
     return jsonify({
-        'imported':   True,
-        'source':     entry.get('custom_source', ''),
-        'local_dir':  local_dir,
-        'stubs':      stubs,
+        'imported':  True,
+        'source':    entry.get('custom_source', ''),
+        'local_dir': local_dir,
     })
 
 

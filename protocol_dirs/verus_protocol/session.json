@@ -78,6 +78,13 @@
           "_BODY": 1
         },
         "ATTRS": []
+      },
+      "run_command_verus_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
       }
     },
     "ASP_Comps": {
@@ -85,7 +92,7 @@
       "certificate": "magic_appr",
       "appraise": "magic_appr",
       "hashevidence": "goldenbytes_appr",
-      "hashfile": "goldenevidence_appr",
+      "hashfile": "goldenbytes_appr",
       "hashdir": "goldenevidence_appr",
       "invary_get_measurement": "invary_get_measurement_appr",
       "provision": "NULL",

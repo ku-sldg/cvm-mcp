@@ -33,7 +33,7 @@ A fast whole-file integrity check over the four "do not edit" contract artifacts
 
 **Copland:** `lseq( lseq( bseq_chain( readfile_range×22 + readfile_marker_range×6 ), SIG ), APPR )`
 
-Per-contract measurements that identify exactly which GUMBO clause or oracle predicate was tampered. Contracts are extracted as byte ranges rather than whole files, so a single targeted edit triggers exactly one failing measurement.
+Per-contract measurements that identify exactly which GUMBO clause or oracle predicate failed attestation. Contracts are extracted as byte ranges rather than whole files, so a single targeted edit triggers exactly one failing measurement.
 
 **28 measurement targets across three artifact types:**
 - **AADL clauses** (`readfile_range`) — `assume`/`guarantee` statements and data invariants extracted by scanning for the clause name and reading to the `;` terminator. Line numbers are resolved live at provision/build time.

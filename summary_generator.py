@@ -167,61 +167,43 @@ def _render_session(session: dict) -> str:
 
 def _golden_refs(proto_id: str, term: dict) -> list[dict]:
     """
-    Walk the term tree and look up golden evidence for each ASPC node.
+    Return provisioned golden evidence rows for the protocol.
+    Reads asp_args.json directly from the protocol's directory.
     Returns list of dicts with keys: asp_id, filepath, timestamp, bundle.
-
-    For protocol-dir-based protocols reads golden_ts from asp_args.json and
-    the most-recent provision bundle from provision_history.json.
     """
-    from protocol_loader import infer_tamper_config
+    rows        = []
+    seen        = set()
+    bundle_name = '—'
 
-    targets = infer_tamper_config(term)
-    rows    = []
-    seen    = set()
-
-    # Attempt to load golden metadata from the protocol's directory
-    asp_args_store = {}
-    bundle_name    = '—'
-    _SKIP = frozenset({'asp_id_appr', 'env_var_golden', 'filepath_golden',
-                       'golden_b64', 'golden_ts'})
     try:
         from protocols import REGISTRY
         local_dir = REGISTRY.get(proto_id, {}).get('imported_dir', '')
-        if local_dir:
-            import json
-            with open(os.path.join(local_dir, 'asp_args.json')) as f:
-                asp_args_store = json.load(f)
-            from evidence_slice import load_provision_history
-            history = load_provision_history(proto_id)
-            if history:
-                bundle_name = os.path.basename(history[0])
+        if not local_dir:
+            return []
+        import json
+        with open(os.path.join(local_dir, 'asp_args.json')) as f:
+            asp_args_store = json.load(f)
+        from evidence_slice import load_provision_history
+        history = load_provision_history(proto_id)
+        if history:
+            bundle_name = os.path.basename(history[0])
+        for asp_id, targets in asp_args_store.items():
+            for _tid, tdata in targets.items():
+                filepath = (tdata.get('filepath_golden')
+                            or tdata.get('target_file', '—'))
+                key = (asp_id, filepath)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append({
+                    'asp_id':    asp_id,
+                    'filepath':  filepath,
+                    'timestamp': tdata.get('golden_ts', '—'),
+                    'bundle':    bundle_name,
+                })
     except Exception:
         pass
 
-    for _tid, cfg in targets.items():
-        asp_id   = cfg['asp_id']
-        asp_args = cfg['asp_args']
-        filepath = cfg['target_file']
-        key      = (asp_id, filepath)
-        if key in seen:
-            continue
-        seen.add(key)
-
-        timestamp = '—'
-        if asp_args_store:
-            clean_query = {k: v for k, v in asp_args.items() if k not in _SKIP}
-            for _targ_id, tdata in asp_args_store.get(asp_id, {}).items():
-                clean_stored = {k: v for k, v in tdata.items() if k not in _SKIP}
-                if clean_stored == clean_query:
-                    timestamp = tdata.get('golden_ts', '—')
-                    break
-
-        rows.append({
-            'asp_id':    asp_id,
-            'filepath':  filepath,
-            'timestamp': timestamp,
-            'bundle':    bundle_name,
-        })
     return rows
 
 
@@ -500,7 +482,7 @@ def generate_run_summary(protocol_id: str,
     # Source files
     if proto_dir:
         src_files = [f for f in
-                     ['manifest.json', 'term.json', 'asp_args.json', 'session.json', 'tamper_config.json']
+                     ['manifest.json', 'term.json', 'asp_args.json', 'session.json']
                      if os.path.exists(os.path.join(proto_dir, f))]
         if src_files:
             md.append('---')

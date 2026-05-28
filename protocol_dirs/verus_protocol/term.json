@@ -1,32 +1,43 @@
 {
-  "TERM_CONSTRUCTOR": "bseq",
+  "TERM_CONSTRUCTOR": "lseq",
   "TERM_BODY": [
     {
-      "split1": "ALL",
-      "split2": "ALL"
+      "TERM_CONSTRUCTOR": "bseq",
+      "TERM_BODY": [
+        {
+          "split1": "ALL",
+          "split2": "ALL"
+        },
+        {
+          "TERM_CONSTRUCTOR": "asp",
+          "TERM_BODY": {
+            "ASP_CONSTRUCTOR": "ASPC",
+            "ASP_BODY": {
+              "ASP_ID": "hashfile",
+              "ASP_ARGS": {},
+              "ASP_PLC": "p1",
+              "ASP_TARG_ID": "verus_exe_targ"
+            }
+          }
+        },
+        {
+          "TERM_CONSTRUCTOR": "asp",
+          "TERM_BODY": {
+            "ASP_CONSTRUCTOR": "ASPC",
+            "ASP_BODY": {
+              "ASP_ID": "run_command_verus",
+              "ASP_ARGS": {},
+              "ASP_PLC": "p1",
+              "ASP_TARG_ID": "run_verus_targ"
+            }
+          }
+        }
+      ]
     },
     {
       "TERM_CONSTRUCTOR": "asp",
       "TERM_BODY": {
-        "ASP_CONSTRUCTOR": "ASPC",
-        "ASP_BODY": {
-          "ASP_ID": "hashfile",
-          "ASP_ARGS": {},
-          "ASP_PLC": "p1",
-          "ASP_TARG_ID": "verus_exe_targ"
-        }
-      }
-    },
-    {
-      "TERM_CONSTRUCTOR": "asp",
-      "TERM_BODY": {
-        "ASP_CONSTRUCTOR": "ASPC",
-        "ASP_BODY": {
-          "ASP_ID": "run_command_verus",
-          "ASP_ARGS": {},
-          "ASP_PLC": "p1",
-          "ASP_TARG_ID": "run_verus_targ"
-        }
+        "ASP_CONSTRUCTOR": "APPR"
       }
     }
   ]

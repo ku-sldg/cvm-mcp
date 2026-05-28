@@ -87,6 +87,40 @@ def get_protocol_dir_meta(proto_id):
     except FileNotFoundError:
         return {}
 
+
+# Known config files in a protocol directory, in the order they should be
+# displayed on the dashboard.
+PROTOCOL_DIR_FILES = (
+    'term.json',
+    'term_no_appr.json',
+    'manifest.json',
+    'session.json',
+    'asp_args.json',
+)
+
+
+def get_protocol_dir_files(proto_id):
+    """
+    Return a list of (filename, raw_text) tuples for every known config file
+    that exists in protocol_dirs/<proto_id>/.
+
+    The raw file text is returned (not parsed JSON) so the dashboard preserves
+    on-disk formatting and key order exactly as written by the generator.
+    """
+    out = []
+    base = _protocol_dir(proto_id)
+    if not os.path.isdir(base):
+        return out
+    for fn in PROTOCOL_DIR_FILES:
+        path = os.path.join(base, fn)
+        if os.path.isfile(path):
+            try:
+                with open(path) as f:
+                    out.append((fn, f.read()))
+            except OSError:
+                pass
+    return out
+
 def inject_asp_args(term, asp_args_map):
     """
     Return a deep copy of *term* with ASP_ARGS filled in from *asp_args_map*
@@ -326,104 +360,6 @@ def _default_meta_from_term(proto_id, term):
     }
 
 
-def infer_tamper_config(term):
-    """
-    Walk a Copland term tree and return a dict of file-target metadata keyed by
-    "<asp_id>::<filepath>" for every ASPC node whose ASP_ARGS include 'filepath'.
-
-    Each entry:
-      {
-        "label":       "<basename(filepath)>",
-        "asp_id":      "<asp_id>",
-        "target_file": "<filepath>",
-        "asp_args":    {<ASP_ARGS without golden_b64>}
-      }
-    """
-    result = {}
-
-    def _walk(node):
-        if not isinstance(node, dict):
-            return
-        constructor = node.get('TERM_CONSTRUCTOR')
-        body        = node.get('TERM_BODY')
-        if constructor == 'asp':
-            if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                asp_body = body.get('ASP_BODY', {})
-                asp_id   = asp_body.get('ASP_ID', '')
-                asp_args = asp_body.get('ASP_ARGS', {})
-                filepath = asp_args.get('filepath', '')
-                if asp_id and filepath:
-                    tid = f'{asp_id}::{filepath}'
-                    clean_args = {k: v for k, v in asp_args.items() if k != 'golden_b64'}
-                    result[tid] = {
-                        'label':       os.path.basename(filepath) or filepath,
-                        'asp_id':      asp_id,
-                        'target_file': filepath,
-                        'asp_args':    clean_args,
-                    }
-            return
-        if isinstance(body, list):
-            for child in body:
-                if isinstance(child, dict):
-                    _walk(child)
-
-    _walk(term)
-    return result
-
-
-def create_target_stubs(tamper_config, targets_dir):
-    """
-    For each target in tamper_config whose target_file doesn't exist locally,
-    create a stub file in targets_dir.
-
-    Returns a rewrite dict {original_path: stub_path}.
-    """
-    rewrites = {}
-    for tid, cfg in tamper_config.items():
-        target_file = cfg.get('target_file', '')
-        if not target_file or os.path.exists(target_file):
-            continue
-        os.makedirs(targets_dir, exist_ok=True)
-        stub_name = os.path.basename(target_file) or tid.replace('::', '_')
-        base, ext = os.path.splitext(stub_name)
-        stub_path = os.path.join(targets_dir, stub_name)
-        n = 1
-        while os.path.exists(stub_path) and stub_path not in rewrites.values():
-            stub_path = os.path.join(targets_dir, f'{base}_{n}{ext}')
-            n += 1
-        with open(stub_path, 'wb') as f:
-            f.write(b'# stub created by cvm-mcp import -- replace with the real file\n')
-        rewrites[target_file] = stub_path
-    return rewrites
-
-
-def _rewrite_paths_in_term(term, rewrites):
-    """Return a deep copy of *term* with filepath values replaced per *rewrites*."""
-    import copy
-    term = copy.deepcopy(term)
-
-    def _walk(node):
-        if not isinstance(node, dict):
-            return
-        constructor = node.get('TERM_CONSTRUCTOR')
-        body        = node.get('TERM_BODY')
-        if constructor == 'asp':
-            if isinstance(body, dict) and body.get('ASP_CONSTRUCTOR') == 'ASPC':
-                asp_body = body.get('ASP_BODY', {})
-                asp_args = asp_body.get('ASP_ARGS', {})
-                fp = asp_args.get('filepath', '')
-                if fp in rewrites:
-                    asp_args['filepath'] = rewrites[fp]
-            return
-        if isinstance(body, list):
-            for child in body:
-                if isinstance(child, dict):
-                    _walk(child)
-
-    _walk(term)
-    return term
-
-
 def import_protocol_dir(source_path, proto_id=None):
     """
     Import a protocol directory from *source_path* into the local
@@ -432,14 +368,9 @@ def import_protocol_dir(source_path, proto_id=None):
     Steps:
       1. Read term.json / session.json / manifest.json from source (required).
          meta.json is optional — a default is generated from term.json when absent.
-      2. Infer tamper_config from term (merge label overrides from source
-         tamper_config.json if present).
-      3. Create stub files in protocol_dirs/<proto_id>/targets/ for any
-         target_file paths that do not exist locally.
-      4. Write term_local.json with rewritten paths when stubs were created.
-      5. Copy core JSON files to the local directory.
-      6. Register the protocol in REGISTRY via register_protocol_dir().
-      7. Return proto_id.
+      2. Copy core JSON files to the local directory.
+      3. Register the protocol in REGISTRY via register_protocol_dir().
+      4. Return proto_id.
 
     Raises FileNotFoundError if required source files are missing.
     Raises ValueError if proto_id conflicts with a built-in protocol.
@@ -473,41 +404,9 @@ def import_protocol_dir(source_path, proto_id=None):
             f"'{proto_id}' is a built-in protocol and cannot be replaced by import."
         )
 
-    # Merge tamper_config: infer from term, apply label overrides from source
-    tamper_config = infer_tamper_config(term)
-    try:
-        source_tamper = _read('tamper_config.json')
-        for tid, cfg in source_tamper.items():
-            if tid in tamper_config:
-                if 'label' in cfg:
-                    tamper_config[tid]['label'] = cfg['label']
-            else:
-                tamper_config[tid] = cfg  # preserve entries we couldn't infer
-    except (FileNotFoundError, KeyError):
-        pass
-
     # Create local directory
-    local_dir   = _protocol_dir(proto_id)
-    targets_dir = os.path.join(local_dir, 'targets')
+    local_dir = _protocol_dir(proto_id)
     os.makedirs(local_dir, exist_ok=True)
-
-    # Create stubs for missing targets; rewrite tamper_config + term
-    rewrites = create_target_stubs(tamper_config, targets_dir)
-    if rewrites:
-        # Update tamper_config entries with rewritten paths
-        for tid, cfg in tamper_config.items():
-            orig = cfg.get('target_file', '')
-            if orig in rewrites:
-                cfg['target_file_original'] = orig
-                cfg['target_file']          = rewrites[orig]
-                cfg['stub']                 = True
-                if isinstance(cfg.get('asp_args'), dict) and 'filepath' in cfg['asp_args']:
-                    cfg['asp_args'] = {**cfg['asp_args'], 'filepath': rewrites[orig]}
-        # Write term_local.json with rewritten paths
-        term_local = _rewrite_paths_in_term(term, rewrites)
-        with open(os.path.join(local_dir, 'term_local.json'), 'w') as f:
-            json.dump(term_local, f, indent=2)
-            f.write('\n')
 
     def _write(filename, data):
         with open(os.path.join(local_dir, filename), 'w') as f:
@@ -518,7 +417,6 @@ def import_protocol_dir(source_path, proto_id=None):
     _write('term.json', term)
     _write('session.json', session)
     _write('manifest.json', manifest)
-    _write('tamper_config.json', tamper_config)
 
     asp_args_path = os.path.join(local_dir, 'asp_args.json')
     if not os.path.exists(asp_args_path):
@@ -533,38 +431,13 @@ def import_protocol_dir(source_path, proto_id=None):
     return proto_id
 
 
-def _build_tamper_targets_from_config(proto_id, tamper_config, local_dir=None):
-    """
-    Build a tamper_targets dict from a tamper_config dict
-    (as loaded from tamper_config.json).
-    """
-    targets = {}
-    for tid, cfg in tamper_config.items():
-        target_file = cfg.get('target_file', '')
-        if not target_file:
-            continue
-        label    = cfg.get('label', tid)
-        asp_id   = cfg.get('asp_id') or None
-        asp_args = cfg.get('asp_args') if cfg.get('asp_args') is not None else None
-        targets[tid] = _make_file_tamper_target(
-            tid, label, target_file, '',
-            golden_evidence_path=None,
-            asp_id=asp_id,
-            asp_args=asp_args,
-            asp_types={},
-            proto_id=proto_id,
-            local_dir=local_dir,
-        )
-    return targets
-
-
 def register_protocol_dir(proto_id, local_dir=None, source_path=None):
     """
     Build a REGISTRY entry backed by protocol_dirs/<proto_id>/ and insert it.
 
-    Reads meta.json and tamper_config.json from *local_dir*
-    (defaults to _protocol_dir(proto_id)).  Creates provision / golden_state
-    closures compatible with the rest of the dashboard.
+    Reads meta.json from *local_dir* (defaults to _protocol_dir(proto_id)).
+    Creates provision / golden_state closures compatible with the rest of the
+    dashboard.
 
     Returns proto_id.
     """
@@ -577,15 +450,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
             meta = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         meta = {}
-
-    # Read tamper_config
-    try:
-        with open(os.path.join(local_dir, 'tamper_config.json')) as f:
-            tamper_config = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        tamper_config = {}
-
-    tamper_targets = _build_tamper_targets_from_config(proto_id, tamper_config, local_dir=local_dir)
 
     # Determine effective term file (prefer term_local.json when stubs exist),
     # then inject ASP_ARGS from asp_args.json for any ASP_TARG_ID nodes.
@@ -618,8 +482,8 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         }
         return json.dumps(manifest), json.dumps(request)
 
-    # Determine which ASP_IDs use goldenbytes_appr in this session.
-    # Only these protocols support the new provision flow.
+    # Determine which ASP_IDs use goldenbytes_appr or goldenevidence_appr in this session.
+    # Only these protocols support the provision flow.
     try:
         _session_for_init = json.load(open(os.path.join(local_dir, 'session.json')))
     except Exception:
@@ -627,7 +491,10 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
     _comps_for_init = (_session_for_init
                        .get('Session_Context', {})
                        .get('ASP_Comps', {}))
-    _has_goldenbytes_appr = any(v == 'goldenbytes_appr' for v in _comps_for_init.values())
+    _has_goldenbytes_appr = any(
+        v in ('goldenbytes_appr', 'goldenevidence_appr')
+        for v in _comps_for_init.values()
+    )
 
     def provision(golden_path=None):  # golden_path ignored in new flow
         import subprocess
@@ -645,17 +512,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         term_obj     = _effective_term()
         session_ctx  = session_obj.get('Session_Context', {})
         comps        = session_ctx.get('ASP_Comps', {})
-
-        # Save .original snapshots of any tamper target files before running
-        for cfg in tamper_config.values():
-            fp = cfg.get('target_file', '')
-            if fp:
-                orig = fp + '.original'
-                if not os.path.exists(orig):
-                    try:
-                        open(orig, 'wb').write(open(fp, 'rb').read())
-                    except FileNotFoundError:
-                        pass
 
         # Fields stored in asp_args.json for dashboard bookkeeping only —
         # must NOT appear in the ASPC ASP_ARGS sent to the CVM (they would
@@ -767,7 +623,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
                     'target':    targ_id,
                     'golden':    'provision_bundle.json',
                     'timestamp': ts,
-                    'tamper_id': targ_id,
                 })
 
         if changed:
@@ -778,26 +633,42 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         return resolved
 
     def golden_state():
-        """Return provision state for each goldenbytes_appr target from asp_args.json."""
+        """Return provision state for each goldenbytes_appr / goldenevidence_appr target."""
         asp_args    = _load_asp_args(proto_id)
         session_obj = json.load(open(os.path.join(local_dir, 'session.json')))
         comps       = session_obj.get('Session_Context', {}).get('ASP_Comps', {})
         bundle_path = os.path.join(local_dir, 'provision_bundle.json')
+        bundle_ts   = None
+        if os.path.exists(bundle_path):
+            import time
+            bundle_ts = datetime.datetime.fromtimestamp(
+                os.path.getmtime(bundle_path)
+            ).strftime('%Y-%m-%d %H:%M:%S')
         result = []
         for asp_id, targets in asp_args.items():
-            if comps.get(asp_id) != 'goldenbytes_appr':
-                continue
-            for targ_id, args in targets.items():
-                golden_b64 = args.get('golden_b64', '')
-                ts         = args.get('golden_ts') if golden_b64 else None
-                result.append({
-                    'target':      targ_id,
-                    'golden':      'provision_bundle.json' if golden_b64 else None,
-                    'golden_path': bundle_path if golden_b64 else None,
-                    'sha256':      None,
-                    'timestamp':   ts,
-                    'tamper_id':   targ_id,
-                })
+            comp = comps.get(asp_id, '')
+            if comp == 'goldenbytes_appr':
+                for targ_id, args in targets.items():
+                    golden_b64 = args.get('golden_b64', '')
+                    ts         = args.get('golden_ts') if golden_b64 else None
+                    result.append({
+                        'target':      targ_id,
+                        'golden':      'provision_bundle.json' if golden_b64 else None,
+                        'golden_path': bundle_path if golden_b64 else None,
+                        'sha256':      None,
+                        'timestamp':   ts,
+                    })
+            elif comp == 'goldenevidence_appr':
+                for targ_id, args in targets.items():
+                    fp_golden = args.get('filepath_golden', '')
+                    provisioned = bool(fp_golden and os.path.exists(fp_golden))
+                    result.append({
+                        'target':      targ_id,
+                        'golden':      os.path.basename(fp_golden) if provisioned else None,
+                        'golden_path': fp_golden if provisioned else None,
+                        'sha256':      None,
+                        'timestamp':   bundle_ts if provisioned else None,
+                    })
         return result
 
     def prepare(req):
@@ -821,7 +692,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None):
         'copland':        meta.get('copland', ''),
         'flow':           meta.get('flow', []),
         'build':          build,
-        'tamper_targets': tamper_targets,
         'places':         {},
         'custom_source':  source_path or local_dir,
         'imported_dir':   local_dir,
@@ -843,14 +713,12 @@ def preview_protocol_dir(source_path):
       - meta_generated: True when meta.json was absent and defaults were generated
       - files_found: list of filenames found
       - files_missing: list of required filenames not found
-      - inferred_targets: result of infer_tamper_config(term)
-      - stubs_needed: list of target_file paths that don't exist locally
       - warnings: list of warning strings
       - error: string or None
     """
     source_path = os.path.abspath(os.path.expanduser(source_path))
     required = ('term.json', 'session.json', 'manifest.json')
-    optional = ('meta.json', 'tamper_config.json', 'term_no_appr.json', 'asp_args.json')
+    optional = ('meta.json', 'term_no_appr.json', 'asp_args.json')
 
     files_found   = []
     files_missing = []
@@ -863,15 +731,13 @@ def preview_protocol_dir(source_path):
 
     if files_missing:
         return {
-            'error':            f"Missing required files: {', '.join(files_missing)}",
-            'files_found':      files_found,
-            'files_missing':    files_missing,
-            'proto_id':         None,
-            'name':             None,
-            'meta_generated':   False,
-            'inferred_targets': {},
-            'stubs_needed':     [],
-            'warnings':         [],
+            'error':          f"Missing required files: {', '.join(files_missing)}",
+            'files_found':    files_found,
+            'files_missing':  files_missing,
+            'proto_id':       None,
+            'name':           None,
+            'meta_generated': False,
+            'warnings':       [],
         }
 
     try:
@@ -880,8 +746,7 @@ def preview_protocol_dir(source_path):
     except Exception as e:
         return {'error': f'Could not parse term.json: {e}', 'files_found': files_found,
                 'files_missing': [], 'proto_id': None, 'name': None,
-                'meta_generated': False, 'inferred_targets': {}, 'stubs_needed': [],
-                'warnings': []}
+                'meta_generated': False, 'warnings': []}
 
     proto_id = os.path.basename(source_path.rstrip('/\\'))
 
@@ -894,19 +759,12 @@ def preview_protocol_dir(source_path):
         except Exception as e:
             return {'error': f'Could not parse meta.json: {e}', 'files_found': files_found,
                     'files_missing': [], 'proto_id': proto_id, 'name': None,
-                    'meta_generated': False, 'inferred_targets': {}, 'stubs_needed': [],
-                    'warnings': []}
+                    'meta_generated': False, 'warnings': []}
     else:
         meta = _default_meta_from_term(proto_id, term)
         meta_generated = True
 
     proto_id = os.path.basename(source_path.rstrip('/\\'))
-    inferred = infer_tamper_config(term)
-    stubs_needed = [
-        cfg['target_file']
-        for cfg in inferred.values()
-        if cfg.get('target_file') and not os.path.exists(cfg['target_file'])
-    ]
 
     warnings = []
     registry = _get_registry()
@@ -923,25 +781,17 @@ def preview_protocol_dir(source_path):
             "meta.json not found — name, copland, and flow were inferred from term.json."
         )
 
-    if stubs_needed:
-        warnings.append(
-            f"{len(stubs_needed)} target file(s) not found locally — "
-            "stub files will be created in targets/."
-        )
-
     return {
-        'error':            None,
-        'proto_id':         proto_id,
-        'name':             meta.get('name', proto_id),
-        'description':      meta.get('description', ''),
-        'copland':          meta.get('copland', ''),
-        'flow':             meta.get('flow', []),
-        'meta_generated':   meta_generated,
-        'files_found':      files_found,
-        'files_missing':    [],
-        'inferred_targets': inferred,
-        'stubs_needed':     stubs_needed,
-        'warnings':         warnings,
+        'error':          None,
+        'proto_id':       proto_id,
+        'name':           meta.get('name', proto_id),
+        'description':    meta.get('description', ''),
+        'copland':        meta.get('copland', ''),
+        'flow':           meta.get('flow', []),
+        'meta_generated': meta_generated,
+        'files_found':    files_found,
+        'files_missing':  [],
+        'warnings':       warnings,
     }
 
 
@@ -980,165 +830,6 @@ def load_saved_protocol_dirs():
 def _get_registry():
     from protocols import REGISTRY
     return REGISTRY
-
-
-def _write_golden(path, data):
-    from protocols import _write_golden as _wg
-    return _wg(path, data)
-
-
-def _read_golden(path):
-    from protocols import _read_golden as _rg
-    return _rg(path)
-
-
-def _file_compliant(file_path, golden_path):
-    from protocols import _file_compliant as _fc
-    return _fc(file_path, golden_path)
-
-
-def _tamper_file(file_path, golden_path, bad_bytes):
-    from protocols import _tamper_file as _tf
-    return _tf(file_path, golden_path, bad_bytes)
-
-
-def _make_file_tamper_target(target_id, label, file_path, golden_path,
-                              golden_evidence_path=None, asp_id=None,
-                              asp_args=None, asp_types=None, proto_id=None,
-                              local_dir=None, golden_lookup_fn=None):
-    """
-    Create a generic file-based tamper_targets entry for a loaded protocol.
-
-    asp_id / asp_args: the measurement ASP and its exact args for this target.
-    local_dir: protocol_dir path; when provided golden_b64 is looked up from
-               local_dir/asp_args.json by matching measurement args.
-    golden_evidence_path / asp_types: kept for API compatibility, not used.
-    """
-    bad_bytes = f"[TAMPERED] {label} - modified to fail appraisal.".encode()
-
-    # Keys present in tamper_config asp_args that are NOT measurement args and
-    # must be stripped when matching against asp_args.json entries.
-    _SKIP = {'asp_id_appr', 'env_var_golden', 'filepath_golden', 'golden_b64', 'golden_ts'}
-
-    def _lookup_golden_b64():
-        """Return (golden_b64_str, targ_id) from asp_args.json or sidecar, or (None, None)."""
-        if golden_lookup_fn is not None:
-            return golden_lookup_fn()
-        if not (local_dir and asp_id and asp_args is not None):
-            return None, None
-        try:
-            all_args = _load_asp_args_from_dir(local_dir)
-            targets  = all_args.get(asp_id, {})
-            clean_lookup = {k: v for k, v in asp_args.items() if k not in _SKIP}
-            for targ_id, targ_data in targets.items():
-                clean_stored = {k: v for k, v in targ_data.items() if k not in _SKIP}
-                if clean_stored == clean_lookup:
-                    b64 = targ_data.get('golden_b64') or None
-                    return b64, targ_id
-        except Exception:
-            pass
-        return None, None
-
-    def _get_golden_hash():
-        import base64
-        b64, _ = _lookup_golden_b64()
-        if b64:
-            try:
-                return base64.b64decode(b64)
-            except Exception:
-                pass
-        return None
-
-    def tamper():
-        golden_hash = _get_golden_hash()
-        content, nonce = bad_bytes, 0
-        while golden_hash and hashlib.sha256(content).digest() == golden_hash:
-            nonce += 1
-            content = bad_bytes + f'\n[TAMPER-NONCE-{nonce}]'.encode()
-        try:
-            open(file_path + '.src', 'wb').write(open(file_path, 'rb').read())
-        except FileNotFoundError:
-            pass
-        open(file_path, 'wb').write(content)
-
-    def repair():
-        src     = file_path + '.src'
-        default = file_path + '.default'
-        if os.path.exists(src):
-            content = open(src, 'rb').read()
-        elif os.path.exists(default):
-            content = open(default, 'rb').read()
-        else:
-            return   # no restore point — provision first
-        open(file_path, 'wb').write(content)
-
-    def reset():
-        orig    = file_path + '.original'
-        default = file_path + '.default'
-        if os.path.exists(orig):
-            content = open(orig, 'rb').read()
-        elif os.path.exists(default):
-            content = open(default, 'rb').read()
-        else:
-            return   # no restore point — provision first
-        open(file_path, 'wb').write(content)
-
-    def get_state():
-        import base64
-        b64, _ = _lookup_golden_b64()
-        if b64 is None and local_dir:
-            return {'compliant': None}   # not yet provisioned
-        if b64:
-            try:
-                current  = hashlib.sha256(open(file_path, 'rb').read()).digest()
-                expected = base64.b64decode(b64)
-                return {'compliant': current == expected}
-            except Exception:
-                return {'compliant': None}
-        return {'compliant': _file_compliant(file_path, golden_path)}
-
-    def inspect():
-        import base64
-        try:
-            current_bytes = open(file_path, 'rb').read()
-        except FileNotFoundError:
-            return {'error': f'Target file not found: {os.path.basename(file_path)}'}
-
-        result = {
-            'type':           'file',
-            'current':        current_bytes.decode('utf-8', errors='replace'),
-            'current_sha256': hashlib.sha256(current_bytes).hexdigest(),
-        }
-
-        src = file_path + '.src'
-        if os.path.exists(src):
-            result['pre_tamper'] = open(src, 'rb').read().decode('utf-8', errors='replace')
-        orig = file_path + '.original'
-        if os.path.exists(orig):
-            result['original'] = open(orig, 'rb').read().decode('utf-8', errors='replace')
-
-        b64, _ = _lookup_golden_b64()
-        if b64 is None:
-            return {**result, 'error': 'No golden evidence — run Provision first'}
-        result['evidence_bundle'] = 'provision_bundle.json'
-        try:
-            expected = base64.b64decode(b64)
-            result['golden_sha256'] = expected.hex()
-            result['compliant']     = (
-                hashlib.sha256(current_bytes).digest() == expected
-            )
-        except Exception as e:
-            result['evidence_slice_error'] = str(e)
-        return result
-
-    return {
-        'label':     label,
-        'tamper':    tamper,
-        'repair':    repair,
-        'reset':     reset,
-        'get_state': get_state,
-        'inspect':   inspect,
-    }
 
 
 def load_protocol_from_file(path):
@@ -1217,15 +908,6 @@ def load_protocol_from_file(path):
             os.path.expanduser('~/Claude_workspace/asp-libs/target/release'),
         )
 
-        # Save per-file original snapshots (for repair/reset) before running CVM
-        for t in resolved_targets:
-            orig = t['file'] + '.original'
-            if not os.path.exists(orig):
-                try:
-                    open(orig, 'wb').write(open(t['file'], 'rb').read())
-                except FileNotFoundError:
-                    pass
-
         # Run CVM with a measurement-only term (APPR → NULL) so it always succeeds
         meas_term    = _make_measurement_term(request_obj.get('TERM', {}))
         meas_request = {**request_obj, 'TERM': meas_term}
@@ -1266,7 +948,6 @@ def load_protocol_from_file(path):
                 'target':    t['label'],
                 'golden':    os.path.basename(actual_ev_path),
                 'timestamp': ts,
-                'tamper_id': t['id'],
             }
             for t in resolved_targets
         ]
@@ -1291,31 +972,8 @@ def load_protocol_from_file(path):
                 'golden_path': golden_path,
                 'sha256':      None,
                 'timestamp':   ts,
-                'tamper_id':   t['id'],
             })
         return result
-
-    def _make_sidecar_lookup(targ_id):
-        """Return a golden_b64 lookup function that reads from the sidecar keyed by targ_id."""
-        def _lookup():
-            entry = _load_golden_state_sidecar().get(targ_id)
-            if entry:
-                return entry.get('golden_b64') or None, targ_id
-            return None, None
-        return _lookup
-
-    tamper_targets = {
-        t['id']: _make_file_tamper_target(
-            t['id'], t['label'], t['file'], t['golden'],
-            golden_evidence_path=golden_evidence_path,
-            asp_id=t.get('asp_id'),
-            asp_args=t.get('asp_args'),
-            asp_types=asp_types,
-            proto_id=proto_id,
-            golden_lookup_fn=_make_sidecar_lookup(t['id']),
-        )
-        for t in resolved_targets
-    }
 
     flow = spec.get('flow') or [
         {'type': 'asp', 'label': spec.get('copland', proto_id), 'style': 'default'}
@@ -1368,7 +1026,6 @@ def load_protocol_from_file(path):
         'provision':      provision,
         'golden_state':   golden_state,
         'prepare':        prepare,
-        'tamper_targets': tamper_targets,
         'places':         spec.get('places', {}),
         'custom_source':  path,          # marks this as a dynamically-loaded protocol
     }
