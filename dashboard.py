@@ -929,6 +929,8 @@ async function confirmImportDir() {
 }
 
 {{ base_js | safe }}
+// Filesystem path autocomplete on the import field (Enter triggers preview).
+setupPathComplete('import-dir-path', previewImportDir);
 </script>
 </body></html>
 """
@@ -1854,9 +1856,15 @@ def api_protocol_files(protocol_id):
 def api_remove_protocol(protocol_id):
     if protocol_id not in REGISTRY:
         return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
+    # Refuse to delete a protocol while it is running — deleting its directory
+    # mid-run would race the background run/provision thread reading those files.
+    with _running_lock:
+        if protocol_id in _running_protocols:
+            return jsonify({'error': 'Protocol is currently running — stop or wait '
+                                     'for it to finish before removing.'}), 409
     cleanup = flask_request.args.get('cleanup', '').lower() == 'true'
     if not protocol_loader.remove_protocol(protocol_id, delete_files=cleanup):
-        return jsonify({'error': 'Cannot remove built-in protocol'}), 400
+        return jsonify({'error': f'Could not remove protocol: {protocol_id}'}), 400
     with store_lock:
         results_store.pop(protocol_id, None)
     return jsonify({'ok': True, 'id': protocol_id})
