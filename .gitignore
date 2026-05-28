@@ -27,3 +27,4 @@ testing/
 # Protocol dir runtime artifacts
 protocol_dirs/**/*_evidence.json
 protocol_dirs/**/.vscode/
+protocol_dirs/**/cvm_request.json

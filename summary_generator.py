@@ -363,7 +363,7 @@ def generate_run_summary(protocol_id: str,
         md.append('> *No run data available — run the protocol to populate results.*')
         md.append('')
 
-    # CVM invocation
+    # CVM invocation — emit a concrete, copy-pasteable command.
     cvm_bin = os.environ.get(
         'CVM_BINARY',
         os.path.expanduser('~/Claude_workspace/cvm/_build/default/theories/cvm'),
@@ -376,14 +376,50 @@ def generate_run_summary(protocol_id: str,
     md.append('')
     md.append('## CVM Invocation')
     md.append('')
-    md.append('```')
-    md.append(f'cvm \\')
-    md.append(f'  --manifest_file  <manifest.json> \\')
-    md.append(f'  --req_file       <request.json>  \\')
-    md.append(f'  --asp_bin        {asp_bin} \\')
-    md.append(f'  --log_level      Info \\')
-    md.append(f'  --cvm_binary     {cvm_bin}')
-    md.append('```')
+
+    # Materialize the exact request the dashboard/MCP send to the CVM
+    # (build_from_dir injects any provisioned golden_b64 into the term) so the
+    # command below references a real, on-disk file and reproduces the run
+    # independently of the dashboard.
+    req_path = None
+    if proto_dir:
+        try:
+            _mf, _rq = pl.build_from_dir(protocol_id)
+            req_path = os.path.join(proto_dir, 'cvm_request.json')
+            with open(req_path, 'w') as f:
+                json.dump(_rq, f, indent=2)
+                f.write('\n')
+        except Exception:
+            req_path = None
+
+    if req_path and manifest_path:
+        md.append('The exact request sent to the CVM — the Copland term with any '
+                  'provisioned `golden_b64` injected — has been written to '
+                  '`cvm_request.json`. Copy this command into a terminal to '
+                  'reproduce the attestation independently of the dashboard:')
+        md.append('')
+        md.append('```bash')
+        md.append(f'{cvm_bin} \\')
+        md.append(f'  --manifest_file {manifest_path} \\')
+        md.append(f'  --req_file      {req_path} \\')
+        md.append(f'  --asp_bin       {asp_bin} \\')
+        md.append(f'  --log_level     Info \\')
+        md.append(f'  --cvm_binary    {cvm_bin}')
+        md.append('```')
+        md.append('')
+        md.append('*The CVM writes the JSON evidence response to stdout.*')
+    else:
+        md.append('*(No protocol directory — fill in concrete manifest/request '
+                  'file paths to run.)*')
+        md.append('')
+        md.append('```bash')
+        md.append(f'{cvm_bin} \\')
+        md.append(f'  --manifest_file <manifest.json> \\')
+        md.append(f'  --req_file      <request.json> \\')
+        md.append(f'  --asp_bin       {asp_bin} \\')
+        md.append(f'  --log_level     Info \\')
+        md.append(f'  --cvm_binary    {cvm_bin}')
+        md.append('```')
     md.append('')
 
     # Manifest
