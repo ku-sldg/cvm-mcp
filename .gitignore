@@ -6,24 +6,17 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Golden evidence binaries and provisioning artifacts (generated locally)
+# Golden evidence binaries and measured-file backups (generated locally)
 examples/*.bin
 examples/*.bin.src
 examples/*.src
 examples/*.original
-examples/*.original_golden.json
-examples/*.*.original_golden.json
-examples/target_goldens.json
-examples/provision_history.json
-examples/*_evidence.json
-examples/*_evidence.json.ts
 
 # MCP server config (contains machine-specific venv paths — copy from .mcp.json.example)
 .mcp.json
 
 # Scratch / session exports
 examples/dashboard.html
-loaded_protocols.json
 session-export.md
 *-export.md
 dashboard.log
@@ -34,6 +27,3 @@ testing/
 # Protocol dir runtime artifacts
 protocol_dirs/**/*_evidence.json
 protocol_dirs/**/.vscode/
-
-# Protocols registered via the builder UI (machine-specific paths)
-built_protocols/
