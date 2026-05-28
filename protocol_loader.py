@@ -45,8 +45,6 @@ import os
 import hashlib
 import datetime
 
-_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loaded_protocols.json')
-
 
 # ── Canonical protocol registry ───────────────────────────────────────────────
 #
@@ -406,12 +404,6 @@ def import_protocol_dir(source_path, proto_id=None):
     except FileNotFoundError:
         meta = _default_meta_from_term(proto_id, term)
 
-    # Guard against clobbering built-in protocols
-    registry = _get_registry()
-    if proto_id in registry and registry[proto_id].get('builtin'):
-        raise ValueError(
-            f"'{proto_id}' is a built-in protocol and cannot be replaced by import."
-        )
 
     # Create local directory
     local_dir = _protocol_dir(proto_id)
@@ -436,12 +428,11 @@ def import_protocol_dir(source_path, proto_id=None):
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(local_dir, fname))
 
-    register_protocol_dir(proto_id, local_dir=local_dir, source_path=source_path,
-                          builtin=False)
+    register_protocol_dir(proto_id, local_dir=local_dir, source_path=source_path)
     return proto_id
 
 
-def register_protocol_dir(proto_id, local_dir=None, source_path=None, builtin=True):
+def register_protocol_dir(proto_id, local_dir=None, source_path=None):
     """
     Build a REGISTRY entry backed by protocol_dirs/<proto_id>/ and insert it.
 
@@ -449,9 +440,8 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None, builtin=Tr
     Creates provision / golden_state closures compatible with the rest of the
     dashboard.
 
-    *builtin* marks shipped protocols (protected from deletion/editing). User
-    protocols created by copying or importing pass builtin=False, which makes
-    them editable and removable in the dashboard.
+    All protocols are treated identically — a protocol simply *is* its
+    protocol_dirs/<id>/ directory. There is no built-in/custom distinction.
 
     Returns proto_id.
     """
@@ -709,7 +699,6 @@ def register_protocol_dir(proto_id, local_dir=None, source_path=None, builtin=Tr
         'places':         {},
         'custom_source':  source_path or local_dir,
         'imported_dir':   local_dir,
-        'builtin':        builtin,
     }
     if _provision_fn:
         entry['provision']    = _provision_fn
@@ -783,13 +772,8 @@ def preview_protocol_dir(source_path):
 
     warnings = []
     registry = _get_registry()
-    if proto_id in registry and registry[proto_id].get('builtin'):
-        warnings.append(
-            f"'{proto_id}' is a built-in protocol — import will be rejected. "
-            "Rename the directory first."
-        )
-    elif proto_id in registry:
-        warnings.append(f"'{proto_id}' is already imported; re-importing will overwrite it.")
+    if proto_id in registry or has_protocol_dir(proto_id):
+        warnings.append(f"'{proto_id}' already exists; importing will overwrite it.")
 
     if meta_generated:
         warnings.append(
@@ -811,16 +795,14 @@ def preview_protocol_dir(source_path):
 
 
 def add_protocol_dir(source_path):
-    """Import a protocol directory, persist it to config, and return its proto_id."""
-    proto_id = import_protocol_dir(source_path)
-    config = _load_config()
-    dirs = config.setdefault('dirs', [])
-    entry = {'source': os.path.abspath(os.path.expanduser(source_path)),
-             'proto_id': proto_id}
-    if not any(d.get('proto_id') == proto_id for d in dirs):
-        dirs.append(entry)
-        _save_config(config)
-    return proto_id
+    """
+    Import a protocol directory and return its proto_id.
+
+    import_protocol_dir copies the source into protocol_dirs/<id>/, so the
+    protocol is picked up automatically on every subsequent startup by
+    load_all_protocols() scanning protocol_dirs/. No separate config is needed.
+    """
+    return import_protocol_dir(source_path)
 
 
 def unique_protocol_id(base_id):
@@ -845,8 +827,8 @@ _COPY_SKIP_SUFFIXES = ('_evidence.json', '_evidence.json.ts')
 
 def copy_protocol_dir(src_id, new_id=None, new_name=None):
     """
-    Duplicate protocol_dirs/<src_id>/ into a new protocol directory, register it
-    as a user (non-built-in) protocol, and persist it to the config.
+    Duplicate protocol_dirs/<src_id>/ into a new protocol directory and register
+    it. The copy is an ordinary protocol like any other.
 
     The copy starts UNPROVISIONED: golden_b64 / golden_ts are cleared from
     asp_args.json and provisioning bundles/evidence sidecars are not copied, so
@@ -908,43 +890,20 @@ def copy_protocol_dir(src_id, new_id=None, new_name=None):
         json.dump(meta, f, indent=2)
         f.write('\n')
 
-    # Register as a user protocol and persist to config so it survives restarts.
-    register_protocol_dir(new_id, local_dir=dst_dir, builtin=False)
-    config = _load_config()
-    dirs = config.setdefault('dirs', [])
-    if not any(d.get('proto_id') == new_id for d in dirs):
-        dirs.append({'source': dst_dir, 'proto_id': new_id})
-        _save_config(config)
+    # Register it. The copy lives under protocol_dirs/, so it is picked up
+    # automatically on every subsequent startup — no separate config needed.
+    register_protocol_dir(new_id, local_dir=dst_dir)
     return new_id
-
-
-def load_saved_protocol_dirs():
-    """
-    Re-register all imported protocol directories saved in loaded_protocols.json.
-    Called once at startup.
-    """
-    config = _load_config()
-    for entry in config.get('dirs', []):
-        proto_id  = entry.get('proto_id', '')
-        local_dir = _protocol_dir(proto_id)
-        if proto_id and os.path.isdir(local_dir):
-            try:
-                register_protocol_dir(proto_id, local_dir=local_dir,
-                                      source_path=entry.get('source'),
-                                      builtin=False)
-            except Exception as exc:
-                import sys
-                print(f"[protocol_loader] WARNING: could not re-register "
-                      f"imported dir '{proto_id}': {exc}", file=sys.stderr)
 
 
 def load_all_protocols():
     """
-    Populate REGISTRY from protocol_dirs/. This is the single startup entry point
-    used by both the dashboard and the MCP server.
+    Populate REGISTRY by scanning protocol_dirs/. This is the single startup
+    entry point used by both the dashboard and the MCP server.
 
-      1. Auto-register every protocol_dirs/<id>/ directory.
-      2. Re-register any imported external directories saved in the config.
+    A protocol simply *is* a protocol_dirs/<id>/ directory: every directory is
+    registered, with no built-in/custom distinction. Copies and imports live in
+    the same tree and are therefore picked up identically.
 
     Safe to call more than once (registration is idempotent per id).
     """
@@ -955,7 +914,6 @@ def load_all_protocols():
         except Exception as exc:
             print(f"[protocol_loader] WARNING: could not auto-register "
                   f"protocol_dir {proto_id!r}: {exc}", file=sys.stderr)
-    load_saved_protocol_dirs()
     return REGISTRY
 
 
@@ -963,32 +921,14 @@ def _get_registry():
     return REGISTRY
 
 
-# ── Config persistence ────────────────────────────────────────────────────────
-
-def _load_config():
-    try:
-        cfg = json.load(open(_CONFIG_FILE))
-        cfg.setdefault('dirs', [])
-        return cfg
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {'dirs': []}
-
-
-def _save_config(config):
-    with open(_CONFIG_FILE, 'w') as f:
-        json.dump(config, f, indent=2)
-
-
 def list_cleanup_files(proto_id):
     """
-    Return an ordered list of paths that exist on disk and would be deleted
-    when this protocol is removed. For the dir-only model this is simply the
-    protocol's directory under protocol_dirs/. Called by the dashboard before
-    showing the confirmation dialog.
+    Return the paths that would be deleted when this protocol is removed. For
+    the dir-only model this is simply the protocol's directory under
+    protocol_dirs/. Called by the dashboard before showing the confirm dialog.
     """
-    registry = _get_registry()
-    entry = registry.get(proto_id)
-    if not entry or entry.get('builtin'):
+    entry = _get_registry().get(proto_id)
+    if not entry:
         return []
     local_dir = entry.get('imported_dir') or entry.get('custom_source')
     return [local_dir] if local_dir and os.path.isdir(local_dir) else []
@@ -996,14 +936,14 @@ def list_cleanup_files(proto_id):
 
 def remove_protocol(proto_id, delete_files=False):
     """
-    Remove a user (non-built-in) protocol from the REGISTRY and config.
-    If delete_files=True, also deletes the protocol's protocol_dirs/<id>/ tree.
-    Built-in protocols are protected and cannot be removed.
-    Returns True if removed, False if not found or built-in.
+    Remove a protocol from the REGISTRY. If delete_files=True, also deletes its
+    protocol_dirs/<id>/ tree. All protocols are removable — a protocol is just a
+    directory. (Directories that ship in the repo are recoverable via git.)
+    Returns True if removed, False if not found.
     """
     registry = _get_registry()
     entry = registry.get(proto_id)
-    if not entry or entry.get('builtin'):
+    if not entry:
         return False
     local_dir = entry.get('imported_dir') or entry.get('custom_source')
 
@@ -1015,9 +955,6 @@ def remove_protocol(proto_id, delete_files=False):
         pass
 
     del registry[proto_id]
-    config = _load_config()
-    config['dirs'] = [d for d in config.get('dirs', []) if d.get('proto_id') != proto_id]
-    _save_config(config)
 
     # Clear all persisted state so a re-registration starts fresh
     from evidence_slice import clear_protocol_state

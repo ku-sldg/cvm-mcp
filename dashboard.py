@@ -576,9 +576,6 @@ HOME_TMPL = """
           {% else %}<span class="dot-r"></span>{% endif %}
         {% else %}<span class="dot-d"></span>{% endif %}
         <span class="proto-name">{{ p.name }}</span>
-        {% if not p.builtin %}
-          <span class="badge-custom" style="margin-left:auto;">⊕ custom</span>
-        {% endif %}
       </div>
       <div class="proto-desc">{{ p.description }}</div>
       <div class="proto-copland">{{ p.copland }}</div>
@@ -634,10 +631,8 @@ HOME_TMPL = """
         {% endif %}
         <button class="copy-btn"
                 onclick="copyProtocol('{{ p.id }}', '{{ p.name }}')">⎘ Copy</button>
-        {% if not p.builtin %}
-          <button class="remove-btn" id="rmbtn-{{ p.id }}"
-                  onclick="removeProtocol('{{ p.id }}')">× Remove</button>
-        {% endif %}
+        <button class="remove-btn" id="rmbtn-{{ p.id }}"
+                onclick="removeProtocol('{{ p.id }}')">× Remove</button>
       </div>
     </div>
   </div>
@@ -1154,13 +1149,9 @@ DETAIL_TMPL = """
 </div>
 {% endif %}
 
-{% if not proto.builtin %}
-<div id="import-info-banner" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;color:#8b949e;">
-  <span style="color:#58a6ff;">⊕ Custom protocol</span>
-  — source: <code style="color:#c9d1d9;">{{ proto.custom_source }}</code>
+<div id="import-info-banner" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;color:#8b949e;">
   <span id="stub-warning-area"></span>
 </div>
-{% endif %}
 
 {% if r %}
 <div class="stats">
@@ -1615,9 +1606,11 @@ setInterval(refreshPlaces, 3000);
     const area = document.getElementById('stub-warning-area');
     if (!area) return;
     const names = data.stubs.map(s => escHtml(s.label || s.tid)).join(', ');
-    area.innerHTML = ` &nbsp;·&nbsp; <span style="color:#f0883e;">⚠ ${data.stubs.length} stub target(s): ${names}</span>
+    area.innerHTML = `<span style="color:#f0883e;">⚠ ${data.stubs.length} stub target(s): ${names}</span>
       <span style="color:#8b949e;"> — provision will fail until real files are provided in
       <code style="color:#c9d1d9;">${escHtml(data.local_dir)}/targets/</code></span>`;
+    const banner = document.getElementById('import-info-banner');
+    if (banner) banner.style.display = '';
   } catch(e) {}
 })();
 {% endif %}
@@ -2877,13 +2870,11 @@ def api_proto_overwrite_check():
     # A collision is either a registry entry or an existing protocol_dirs/ tree.
     in_registry   = proto_id in REGISTRY
     has_dir       = protocol_loader.has_protocol_dir(proto_id)
-    is_builtin    = in_registry and bool(REGISTRY[proto_id].get('builtin'))
     existing_name = REGISTRY[proto_id].get('name', proto_id) if in_registry else None
 
     return jsonify({
         'would_overwrite': in_registry or has_dir,
         'in_registry':     in_registry,
-        'is_builtin':      is_builtin,
         'existing_name':   existing_name,
         'file_path':       protocol_loader._protocol_dir(proto_id) if has_dir else None,
     })
