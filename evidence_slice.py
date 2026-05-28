@@ -135,19 +135,6 @@ def do_evidence_slice(et, raw_ev, asp_types, target_id, target_args):
 _EXAMPLES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples')
 
 PROVISION_HISTORY_PATH = os.path.join(_EXAMPLES_DIR, 'provision_history.json')
-PROVISION_HISTORY_MAX  = 8
-
-def store_provision_path(proto_id, path):
-    """Record an evidence bundle path in the per-protocol history (most recent first, deduped)."""
-    try:
-        history = json.loads(open(PROVISION_HISTORY_PATH).read())
-    except Exception:
-        history = {}
-    paths = [p for p in history.get(proto_id, []) if p != path]
-    paths.insert(0, path)
-    history[proto_id] = paths[:PROVISION_HISTORY_MAX]
-    with open(PROVISION_HISTORY_PATH, 'w') as f:
-        json.dump(history, f, indent=2)
 
 def load_provision_history(proto_id):
     """Return list of previously used evidence bundle paths for a protocol (most recent first)."""

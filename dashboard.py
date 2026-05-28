@@ -356,24 +356,6 @@ tr:hover td { background:#1c2128; }
 .prov-btn:hover:not(:disabled) { background:#3a2800;color:#ffd700; }
 .prov-btn:disabled { opacity:.5;cursor:not-allowed; }
 .prov-btn-lg { padding:7px 16px;font-size:0.82rem; }
-.prov-split { display:inline-flex;position:relative; }
-.prov-split .prov-btn { border-radius:6px 0 0 6px;border-right:none; }
-.prov-split .prov-btn-lg { border-radius:6px 0 0 6px; }
-.prov-arrow { background:#21262d;border:1px solid #9e6a03;color:#e3b341;border-radius:0 6px 6px 0;
-              padding:0 7px;font-size:0.7rem;cursor:pointer;transition:background .15s; }
-.prov-arrow:hover { background:#3a2800;color:#ffd700; }
-.prov-popover { display:none;position:absolute;top:calc(100% + 4px);right:0;left:auto;z-index:100;
-                background:#161b22;border:1px solid #9e6a03;border-radius:6px;
-                padding:8px 10px;width:max(260px,min(420px,55vw)); }
-.prov-popover.open { display:flex;flex-direction:column;gap:4px; }
-.prov-popover-row { display:flex;gap:6px;align-items:center; }
-.prov-history { display:flex;flex-direction:column;margin-top:2px; }
-.prov-hist-item { padding:3px 6px;font-size:0.72rem;color:#8b949e;cursor:pointer;border-radius:3px;
-                  overflow:hidden;white-space:nowrap; }
-.prov-hist-item:hover { background:#21262d;color:#e3b341; }
-.prov-path-input { background:#0d1117;border:1px solid #444;color:#e6edf3;padding:4px 8px;
-                   border-radius:4px;font-size:0.78rem;font-family:inherit;flex:1;min-width:0; }
-.prov-path-input::placeholder { color:#555; }
 .prov-result { background:#1a1200;border:1px solid #9e6a03;border-radius:8px;
                padding:14px 16px;margin-top:12px;font-size:0.78rem; }
 .prov-row { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2a1f00;flex-wrap:wrap; }
@@ -403,26 +385,6 @@ tr:hover td { background:#1c2128; }
 .path-dropdown-item { padding:5px 11px;font-size:0.72rem;color:#8b949e;cursor:pointer;
                       white-space:pre-wrap;word-break:break-all;line-height:1.4; }
 .path-dropdown-item.active { background:#21262d;color:#e6edf3; }
-.place-row  { display:flex;align-items:center;gap:10px;padding:7px 0;
-              border-bottom:1px solid #21262d;flex-wrap:wrap; }
-.place-row:last-child { border-bottom:none; }
-.place-id   { color:#79c0ff;font-family:'SF Mono','Fira Code',monospace;
-              min-width:60px;font-size:0.82rem;font-weight:600; }
-.place-addr { color:#6e7681;font-size:0.75rem;font-family:'SF Mono','Fira Code',monospace;
-              min-width:140px; }
-.place-start-btn { background:#001a00;border:1px solid #238636;color:#3fb950;
-                   border-radius:6px;padding:3px 10px;font-size:0.72rem;cursor:pointer; }
-.place-start-btn:hover { background:#0d2c0d; }
-.place-stop-btn  { background:#1a0000;border:1px solid #da3633;color:#f85149;
-                   border-radius:6px;padding:3px 10px;font-size:0.72rem;cursor:pointer; }
-.place-stop-btn:hover  { background:#2d0000; }
-.places-row { display:grid;
-              grid-template-columns:80px 110px 65px 1fr 1fr auto;
-              gap:6px;align-items:center;margin-bottom:6px;font-size:0.78rem; }
-.places-row input { background:#0d1117;color:#e6edf3;border:1px solid #30363d;
-                    border-radius:4px;padding:4px 7px;font-family:inherit;
-                    font-size:0.75rem;outline:none;width:100%; }
-.places-row input:focus { border-color:#388bfd; }
 .dir-config-path { font-family:'SF Mono','Fira Code',monospace;font-size:0.72rem;
                    color:#6e7681;margin-bottom:10px;word-break:break-all; }
 .dir-config-file { margin-bottom:8px;border:1px solid #21262d;border-radius:6px;
@@ -593,14 +555,6 @@ HOME_TMPL = """
       </div>
       <div class="proto-desc">{{ p.description }}</div>
       <div class="proto-copland">{{ p.copland }}</div>
-      {% if p.places %}
-      <div style="display:flex;align-items:center;gap:5px;margin-top:5px;">
-        <span style="font-size:0.63rem;color:#6e7681;letter-spacing:.04em;text-transform:uppercase;">places</span>
-        <span id="place-strip-{{ p.id }}" style="display:flex;gap:3px;align-items:center;">
-          {% for pid in p.places %}<span class="dot-d" style="width:8px;height:8px;" title="{{ pid }}"></span>{% endfor %}
-        </span>
-      </div>
-      {% endif %}
     </a>
     <div class="proto-card-footer">
       <div class="proto-stats" id="stats-{{ p.id }}" style="min-width:0;">
@@ -614,34 +568,14 @@ HOME_TMPL = """
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         {% if p.provision %}
-        <div class="prov-split">
-          <button class="prov-btn" id="provbtn-{{ p.id }}"
-                  onclick="provisionWithPath('{{ p.id }}')">⚙ Provision</button>
-          <button class="prov-arrow" onclick="toggleProvPopover('{{ p.id }}', event)" title="Custom evidence path">▾</button>
-          <div class="prov-popover" id="prov-popover-{{ p.id }}">
-            <div class="prov-popover-row">
-              <input type="text" class="prov-path-input" id="prov-path-{{ p.id }}"
-                     placeholder="Custom evidence path…" autocomplete="off">
-              <button class="prov-btn" onclick="provisionWithPath('{{ p.id }}')">Provision</button>
-            </div>
-            <div class="prov-history" id="prov-history-{{ p.id }}"></div>
-          </div>
-        </div>
+        <button class="prov-btn" id="provbtn-{{ p.id }}"
+                onclick="provisionProtocol('{{ p.id }}')">⚙ Provision</button>
         {% endif %}
         <button class="run-btn" id="runbtn-{{ p.id }}"
                 onclick="runProtocol('{{ p.id }}')">▶ Run</button>
         {% if p.steps %}
         <button class="check-btn" id="checkbtn-{{ p.id }}"
                 onclick="checkProtocol('{{ p.id }}')">⚡ Check</button>
-        {% endif %}
-        {% if p.places %}
-          {% set all_sim = namespace(v=true) %}
-          {% for cfg in p.places.values() %}{% if not cfg.manifest or not cfg.asp_bin %}{% set all_sim.v = false %}{% endif %}{% endfor %}
-          {% if all_sim.v %}
-          <button class="run-btn" style="border-color:#238636;color:#3fb950;padding:3px 9px;font-size:0.72rem;"
-                  id="startallbtn-{{ p.id }}"
-                  onclick="startAllPlaces('{{ p.id }}', event)">▶ Places</button>
-          {% endif %}
         {% endif %}
         <button class="copy-btn"
                 onclick="copyProtocol('{{ p.id }}', '{{ p.name }}')">⎘ Copy</button>
@@ -737,66 +671,11 @@ async function checkProtocol(id) {
   }
 }
 
-async function toggleProvPopover(id, ev) {
-  ev.stopPropagation();
-  const pop = document.getElementById('prov-popover-' + id);
-  if (!pop) return;
-  const opening = !pop.classList.contains('open');
-  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
-  if (opening) {
-    pop.classList.add('open');
-    const inp  = document.getElementById('prov-path-' + id);
-    const hist = document.getElementById('prov-history-' + id);
-    try {
-      const d        = await (await fetch('/api/provision_history/' + id)).json();
-      const current  = d.current_path || (d.paths && d.paths[0]) || '';
-      const allPaths = d.paths || [];
-      if (inp) { inp.value = current; inp.scrollLeft = inp.scrollWidth; }
-      if (hist) {
-        hist.innerHTML = '';
-        allPaths.filter(p => p !== current).forEach(p => {
-          const el = document.createElement('div');
-          el.className = 'prov-hist-item';
-          // Trim to a slash boundary so the filename is always visible
-          const max = 48;
-          if (p.length > max) {
-            const cut   = p.length - max;
-            const slash = p.indexOf('/', cut);
-            el.textContent = '\u2026' + (slash >= 0 ? p.slice(slash) : p.slice(cut));
-          } else {
-            el.textContent = p;
-          }
-          el.title = p;
-          el.addEventListener('click', ev => {
-            ev.stopPropagation();
-            if (inp) { inp.value = p; inp.scrollLeft = inp.scrollWidth; inp.focus(); }
-          });
-          hist.appendChild(el);
-        });
-      }
-    } catch(e) {}
-    if (inp) inp.focus();
-  }
-}
-document.addEventListener('click', () => {
-  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
-});
-
-async function provisionWithPath(id) {
-  const inp = document.getElementById('prov-path-' + id);
-  const customPath = inp ? inp.value.trim() : '';
-  const pop = document.getElementById('prov-popover-' + id);
-  if (pop) pop.classList.remove('open');
-  await provisionProtocol(id, customPath || null);
-}
-
-async function provisionProtocol(id, customPath) {
+async function provisionProtocol(id) {
   const btn = document.getElementById('provbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
-  const url = '/api/provision/' + id +
-    (customPath ? '?golden_path=' + encodeURIComponent(customPath) : '');
   try {
-    const res = await fetch(url);
+    const res = await fetch('/api/provision/' + id);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       alert(data.error || 'Provision failed');
@@ -950,38 +829,6 @@ async function poll() {
 }
 setInterval(poll, 3000);
 
-const PROTO_IDS_WITH_PLACES = [{% for p in protocols %}{% if p.places %}'{{ p.id }}',{% endif %}{% endfor %}];
-async function pollPlaces() {
-  for (const id of PROTO_IDS_WITH_PLACES) {
-    try {
-      const res  = await fetch('/api/protocols/' + id + '/places');
-      const data = await res.json();
-      const strip = document.getElementById('place-strip-' + id);
-      if (!strip) continue;
-      strip.innerHTML = Object.entries(data.places || {}).map(([pid, info]) =>
-        `<span class="${info.reachable ? 'dot-g' : 'dot-r'}"
-               style="width:8px;height:8px;"
-               title="${escHtml(pid + ': ' + (info.reachable ? 'reachable' : 'unreachable'))}"></span>`
-      ).join('');
-    } catch(e) {}
-  }
-}
-async function startAllPlaces(protoId, ev) {
-  ev.stopPropagation();
-  const btn = document.getElementById('startallbtn-' + protoId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
-  try {
-    const res  = await fetch('/api/protocols/' + protoId + '/places');
-    const data = await res.json();
-    await Promise.all(Object.keys(data.places || {}).map(pid =>
-      fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(pid) + '/start', {method:'POST'})
-    ));
-    await pollPlaces();
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '▶ Places'; }
-}
-if (PROTO_IDS_WITH_PLACES.length) { pollPlaces(); setInterval(pollPlaces, 3000); }
-
 // ── Import Protocol Directory ─────────────────────────────────────────────────
 let _importPreviewOk = false;
 
@@ -1082,16 +929,6 @@ async function confirmImportDir() {
 }
 
 {{ base_js | safe }}
-{% for p in protocols %}
-setupPathComplete('prov-path-{{ p.id }}', () => provisionWithPath('{{ p.id }}'));
-fetch('/api/provision_history/{{ p.id }}').then(r => r.json()).then(d => {
-  const fill = d.current_path || (d.paths && d.paths[0]) || '';
-  if (fill) {
-    const inp = document.getElementById('prov-path-{{ p.id }}');
-    if (inp && !inp.value) { inp.value = fill; inp.scrollLeft = inp.scrollWidth; }
-  }
-}).catch(() => {});
-{% endfor %}
 </script>
 </body></html>
 """
@@ -1117,20 +954,8 @@ DETAIL_TMPL = """
             title="Re-run generator to capture latest source file line numbers">↻ Refresh Config</button>
     {% endif %}
     {% if proto.provision %}
-    <div class="prov-split">
-      <button class="prov-btn prov-btn-lg" id="provbtn-{{ proto.id }}"
-              onclick="provisionWithPath('{{ proto.id }}')">⚙ Provision</button>
-      <button class="prov-arrow" style="padding:0 9px;font-size:0.75rem;"
-              onclick="toggleProvPopover('{{ proto.id }}', event)" title="Custom evidence path">▾</button>
-      <div class="prov-popover" id="prov-popover-{{ proto.id }}">
-        <div class="prov-popover-row">
-          <input type="text" class="prov-path-input" id="prov-path-{{ proto.id }}"
-                 placeholder="Custom evidence path…" autocomplete="off">
-          <button class="prov-btn" onclick="provisionWithPath('{{ proto.id }}')">Provision</button>
-        </div>
-        <div class="prov-history" id="prov-history-{{ proto.id }}"></div>
-      </div>
-    </div>
+    <button class="prov-btn prov-btn-lg" id="provbtn-{{ proto.id }}"
+            onclick="provisionProtocol('{{ proto.id }}')">⚙ Provision</button>
     {% endif %}
     <button class="run-btn run-btn-lg" id="run-btn-detail"
             onclick="runProtocol('{{ proto.id }}')">▶ Run</button>
@@ -1284,32 +1109,6 @@ DETAIL_TMPL = """
   {% endif %}
   {% endif %}
 </div>
-
-{% if proto.places %}
-<div class="card" style="border-color:#553098;">
-  <div class="card-title" style="color:#d2a8ff;">Remote Places</div>
-  <div id="places-panel">
-    {% for pid, cfg in proto.places.items() %}
-    <div class="place-row" id="place-row-{{ pid }}">
-      <span class="place-id">{{ pid }}</span>
-      <span class="place-addr">{{ cfg.host }}:{{ cfg.port }}</span>
-      <span class="dot-d" id="place-dot-{{ pid }}" title="Checking…" style="flex-shrink:0;"></span>
-      <span id="place-pid-{{ pid }}" style="color:#6e7681;font-size:0.7rem;font-family:monospace;"></span>
-      <div class="place-btns" style="display:flex;gap:6px;margin-left:auto;">
-        {% if cfg.manifest and cfg.asp_bin %}
-        <button class="place-start-btn" id="place-start-{{ pid }}"
-                onclick="startPlace('{{ proto.id }}', '{{ pid }}')">▶ Start</button>
-        <button class="place-stop-btn" id="place-stop-{{ pid }}"
-                onclick="stopPlace('{{ proto.id }}', '{{ pid }}')">■ Stop</button>
-        {% else %}
-        <span style="color:#6e7681;font-size:0.7rem;font-style:italic;">external</span>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
 
 {% if not r %}
   <div class="card" style="border-color:#21262d;">
@@ -1490,66 +1289,11 @@ async function checkProtocol(id) {
   }
 }
 
-async function toggleProvPopover(id, ev) {
-  ev.stopPropagation();
-  const pop = document.getElementById('prov-popover-' + id);
-  if (!pop) return;
-  const opening = !pop.classList.contains('open');
-  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
-  if (opening) {
-    pop.classList.add('open');
-    const inp  = document.getElementById('prov-path-' + id);
-    const hist = document.getElementById('prov-history-' + id);
-    try {
-      const d        = await (await fetch('/api/provision_history/' + id)).json();
-      const current  = d.current_path || (d.paths && d.paths[0]) || '';
-      const allPaths = d.paths || [];
-      if (inp) { inp.value = current; inp.scrollLeft = inp.scrollWidth; }
-      if (hist) {
-        hist.innerHTML = '';
-        allPaths.filter(p => p !== current).forEach(p => {
-          const el = document.createElement('div');
-          el.className = 'prov-hist-item';
-          // Trim to a slash boundary so the filename is always visible
-          const max = 48;
-          if (p.length > max) {
-            const cut   = p.length - max;
-            const slash = p.indexOf('/', cut);
-            el.textContent = '\u2026' + (slash >= 0 ? p.slice(slash) : p.slice(cut));
-          } else {
-            el.textContent = p;
-          }
-          el.title = p;
-          el.addEventListener('click', ev => {
-            ev.stopPropagation();
-            if (inp) { inp.value = p; inp.scrollLeft = inp.scrollWidth; inp.focus(); }
-          });
-          hist.appendChild(el);
-        });
-      }
-    } catch(e) {}
-    if (inp) inp.focus();
-  }
-}
-document.addEventListener('click', () => {
-  document.querySelectorAll('.prov-popover.open').forEach(p => p.classList.remove('open'));
-});
-
-async function provisionWithPath(id) {
-  const inp = document.getElementById('prov-path-' + id);
-  const customPath = inp ? inp.value.trim() : '';
-  const pop = document.getElementById('prov-popover-' + id);
-  if (pop) pop.classList.remove('open');
-  await provisionProtocol(id, customPath || null);
-}
-
-async function provisionProtocol(id, customPath) {
+async function provisionProtocol(id) {
   const btn = document.getElementById('provbtn-' + id);
   if (btn) { btn.disabled = true; btn.textContent = '⟳ Provisioning…'; }
-  const url = '/api/provision/' + id +
-    (customPath ? '?golden_path=' + encodeURIComponent(customPath) : '');
   try {
-    const res = await fetch(url);
+    const res = await fetch('/api/provision/' + id);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       alert(data.error || 'Provision failed');
@@ -1612,63 +1356,6 @@ async function saveAspArgs(id) {
 }
 
 {{ base_js | safe }}
-setupPathComplete('prov-path-{{ proto.id }}', () => provisionWithPath('{{ proto.id }}'));
-fetch('/api/provision_history/{{ proto.id }}').then(r => r.json()).then(d => {
-  const fill = d.current_path || (d.paths && d.paths[0]) || '';
-  if (fill) {
-    const inp = document.getElementById('prov-path-{{ proto.id }}');
-    if (inp && !inp.value) { inp.value = fill; inp.scrollLeft = inp.scrollWidth; }
-  }
-}).catch(() => {});
-
-{% if proto.places %}
-async function refreshPlaces() {
-  try {
-    const res  = await fetch('/api/protocols/{{ proto.id }}/places');
-    const data = await res.json();
-    let anyUnreachable = false;
-    Object.entries(data.places || {}).forEach(([pid, info]) => {
-      const dot = document.getElementById('place-dot-' + pid);
-      if (dot) {
-        dot.className = info.reachable ? 'dot-g' : 'dot-r';
-        dot.title     = info.reachable
-          ? (info.running ? `Running (PID ${info.pid})` : 'Reachable (external)')
-          : 'Unreachable — click Start';
-      }
-      const pidEl = document.getElementById('place-pid-' + pid);
-      if (pidEl) pidEl.textContent = info.running ? `PID ${info.pid}` : '';
-      if (!info.reachable) anyUnreachable = true;
-    });
-    const runBtn = document.getElementById('run-btn-detail');
-    if (runBtn) {
-      runBtn.disabled = anyUnreachable;
-      runBtn.title    = anyUnreachable ? 'One or more places unreachable — start them first' : '';
-    }
-  } catch(e) {}
-}
-async function startPlace(protoId, placeId) {
-  const btn = document.getElementById('place-start-' + placeId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
-  try {
-    const res  = await fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(placeId) + '/start', {method:'POST'});
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) alert(data.error || 'Start failed');
-  } catch(e) { alert('Error: ' + e.message); }
-  if (btn) { btn.disabled = false; btn.textContent = '▶ Start'; }
-  await refreshPlaces();
-}
-async function stopPlace(protoId, placeId) {
-  const btn = document.getElementById('place-stop-' + placeId);
-  if (btn) { btn.disabled = true; btn.textContent = '⟳'; }
-  try {
-    await fetch('/api/protocols/' + protoId + '/places/' + encodeURIComponent(placeId) + '/stop', {method:'POST'});
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.textContent = '■ Stop'; }
-  await refreshPlaces();
-}
-refreshPlaces();
-setInterval(refreshPlaces, 3000);
-{% endif %}
 
 {% if proto.imported_dir %}
 // Load stub info for this imported protocol
@@ -2155,41 +1842,6 @@ def api_run_summary(protocol_id):
     return Response(md, mimetype='text/plain; charset=utf-8')
 
 
-@app.route('/api/protocols/<protocol_id>/places', methods=['GET'])
-def api_protocol_places(protocol_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    proto  = REGISTRY[protocol_id]
-    places = proto.get('places', {})
-    status = place_manager.get_place_status(protocol_id, places)
-    return jsonify({'places': status})
-
-
-@app.route('/api/protocols/<protocol_id>/places/<place_id>/start', methods=['POST'])
-def api_place_start(protocol_id, place_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    places = REGISTRY[protocol_id].get('places', {})
-    cfg    = places.get(place_id)
-    if not cfg:
-        return jsonify({'error': f'Unknown place: {place_id}'}), 404
-    try:
-        result = place_manager.start_place(protocol_id, place_id, cfg)
-        return jsonify({'ok': True, **result})
-    except FileNotFoundError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/protocols/<protocol_id>/places/<place_id>/stop', methods=['POST'])
-def api_place_stop(protocol_id, place_id):
-    if protocol_id not in REGISTRY:
-        return jsonify({'error': f'Unknown protocol: {protocol_id}'}), 404
-    result = place_manager.stop_place(protocol_id, place_id)
-    return jsonify({'ok': True, **result})
-
-
 @app.route('/api/protocols/<protocol_id>/files', methods=['GET'])
 def api_protocol_files(protocol_id):
     if protocol_id not in REGISTRY:
@@ -2236,22 +1888,6 @@ def api_results():
         else:
             snap[pid] = {**snap[pid], 'running': True, 'operation': op}
     return jsonify(snap)
-
-
-@app.route('/api/provision_history/<protocol_id>')
-def api_provision_history(protocol_id):
-    from evidence_slice import load_provision_history
-    paths = load_provision_history(protocol_id)
-    current_path = ''
-    proto = REGISTRY.get(protocol_id)
-    if proto and 'golden_state' in proto:
-        try:
-            gs = proto['golden_state']()
-            if gs:
-                current_path = gs[0].get('golden_path', '') or ''
-        except Exception:
-            pass
-    return jsonify({'paths': paths, 'current_path': current_path})
 
 
 @app.route('/api/refresh_protocol_config/<protocol_id>', methods=['POST'])
