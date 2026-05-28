@@ -28,3 +28,4 @@ testing/
 protocol_dirs/**/*_evidence.json
 protocol_dirs/**/.vscode/
 protocol_dirs/**/cvm_request.json
+protocol_dirs/**/run_cvm.sh

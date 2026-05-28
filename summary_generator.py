@@ -378,11 +378,24 @@ def generate_run_summary(protocol_id: str,
     md.append('## CVM Invocation')
     md.append('')
 
+    def _cvm_cmd_lines(manifest_arg, req_arg):
+        """Readable multi-line invocation. Safe inside a script file (no copy)."""
+        q = shlex.quote
+        return [
+            f'{q(cvm_bin)} \\',
+            f'  --manifest_file {q(manifest_arg)} \\',
+            f'  --req_file      {q(req_arg)} \\',
+            f'  --asp_bin       {q(asp_bin)} \\',
+            f'  --log_level     Info \\',
+            f'  --cvm_binary    {q(cvm_bin)}',
+        ]
+
     # Materialize the exact request the dashboard/MCP send to the CVM
-    # (build_from_dir injects any provisioned golden_b64 into the term) so the
-    # command below references a real, on-disk file and reproduces the run
-    # independently of the dashboard.
+    # (build_from_dir injects any provisioned golden_b64 into the term) and a
+    # ready-to-run wrapper script, so the run can be reproduced without the
+    # dashboard. The wrapper avoids the copy-paste fragility of a long one-liner.
     req_path = None
+    script_path = None
     if proto_dir:
         try:
             _mf, _rq = pl.build_from_dir(protocol_id)
@@ -390,40 +403,47 @@ def generate_run_summary(protocol_id: str,
             with open(req_path, 'w') as f:
                 json.dump(_rq, f, indent=2)
                 f.write('\n')
+            # Wrapper script: backslash continuations are safe here — the file is
+            # executed, never copied — so it stays readable AND runnable.
+            script_path = os.path.join(proto_dir, 'run_cvm.sh')
+            script = (
+                ['#!/usr/bin/env bash',
+                 f'# Reproduce the CVM attestation for {protocol_id}, independent of the dashboard.',
+                 '# Auto-generated each time the Markdown run summary is produced.',
+                 '']
+                + _cvm_cmd_lines(manifest_path, req_path)
+                + ['']
+            )
+            with open(script_path, 'w') as f:
+                f.write('\n'.join(script))
+            os.chmod(script_path, 0o755)
         except Exception:
             req_path = None
+            script_path = None
 
-    def _cvm_cmd(manifest_arg, req_arg):
-        # Single line (no backslash continuations) so it pastes atomically.
-        # If the trailing "\" of a multi-line command is lost on copy, the bare
-        # `cvm` runs with no args, enters stdin mode, and silently swallows the
-        # remaining pasted lines — producing blank output. One line avoids that.
-        parts = [cvm_bin,
-                 '--manifest_file', manifest_arg,
-                 '--req_file',      req_arg,
-                 '--asp_bin',       asp_bin,
-                 '--log_level',     'Info',
-                 '--cvm_binary',    cvm_bin]
-        return ' '.join(shlex.quote(p) for p in parts)
-
-    if req_path and manifest_path:
-        md.append('The exact request sent to the CVM — the Copland term with any '
-                  'provisioned `golden_b64` injected — has been written to '
-                  '`cvm_request.json`. Copy this single-line command into a '
-                  'terminal to reproduce the attestation independently of the '
-                  'dashboard (it must stay on one line):')
+    if script_path and req_path and manifest_path:
+        md.append('A ready-to-run script — `run_cvm.sh` — has been written next to '
+                  'the protocol config. It invokes the CVM with the exact manifest '
+                  'and request (Copland term with any provisioned `golden_b64` '
+                  'injected) used by this run. Run it in a terminal to reproduce '
+                  'the attestation independently of the dashboard:')
         md.append('')
         md.append('```bash')
-        md.append(_cvm_cmd(manifest_path, req_path))
+        md.append(f'bash {shlex.quote(script_path)}')
         md.append('```')
         md.append('')
-        md.append('*The CVM writes the JSON evidence response to stdout.*')
+        md.append('*The CVM writes the JSON evidence response to stdout. '
+                  'For reference, `run_cvm.sh` runs:*')
+        md.append('')
+        md.append('```bash')
+        md.extend(_cvm_cmd_lines(manifest_path, req_path))
+        md.append('```')
     else:
         md.append('*(No protocol directory — substitute concrete manifest/request '
                   'file paths to run.)*')
         md.append('')
         md.append('```bash')
-        md.append(_cvm_cmd('<manifest.json>', '<request.json>'))
+        md.extend(_cvm_cmd_lines('<manifest.json>', '<request.json>'))
         md.append('```')
     md.append('')
 

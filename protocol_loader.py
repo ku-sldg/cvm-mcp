@@ -821,9 +821,10 @@ def unique_protocol_id(base_id):
 
 # Runtime/provisioned artifacts that must NOT be carried into a fresh copy —
 # the copy starts unprovisioned and is re-provisioned from scratch.
-# cvm_request.json is a regenerated reproducibility artifact (written when a
-# Markdown summary is generated), so it must not bleed into a copy either.
-_COPY_SKIP_FILES = {'provision_bundle.json', 'cvm_request.json'}
+# cvm_request.json and run_cvm.sh are regenerated reproducibility artifacts
+# (written when a Markdown summary is generated), so they must not bleed into a
+# copy either.
+_COPY_SKIP_FILES = {'provision_bundle.json', 'cvm_request.json', 'run_cvm.sh'}
 _COPY_SKIP_SUFFIXES = ('_evidence.json', '_evidence.json.ts')
 
 
