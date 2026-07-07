@@ -1,0 +1,82 @@
+{
+  "hashfile": {
+    "isolette_regulate_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "env_var": "",
+      "golden_b64": "xWOzWJRuKHJyiJgVcHYwbx+L0FLMjufx3Dn5rY8gqjM=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mri_mri_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mri_mri/src/component/thermostat_rt_mri_mri_app.rs",
+      "env_var": "",
+      "golden_b64": "qhVxAL2okhR4uqHVnKpYXYOwh+ypquiIENzMOnsHD9s=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "env_var": "",
+      "golden_b64": "1PUl+x1JImihYiDhbzB+Jf/lyweKorV5KkUWx1gDYv4=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mrm_mrm_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mrm_mrm/src/component/thermostat_rt_mrm_mrm_app.rs",
+      "env_var": "",
+      "golden_b64": "cLslykYHX7dPxqjk3R32s8MGjNlvZ/IERclaCVoA19o=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "env_var": "",
+      "golden_b64": "jOnuSpdzRvdWknQqWxh8Uh8maktZUYkQu0Gz+Cqr1aA=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/component/thermostat_mt_mmi_mmi_app.rs",
+      "env_var": "",
+      "golden_b64": "yRB471gQb64ni7P/DxBYUDh5cgCFvF9H7Q60MLsulXM=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "env_var": "",
+      "golden_b64": "+GwEjIbBoyy6u/VNkSkw1QNAQo8kO2ThUHdFwSWdi2s=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_api_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/bridge/thermostat_mt_mmi_mmi_api.rs",
+      "env_var": "",
+      "golden_b64": "5QKOrwuszLRqDRzx3ikmdoR40nT2E68iLyZaF6XXJNE=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "env_var": "",
+      "golden_b64": "OKwqwZs1JcZFgoYWfjiVJ29JxjUo3+Kx1PwUXdA+KWU=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmm_mmm_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmm_mmm/src/component/thermostat_mt_mmm_mmm_app.rs",
+      "env_var": "",
+      "golden_b64": "KA3ceLor07OvljGjwoDHW009x0CWUaWmp0PR+y+y/Mo=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "env_var": "",
+      "golden_b64": "MkpNpXCYP1+3fx4AjKQJUmy0hjlwTWBz61KPHUtgab0=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_app_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/component/operator_interface_oip_oit_app.rs",
+      "env_var": "",
+      "golden_b64": "0jMtFfTwx+BOTtHweEowJjEvn50PooK/Jub3H7iu6p4=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_api_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/bridge/operator_interface_oip_oit_api.rs",
+      "env_var": "",
+      "golden_b64": "/RdvuGmOfJdkSnUm4lRLqH6cqoblF0SIrtjaQeQd78g=",
+      "golden_ts": "2026-07-07 16:49:00"
+    }
+  }
+}

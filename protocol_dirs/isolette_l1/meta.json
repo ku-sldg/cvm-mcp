@@ -1,0 +1,43 @@
+{
+  "name": "isolette file integrity (level 1)",
+  "description": "Whole-file hashes of the 13 files named by the HAMR attestation report (aadl_attestation_report.json). Fast check; run isolette_l2 on failure for per-contract attribution.",
+  "copland": "lseq( lseq( bseq_chain( hashfile\u00d713 ), SIG ), APPR )",
+  "flow": [
+    {
+      "type": "bseq",
+      "label": "bseq / both_paths",
+      "children": [
+        "hashfile(Regulate.aadl)",
+        "hashfile(thermostat_rt_mri_mri_app.rs)",
+        "hashfile(thermostat_rt_mhs_mhs_app.rs)",
+        "hashfile(thermostat_rt_mrm_mrm_app.rs)",
+        "hashfile(Monitor.aadl)",
+        "hashfile(thermostat_mt_mmi_mmi_app.rs)",
+        "hashfile(GUMBO_Library.aadl)",
+        "hashfile(thermostat_mt_mmi_mmi_api.rs)",
+        "hashfile(thermostat_mt_ma_ma_app.rs)",
+        "hashfile(thermostat_mt_mmm_mmm_app.rs)",
+        "hashfile(Operator_Interface.aadl)",
+        "hashfile(operator_interface_oip_oit_app.rs)",
+        "hashfile(operator_interface_oip_oit_api.rs)"
+      ]
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "SIG",
+      "style": "sig"
+    },
+    {
+      "type": "arrow"
+    },
+    {
+      "type": "asp",
+      "label": "APPR",
+      "style": "appr"
+    }
+  ],
+  "dynamic": true
+}

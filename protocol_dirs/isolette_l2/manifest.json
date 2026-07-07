@@ -1,0 +1,10 @@
+{
+  "ASPS": [
+    "readfile_range",
+    "sig",
+    "sig_appr",
+    "goldenbytes_appr"
+  ],
+  "ASP_FS_MAP": {},
+  "POLICY": []
+}

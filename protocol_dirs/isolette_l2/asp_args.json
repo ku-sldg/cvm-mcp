@@ -1,0 +1,684 @@
+{
+  "readfile_range": {
+    "isolette_regulate_217_218_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 217,
+      "end_index": 218,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::RegulatorStatusIsInitiallyInit",
+      "golden_b64": "CQkJCWd1YXJhbnRlZQkJCQkJUmVndWxhdG9yU3RhdHVzSXNJbml0aWFsbHlJbml0OiByZWd1bGF0b3Jfc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlN0YXR1cy5Jbml0X1N0YXR1czs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mri_mri_app_25_26_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mri_mri/src/component/thermostat_rt_mri_mri_app.rs",
+      "start_index": 25,
+      "end_index": 26,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::RegulatorStatusIsInitiallyInit",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgUmVndWxhdG9yU3RhdHVzSXNJbml0aWFsbHlJbml0ICAgICAgICBhcGkucmVndWxhdG9yX3N0YXR1cyA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpTdGF0dXM6OkluaXRfU3RhdHVzLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_223_227_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 223,
+      "end_index": 227,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::lower_is_not_higher_than_upper",
+      "golden_b64": "CQkJCWFzc3VtZSBsb3dlcl9pc19ub3RfaGlnaGVyX3RoYW5fdXBwZXIgIlRoZSBvcmRlcmluZyBvZiB0aGUgZGVzaXJlZCB0ZW1wZXJhdHVyZSByYW5nZSBpcyBvbmx5IGEgbWVhbmluZ2Z1bAkJCQkJCQkJCQkJCQkJfGNvbnN0cmFpbnQgb24gVmFsaWQgcmVhZGluZ3MiOgkJCQkJKGxvd2VyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlZhbHVlU3RhdHVzLlZhbGlkICYJCQkJCSB1cHBlcl9kZXNpcmVkX3RlbXBXc3RhdHVzLnN0YXR1cyA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpWYWx1ZVN0YXR1cy5WYWxpZCkgLT46CQkJCQkJKGxvd2VyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuZGVncmVlcyA8PSB1cHBlcl9kZXNpcmVkX3RlbXBXc3RhdHVzLmRlZ3JlZXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mri_mri_app_54_59_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mri_mri/src/component/thermostat_rt_mri_mri_app.rs",
+      "start_index": 54,
+      "end_index": 59,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::lower_is_not_higher_than_upper",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgbG93ZXJfaXNfbm90X2hpZ2hlcl90aGFuX3VwcGVyICAgICAgICAvLyAgIFRoZSBvcmRlcmluZyBvZiB0aGUgZGVzaXJlZCB0ZW1wZXJhdHVyZSByYW5nZSBpcyBvbmx5IGEgbWVhbmluZ2Z1bCAgICAgICAgLy8gICBjb25zdHJhaW50IG9uIFZhbGlkIHJlYWRpbmdzICAgICAgICAoKG9sZChhcGkpLmxvd2VyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlZhbHVlU3RhdHVzOjpWYWxpZCkgJiYgICAgICAgICAgKG9sZChhcGkpLnVwcGVyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlZhbHVlU3RhdHVzOjpWYWxpZCkpID09PiAgICAgICAgICAob2xkKGFwaSkubG93ZXJfZGVzaXJlZF90ZW1wV3N0YXR1cy5kZWdyZWVzIDw9IG9sZChhcGkpLnVwcGVyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuZGVncmVlcyks",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_230_232_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 230,
+      "end_index": 232,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::lower_is_lower_temp",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBsb3dlcl9pc19sb3dlcl90ZW1wICJEZXJpdmVkIHJlcXVpcmVtZW50LCBub3QgaW4gQVItMDgtMzI6IE1IUyB1bmNvbmRpdGlvbmFsbHkgYXNzdW1lcyB0aGUJCQkJCQkJCQkJCQl8RGVzaXJlZCBSYW5nZSBpcyB3ZWxsLW9yZGVyZWQsLiI6CQkJCQlsb3dlcl9kZXNpcmVkX3RlbXAuZGVncmVlcyA8PSB1cHBlcl9kZXNpcmVkX3RlbXAuZGVncmVlczs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mri_mri_app_63_66_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mri_mri/src/component/thermostat_rt_mri_mri_app.rs",
+      "start_index": 63,
+      "end_index": 66,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mri_mri::lower_is_lower_temp",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgbG93ZXJfaXNfbG93ZXJfdGVtcCAgICAgICAgLy8gICBEZXJpdmVkIHJlcXVpcmVtZW50LCBub3QgaW4gQVItMDgtMzI6IE1IUyB1bmNvbmRpdGlvbmFsbHkgYXNzdW1lcyB0aGUgICAgICAgIC8vICAgRGVzaXJlZCBSYW5nZSBpcyB3ZWxsLW9yZGVyZWQsLiAgICAgICAgYXBpLmxvd2VyX2Rlc2lyZWRfdGVtcC5kZWdyZWVzIDw9IGFwaS51cHBlcl9kZXNpcmVkX3RlbXAuZGVncmVlcyw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_524_525_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 524,
+      "end_index": 525,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::initlastCmd",
+      "golden_b64": "CQkJCWd1YXJhbnRlZQkJCQkJaW5pdGxhc3RDbWQ6IGxhc3RDbWQgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6T25fT2ZmLk9mZjs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_520_520_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 520,
+      "end_index": 520,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::initlastCmd",
+      "golden_b64": "CQkJCWxhc3RDbWQ6IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_33_34_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 33,
+      "end_index": 34,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::initlastCmd",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgaW5pdGxhc3RDbWQgICAgICAgIHNlbGYubGFzdENtZCA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmY6Ok9mZiw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_14_14_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 14,
+      "end_index": 14,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::initlastCmd",
+      "golden_b64": "ICAgIHB1YiBsYXN0Q21kOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmYs",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_527_530_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 527,
+      "end_index": 530,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::REQ_MHS_1",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBSRVFfTUhTXzEgIklmIHRoZSBSZWd1bGF0b3IgTW9kZSBpcyBJTklULCB0aGUgSGVhdCBDb250cm9sIHNoYWxsIGJlCQkJCQkJCQkJfHNldCB0byBPZmYuCQkJCQkJCQkJfGh0dHBzOi8vd3d3LmZhYS5nb3Yvc2l0ZXMvZmFhLmdvdi9maWxlcy9haXJjcmFmdC9haXJfY2VydC9kZXNpZ25fYXBwcm92YWxzL2Fpcl9zb2Z0d2FyZS9BUi0wOC0zMi5wZGYjcGFnZT0xMTAgIjoJCQkJCWhlYXRfY29udHJvbCA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmYuT2ZmOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_35_39_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 35,
+      "end_index": 39,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::REQ_MHS_1",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgUkVRX01IU18xICAgICAgICAvLyAgIElmIHRoZSBSZWd1bGF0b3IgTW9kZSBpcyBJTklULCB0aGUgSGVhdCBDb250cm9sIHNoYWxsIGJlICAgICAgICAvLyAgIHNldCB0byBPZmYuICAgICAgICAvLyAgIGh0dHBzOi8vd3d3LmZhYS5nb3Yvc2l0ZXMvZmFhLmdvdi9maWxlcy9haXJjcmFmdC9haXJfY2VydC9kZXNpZ25fYXBwcm92YWxzL2Fpcl9zb2Z0d2FyZS9BUi0wOC0zMi5wZGYjcGFnZT0xMTAgICAgICAgICBhcGkuaGVhdF9jb250cm9sID09IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjo6T2ZmLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_535_535_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 535,
+      "end_index": 535,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lower_is_lower_temp",
+      "golden_b64": "CQkJCWFzc3VtZSBsb3dlcl9pc19sb3dlcl90ZW1wOiBsb3dlcl9kZXNpcmVkX3RlbXAuZGVncmVlcyA8PSB1cHBlcl9kZXNpcmVkX3RlbXAuZGVncmVlczs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_56_57_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 56,
+      "end_index": 57,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lower_is_lower_temp",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgbG93ZXJfaXNfbG93ZXJfdGVtcCAgICAgICAgb2xkKGFwaSkubG93ZXJfZGVzaXJlZF90ZW1wLmRlZ3JlZXMgPD0gb2xkKGFwaSkudXBwZXJfZGVzaXJlZF90ZW1wLmRlZ3JlZXMs",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_538_539_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 538,
+      "end_index": 539,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lastCmd",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBsYXN0Q21kICJTZXQgbGFzdENtZCB0byB2YWx1ZSBvZiBvdXRwdXQgQ21kIHBvcnQiOgkJCQkJbGFzdENtZCA9PSBoZWF0X2NvbnRyb2w7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_520_520_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 520,
+      "end_index": 520,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lastCmd",
+      "golden_b64": "CQkJCWxhc3RDbWQ6IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_61_63_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 61,
+      "end_index": 63,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lastCmd",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgbGFzdENtZCAgICAgICAgLy8gICBTZXQgbGFzdENtZCB0byB2YWx1ZSBvZiBvdXRwdXQgQ21kIHBvcnQgICAgICAgIHNlbGYubGFzdENtZCA9PSBhcGkuaGVhdF9jb250cm9sLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mhs_mhs_app_14_14_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mhs_mhs/src/component/thermostat_rt_mhs_mhs_app.rs",
+      "start_index": 14,
+      "end_index": 14,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mhs_mhs::lastCmd",
+      "golden_b64": "ICAgIHB1YiBsYXN0Q21kOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmYs",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_388_390_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 388,
+      "end_index": 390,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::REQ_MRM_1",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBSRVFfTVJNXzEgIlRoZSBpbml0aWFsIG1vZGUgb2YgdGhlIHJlZ3VsYXIgaXMgSU5JVAkJCQkJCQkJCXxodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTA5ICIgOgkJCQkJcmVndWxhdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6UmVndWxhdG9yX01vZGUuSW5pdF9SZWd1bGF0b3JfTW9kZTsg",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mrm_mrm_app_31_34_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mrm_mrm/src/component/thermostat_rt_mrm_mrm_app.rs",
+      "start_index": 31,
+      "end_index": 34,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::REQ_MRM_1",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgUkVRX01STV8xICAgICAgICAvLyAgIFRoZSBpbml0aWFsIG1vZGUgb2YgdGhlIHJlZ3VsYXIgaXMgSU5JVCAgICAgICAgLy8gICBodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTA5ICAgICAgICAgYXBpLnJlZ3VsYXRvcl9tb2RlID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlJlZ3VsYXRvcl9Nb2RlOjpJbml0X1JlZ3VsYXRvcl9Nb2RlLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_394_395_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 394,
+      "end_index": 395,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::update_lastRegulatorMode",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSB1cGRhdGVfbGFzdFJlZ3VsYXRvck1vZGU6CQkJCQlsYXN0UmVndWxhdG9yTW9kZSA9PSByZWd1bGF0b3JfbW9kZTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_regulate_369_369_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Regulate.aadl",
+      "start_index": 369,
+      "end_index": 369,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::update_lastRegulatorMode",
+      "golden_b64": "CQkJCWxhc3RSZWd1bGF0b3JNb2RlOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpSZWd1bGF0b3JfTW9kZTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mrm_mrm_app_48_49_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mrm_mrm/src/component/thermostat_rt_mrm_mrm_app.rs",
+      "start_index": 48,
+      "end_index": 49,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::update_lastRegulatorMode",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgdXBkYXRlX2xhc3RSZWd1bGF0b3JNb2RlICAgICAgICBzZWxmLmxhc3RSZWd1bGF0b3JNb2RlID09IGFwaS5yZWd1bGF0b3JfbW9kZSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_rt_mrm_mrm_app_12_12_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_rt_mrm_mrm/src/component/thermostat_rt_mrm_mrm_app.rs",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_rt_mrm_mrm::update_lastRegulatorMode",
+      "golden_b64": "ICAgIHB1YiBsYXN0UmVndWxhdG9yTW9kZTogSXNvbGV0dGVfRGF0YV9Nb2RlbDo6UmVndWxhdG9yX01vZGUs",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_192_193_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 192,
+      "end_index": 193,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::monitorStatusInitiallyInit",
+      "golden_b64": "CQkJCWd1YXJhbnRlZQkJCQkJbW9uaXRvclN0YXR1c0luaXRpYWxseUluaXQ6IG1vbml0b3Jfc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlN0YXR1cy5Jbml0X1N0YXR1czs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_app_31_32_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/component/thermostat_mt_mmi_mmi_app.rs",
+      "start_index": 31,
+      "end_index": 32,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::monitorStatusInitiallyInit",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgbW9uaXRvclN0YXR1c0luaXRpYWxseUluaXQgICAgICAgIGFwaS5tb25pdG9yX3N0YXR1cyA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpTdGF0dXM6OkluaXRfU3RhdHVzLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_198_202_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 198,
+      "end_index": 202,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJCWFzc3VtZQkJCQkJQWxsb3dlZF9BbGFybVRlbXBXc3RhdHVzX1JhbmdlcyAJCQkJCQkiQW4gaW50ZWdyYXRpb24gY29uc3RyYWludCBjYW4gb25seSByZWZlciB0byBhIHNpbmdsZSBwb3J0LCBzbyBuZWVkIGEgZ2VuZXJhbCBhc3N1bWUgY2xhdXNlCQkJCQkJfGluIG9yZGVyIHRvIHJlbGF0ZSB0aGUgbG93ZXIgYW5kIHVwZXIgdGVtcHMiOgkJCQkJCUdVTUJPX0xpYnJhcnk6OkFsbG93ZWRfQWxhcm1UZW1wV1N0YXR1c19SYW5nZXMobG93ZXJfYWxhcm1fdGVtcFdzdGF0dXMsIHVwcGVyX2FsYXJtX3RlbXBXc3RhdHVzKTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_45_48_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 45,
+      "end_index": 48,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfQWxhcm1UZW1wV1N0YXR1c19SYW5nZXMobG93ZXI6IElzb2xldHRlX0RhdGFfTW9kZWw6OlRlbXBXc3RhdHVzLmksCQkJCQkJCQkJCQkJdXBwZXI6IElzb2xldHRlX0RhdGFfTW9kZWw6OlRlbXBXc3RhdHVzLmkpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCShpc1ZhbGlkVGVtcFdzdGF0dXMobG93ZXIpICYgaXNWYWxpZFRlbXBXc3RhdHVzKHVwcGVyKSkgLT46IAkJCQkJKEFsbG93ZWRfQWxhcm1UZW1wX1Jhbmdlcyhsb3dlci5kZWdyZWVzLCB1cHBlci5kZWdyZWVzKSk7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_184_185_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 184,
+      "end_index": 185,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJCWFzc3VtZSBBbGxvd2VkX0xvd2VyQWxhcm1UZW1wOgkJCQkJR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9Mb3dlckFsYXJtVGVtcFdTdGF0dXMobG93ZXJfYWxhcm1fdGVtcFdzdGF0dXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_187_188_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 187,
+      "end_index": 188,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJCWFzc3VtZSBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wOgkJCQkJR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9VcHBlckFsYXJtVGVtcFdTdGF0dXModXBwZXJfYWxhcm1fdGVtcFdzdGF0dXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_51_52_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 51,
+      "end_index": 52,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIGlzVmFsaWRUZW1wV3N0YXR1cyh2YWx1ZTogSXNvbGV0dGVfRGF0YV9Nb2RlbDo6VGVtcFdzdGF0dXMuaSk6IEJhc2VfVHlwZXM6OkJvb2xlYW4gOj0JCQkJdmFsdWUuc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlZhbHVlU3RhdHVzLlZhbGlkOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_39_42_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 39,
+      "end_index": 42,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfQWxhcm1UZW1wX1Jhbmdlcyhsb3dlcjogQmFzZV9UeXBlczo6SW50ZWdlcl8zMiwJCQkJCQkJCQkJdXBwZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCWxvd2VyIDw9IHVwcGVyICYJCQkJQWxsb3dlZF9Mb3dlckFsYXJtVGVtcChsb3dlcikgJiBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wKHVwcGVyKTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_30_31_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 30,
+      "end_index": 31,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfTG93ZXJBbGFybVRlbXBXU3RhdHVzKGxvd2VyOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpUZW1wV3N0YXR1cy5pKTogQmFzZV9UeXBlczo6Qm9vbGVhbiA6PQkJCQlpc1ZhbGlkVGVtcFdzdGF0dXMobG93ZXIpIC0+OiBBbGxvd2VkX0xvd2VyQWxhcm1UZW1wKGxvd2VyLmRlZ3JlZXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_34_35_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 34,
+      "end_index": 35,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzKHVwcGVyOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpUZW1wV3N0YXR1cy5pKTogQmFzZV9UeXBlczo6Qm9vbGVhbiA6PQkJCQlpc1ZhbGlkVGVtcFdzdGF0dXModXBwZXIpIC0+OiBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wKHVwcGVyLmRlZ3JlZXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_21_22_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 21,
+      "end_index": 22,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfTG93ZXJBbGFybVRlbXAobG93ZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCUxvd2VyQWxhcm1UZW1wX2xvd2VyKCkgPD0gbG93ZXIgJiBsb3dlciA8PSBMb3dlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_25_26_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 25,
+      "end_index": 26,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfVXBwZXJBbGFybVRlbXAodXBwZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCVVwcGVyQWxhcm1UZW1wX2xvd2VyKCkgPD0gdXBwZXIgJiB1cHBlciA8PSBVcHBlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_11_11_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 11,
+      "end_index": 11,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk2Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_12_12_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMSI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_16_16_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 16,
+      "end_index": 16,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk3Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_17_17_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 17,
+      "end_index": 17,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMiI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_app_58_61_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/component/thermostat_mt_mmi_mmi_app.rs",
+      "start_index": 58,
+      "end_index": 61,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgQWxsb3dlZF9BbGFybVRlbXBXc3RhdHVzX1JhbmdlcyAgICAgICAgLy8gICBBbiBpbnRlZ3JhdGlvbiBjb25zdHJhaW50IGNhbiBvbmx5IHJlZmVyIHRvIGEgc2luZ2xlIHBvcnQsIHNvIG5lZWQgYSBnZW5lcmFsIGFzc3VtZSBjbGF1c2UgICAgICAgIC8vICAgaW4gb3JkZXIgdG8gcmVsYXRlIHRoZSBsb3dlciBhbmQgdXBlciB0ZW1wcyAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9BbGFybVRlbXBXU3RhdHVzX1Jhbmdlc19zcGVjKG9sZChhcGkpLmxvd2VyX2FsYXJtX3RlbXBXc3RhdHVzLCBvbGQoYXBpKS51cHBlcl9hbGFybV90ZW1wV3N0YXR1cyks",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_api_201_202_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/bridge/thermostat_mt_mmi_mmi_api.rs",
+      "start_index": 201,
+      "end_index": 202,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgQWxsb3dlZF9Mb3dlckFsYXJtVGVtcCAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9Mb3dlckFsYXJtVGVtcFdTdGF0dXNfc3BlYyhyZXMpLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmi_mmi_api_185_186_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmi_mmi/src/bridge/thermostat_mt_mmi_mmi_api.rs",
+      "start_index": 185,
+      "end_index": 186,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmi_mmi::Allowed_AlarmTempWstatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgQWxsb3dlZF9VcHBlckFsYXJtVGVtcCAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9VcHBlckFsYXJtVGVtcFdTdGF0dXNfc3BlYyhyZXMpLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_475_479_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 475,
+      "end_index": 479,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::REQ_MA_1",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBSRVFfTUFfMSAiSWYgdGhlIE1vbml0b3IgTW9kZSBpcyBJTklULCB0aGUgQWxhcm0gQ29udHJvbCBzaGFsbCBiZSBzZXQJCQkJCQkJCQl8dG8gT2ZmLgkJCQkJCQkJCXxodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTE1ICIgOgkJCQkJYWxhcm1fY29udHJvbCA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmYuT2ZmICYJCQkJCWxhc3RDbWQgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6T25fT2ZmLk9mZjs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_468_468_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 468,
+      "end_index": 468,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::REQ_MA_1",
+      "golden_b64": "CQkJCWxhc3RDbWQ6IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_31_36_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "start_index": 31,
+      "end_index": 36,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::REQ_MA_1",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgUkVRX01BXzEgICAgICAgIC8vICAgSWYgdGhlIE1vbml0b3IgTW9kZSBpcyBJTklULCB0aGUgQWxhcm0gQ29udHJvbCBzaGFsbCBiZSBzZXQgICAgICAgIC8vICAgdG8gT2ZmLiAgICAgICAgLy8gICBodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTE1ICAgICAgICAgKGFwaS5hbGFybV9jb250cm9sID09IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjo6T2ZmKSAmJiAgICAgICAgICAoc2VsZi5sYXN0Q21kID09IElzb2xldHRlX0RhdGFfTW9kZWw6Ok9uX09mZjo6T2ZmKSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_12_12_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::REQ_MA_1",
+      "golden_b64": "ICAgIHB1YiBsYXN0Q21kOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpPbl9PZmYs",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_484_487_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 484,
+      "end_index": 487,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Figure_A_7",
+      "golden_b64": "CQkJCWFzc3VtZSBGaWd1cmVfQV83ICJVbm9yZGVyZWQgYm91bmRzIG1ha2UgUkVRLU1BLTIgYW5kIFJFUS1NQS0zIGNvbnRyYWRpY3RvcnkJCQkJCQkJCQl8aHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExNSAiOgkJCQkJbW9uaXRvcl9tb2RlID09IElzb2xldHRlX0RhdGFfTW9kZWw6Ok1vbml0b3JfTW9kZS5Ob3JtYWxfTW9uaXRvcl9Nb2RlIC0+OgkJCQkJCWxvd2VyX2FsYXJtX3RlbXAuZGVncmVlcyA8PSB1cHBlcl9hbGFybV90ZW1wLmRlZ3JlZXM7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_50_54_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "start_index": 50,
+      "end_index": 54,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Figure_A_7",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgRmlndXJlX0FfNyAgICAgICAgLy8gICBVbm9yZGVyZWQgYm91bmRzIG1ha2UgUkVRLU1BLTIgYW5kIFJFUS1NQS0zIGNvbnRyYWRpY3RvcnkgICAgICAgIC8vICAgaHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExNSAgICAgICAgIChvbGQoYXBpKS5tb25pdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlOjpOb3JtYWxfTW9uaXRvcl9Nb2RlKSA9PT4gICAgICAgICAgKG9sZChhcGkpLmxvd2VyX2FsYXJtX3RlbXAuZGVncmVlcyA8PSBvbGQoYXBpKS51cHBlcl9hbGFybV90ZW1wLmRlZ3JlZXMpLA==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_489_492_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 489,
+      "end_index": 492,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_LowerAlarmTemp",
+      "golden_b64": "CQkJCWFzc3VtZSBUYWJsZV9BXzEyX0xvd2VyQWxhcm1UZW1wICJSYW5nZSBbOTYuLjEwMV0JCQkJCQkJCQkJCQkJfGh0dHBzOi8vd3d3LmZhYS5nb3Yvc2l0ZXMvZmFhLmdvdi9maWxlcy9haXJjcmFmdC9haXJfY2VydC9kZXNpZ25fYXBwcm92YWxzL2Fpcl9zb2Z0d2FyZS9BUi0wOC0zMi5wZGYjcGFnZT0xMTIgIiA6CQkJCQltb25pdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlLk5vcm1hbF9Nb25pdG9yX01vZGUgLT46CQkJCQkJR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9Mb3dlckFsYXJtVGVtcChsb3dlcl9hbGFybV90ZW1wLmRlZ3JlZXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_21_22_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 21,
+      "end_index": 22,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_LowerAlarmTemp",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfTG93ZXJBbGFybVRlbXAobG93ZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCUxvd2VyQWxhcm1UZW1wX2xvd2VyKCkgPD0gbG93ZXIgJiBsb3dlciA8PSBMb3dlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_11_11_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 11,
+      "end_index": 11,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_LowerAlarmTemp",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk2Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_12_12_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_LowerAlarmTemp",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMSI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_55_59_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "start_index": 55,
+      "end_index": 59,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_LowerAlarmTemp",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgVGFibGVfQV8xMl9Mb3dlckFsYXJtVGVtcCAgICAgICAgLy8gICBSYW5nZSBbOTYuLjEwMV0gICAgICAgIC8vICAgaHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExMiAgICAgICAgIChvbGQoYXBpKS5tb25pdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlOjpOb3JtYWxfTW9uaXRvcl9Nb2RlKSA9PT4gICAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9Mb3dlckFsYXJtVGVtcF9zcGVjKG9sZChhcGkpLmxvd2VyX2FsYXJtX3RlbXAuZGVncmVlcyks",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_494_497_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 494,
+      "end_index": 497,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_UpperAlarmTemp",
+      "golden_b64": "CQkJCWFzc3VtZSBUYWJsZV9BXzEyX1VwcGVyQWxhcm1UZW1wICJSYW5nZSBbOTcuLjEwMl0JCQkJCQkJCQkJCQl8aHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExMiAiIDoJCQkJCW1vbml0b3JfbW9kZSA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpNb25pdG9yX01vZGUuTm9ybWFsX01vbml0b3JfTW9kZSAtPjoJCQkJCQlHVU1CT19MaWJyYXJ5OjpBbGxvd2VkX1VwcGVyQWxhcm1UZW1wKHVwcGVyX2FsYXJtX3RlbXAuZGVncmVlcyk7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_25_26_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 25,
+      "end_index": 26,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_UpperAlarmTemp",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfVXBwZXJBbGFybVRlbXAodXBwZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCVVwcGVyQWxhcm1UZW1wX2xvd2VyKCkgPD0gdXBwZXIgJiB1cHBlciA8PSBVcHBlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_16_16_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 16,
+      "end_index": 16,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_UpperAlarmTemp",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk3Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_17_17_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 17,
+      "end_index": 17,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_UpperAlarmTemp",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMiI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_ma_ma_app_60_64_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_ma_ma/src/component/thermostat_mt_ma_ma_app.rs",
+      "start_index": 60,
+      "end_index": 64,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_ma_ma::Table_A_12_UpperAlarmTemp",
+      "golden_b64": "ICAgICAgICAvLyBhc3N1bWUgVGFibGVfQV8xMl9VcHBlckFsYXJtVGVtcCAgICAgICAgLy8gICBSYW5nZSBbOTcuLjEwMl0gICAgICAgIC8vICAgaHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExMiAgICAgICAgIChvbGQoYXBpKS5tb25pdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlOjpOb3JtYWxfTW9uaXRvcl9Nb2RlKSA9PT4gICAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9VcHBlckFsYXJtVGVtcF9zcGVjKG9sZChhcGkpLnVwcGVyX2FsYXJtX3RlbXAuZGVncmVlcyks",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_336_338_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 336,
+      "end_index": 338,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::REQ_MMM_1",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBSRVFfTU1NXzEgIlVwb24gdGhlIGZpcnN0IGRpc3BhdGNoIG9mIHRoZSB0aHJlYWQsIHRoZSBtb25pdG9yIG1vZGUgaXMgSW5pdC4JCQkJCQkJCQl8aHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExNCAiIDoJCQkJCW1vbml0b3JfbW9kZSA9PSBJc29sZXR0ZV9EYXRhX01vZGVsOjpNb25pdG9yX01vZGUuSW5pdF9Nb25pdG9yX01vZGU7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmm_mmm_app_31_34_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmm_mmm/src/component/thermostat_mt_mmm_mmm_app.rs",
+      "start_index": 31,
+      "end_index": 34,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::REQ_MMM_1",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgUkVRX01NTV8xICAgICAgICAvLyAgIFVwb24gdGhlIGZpcnN0IGRpc3BhdGNoIG9mIHRoZSB0aHJlYWQsIHRoZSBtb25pdG9yIG1vZGUgaXMgSW5pdC4gICAgICAgIC8vICAgaHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExNCAgICAgICAgIGFwaS5tb25pdG9yX21vZGUgPT0gSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlOjpJbml0X01vbml0b3JfTW9kZSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_340_341_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 340,
+      "end_index": 341,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::update_lastMonitorMode",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSB1cGRhdGVfbGFzdE1vbml0b3JNb2RlOgkJCQkJbGFzdE1vbml0b3JNb2RlID09IG1vbml0b3JfbW9kZTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_monitor_323_323_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Monitor.aadl",
+      "start_index": 323,
+      "end_index": 323,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::update_lastMonitorMode",
+      "golden_b64": "CQkJCWxhc3RNb25pdG9yTW9kZTogSXNvbGV0dGVfRGF0YV9Nb2RlbDo6TW9uaXRvcl9Nb2RlOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmm_mmm_app_35_36_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmm_mmm/src/component/thermostat_mt_mmm_mmm_app.rs",
+      "start_index": 35,
+      "end_index": 36,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::update_lastMonitorMode",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgdXBkYXRlX2xhc3RNb25pdG9yTW9kZSAgICAgICAgc2VsZi5sYXN0TW9uaXRvck1vZGUgPT0gYXBpLm1vbml0b3JfbW9kZSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_thermostat_mt_mmm_mmm_app_12_12_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/thermostat_mt_mmm_mmm/src/component/thermostat_mt_mmm_mmm_app.rs",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_thermostat_mt_mmm_mmm::update_lastMonitorMode",
+      "golden_b64": "ICAgIHB1YiBsYXN0TW9uaXRvck1vZGU6IElzb2xldHRlX0RhdGFfTW9kZWw6Ok1vbml0b3JfTW9kZSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_135_138_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "start_index": 135,
+      "end_index": 138,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBBbGxvd2VkX0FsYXJtVGVtcFdTdGF0dXNfUmFuZ2VzCQkJCQkiQW4gaW50ZWdyYXRpb24gY29uc3RyYWludCBjYW4gb25seSByZWZlciB0byBhIHNpbmdsZSBwb3J0LCBzbyBuZWVkIGEgZ2VuZXJhbCByZXF1aXJlcwkJCQkJfGNsYXVzZSB0byByZWxhdGUgdGhlIGxvd2VyIGFuZCB1cHBlciB0ZW1wcyI6CQkJCQlHVU1CT19MaWJyYXJ5OjpBbGxvd2VkX0FsYXJtVGVtcFdTdGF0dXNfUmFuZ2VzKGxvd2VyX2FsYXJtX3RlbXBXc3RhdHVzLCB1cHBlcl9hbGFybV90ZW1wV3N0YXR1cyk7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_45_48_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 45,
+      "end_index": 48,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfQWxhcm1UZW1wV1N0YXR1c19SYW5nZXMobG93ZXI6IElzb2xldHRlX0RhdGFfTW9kZWw6OlRlbXBXc3RhdHVzLmksCQkJCQkJCQkJCQkJdXBwZXI6IElzb2xldHRlX0RhdGFfTW9kZWw6OlRlbXBXc3RhdHVzLmkpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCShpc1ZhbGlkVGVtcFdzdGF0dXMobG93ZXIpICYgaXNWYWxpZFRlbXBXc3RhdHVzKHVwcGVyKSkgLT46IAkJCQkJKEFsbG93ZWRfQWxhcm1UZW1wX1Jhbmdlcyhsb3dlci5kZWdyZWVzLCB1cHBlci5kZWdyZWVzKSk7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_121_126_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "start_index": 121,
+      "end_index": 126,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBBbGxvd2VkX0xvd2VyQWxhcm1UZW1wV3N0YXR1cwkJCQkJCSJUYWJsZV9BXzEyX0xvd2VyQWxhcm1UZW1wOiBSYW5nZSBbOTYuLjEwMV06CQkJCQl8aHR0cHM6Ly93d3cuZmFhLmdvdi9zaXRlcy9mYWEuZ292L2ZpbGVzL2FpcmNyYWZ0L2Fpcl9jZXJ0L2Rlc2lnbl9hcHByb3ZhbHMvYWlyX3NvZnR3YXJlL0FSLTA4LTMyLnBkZiNwYWdlPTExMiAiIDoJCQkJCS0tR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9Mb3dlckFsYXJtVGVtcFdTdGF0dXMobG93ZXJfYWxhcm1fdGVtcFdzdGF0dXMpOwkJCQkJR1VNQk9fTGlicmFyeTo6aXNWYWxpZFRlbXBXc3RhdHVzKGxvd2VyX2FsYXJtX3RlbXBXc3RhdHVzKSAtPjoJCQkJCQlzMzIiOTYiIDw9IGxvd2VyX2FsYXJtX3RlbXBXc3RhdHVzLmRlZ3JlZXMgJiBsb3dlcl9hbGFybV90ZW1wV3N0YXR1cy5kZWdyZWVzIDw9IHMzMiIxMDEiOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_128_132_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "start_index": 128,
+      "end_index": 132,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wV3N0YXR1cwkJCQkJCSJUYWJsZV9BXzEyX1VwcGVyQWxhcm1UZW1wOiBSYW5nZSBbOTcuLjEwMl0JCQkJCXxodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTEyICIgOgkJCQkJLS0gZXhhbXBsZSBvZiBjYWxsaW5nIGEgc3ViY2xhdXNlIGZ1bmN0aW9uIGZyb20gYW4gaW50ZWdyYWl0b24gY29uc3RyYWludAkJCQkJQWxsb3dlZF9VcHBlckFsYXJtVGVtcFdTdGF0dXModXBwZXJfYWxhcm1fdGVtcFdzdGF0dXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_51_52_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 51,
+      "end_index": 52,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIGlzVmFsaWRUZW1wV3N0YXR1cyh2YWx1ZTogSXNvbGV0dGVfRGF0YV9Nb2RlbDo6VGVtcFdzdGF0dXMuaSk6IEJhc2VfVHlwZXM6OkJvb2xlYW4gOj0JCQkJdmFsdWUuc3RhdHVzID09IElzb2xldHRlX0RhdGFfTW9kZWw6OlZhbHVlU3RhdHVzLlZhbGlkOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_39_42_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 39,
+      "end_index": 42,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfQWxhcm1UZW1wX1Jhbmdlcyhsb3dlcjogQmFzZV9UeXBlczo6SW50ZWdlcl8zMiwJCQkJCQkJCQkJdXBwZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCWxvd2VyIDw9IHVwcGVyICYJCQkJQWxsb3dlZF9Mb3dlckFsYXJtVGVtcChsb3dlcikgJiBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wKHVwcGVyKTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_113_114_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "start_index": 113,
+      "end_index": 114,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJCWRlZiBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wV1N0YXR1cyh1cHBlcjogSXNvbGV0dGVfRGF0YV9Nb2RlbDo6VGVtcFdzdGF0dXMuaSk6IEJhc2VfVHlwZXM6OkJvb2xlYW4gOj0JCQkJCUdVTUJPX0xpYnJhcnk6OkFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzKHVwcGVyKTs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_21_22_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 21,
+      "end_index": 22,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfTG93ZXJBbGFybVRlbXAobG93ZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCUxvd2VyQWxhcm1UZW1wX2xvd2VyKCkgPD0gbG93ZXIgJiBsb3dlciA8PSBMb3dlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_25_26_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 25,
+      "end_index": 26,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfVXBwZXJBbGFybVRlbXAodXBwZXI6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIpOiBCYXNlX1R5cGVzOjpCb29sZWFuIDo9CQkJCVVwcGVyQWxhcm1UZW1wX2xvd2VyKCkgPD0gdXBwZXIgJiB1cHBlciA8PSBVcHBlckFsYXJtVGVtcF91cHBlcigpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_34_35_2_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 34,
+      "end_index": 35,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIEFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzKHVwcGVyOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpUZW1wV3N0YXR1cy5pKTogQmFzZV9UeXBlczo6Qm9vbGVhbiA6PQkJCQlpc1ZhbGlkVGVtcFdzdGF0dXModXBwZXIpIC0+OiBBbGxvd2VkX1VwcGVyQWxhcm1UZW1wKHVwcGVyLmRlZ3JlZXMpOw==",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_11_11_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 11,
+      "end_index": 11,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk2Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_12_12_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 12,
+      "end_index": 12,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIExvd2VyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMSI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_16_16_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 16,
+      "end_index": 16,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX2xvd2VyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjk3Ijs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_gumbo_library_17_17_3_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/GUMBO_Library.aadl",
+      "start_index": 17,
+      "end_index": 17,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "CQkJZGVmIFVwcGVyQWxhcm1UZW1wX3VwcGVyKCk6IEJhc2VfVHlwZXM6OkludGVnZXJfMzIgOj0gczMyIjEwMiI7",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_app_55_58_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/component/operator_interface_oip_oit_app.rs",
+      "start_index": 55,
+      "end_index": 58,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgQWxsb3dlZF9BbGFybVRlbXBXU3RhdHVzX1JhbmdlcyAgICAgICAgLy8gICBBbiBpbnRlZ3JhdGlvbiBjb25zdHJhaW50IGNhbiBvbmx5IHJlZmVyIHRvIGEgc2luZ2xlIHBvcnQsIHNvIG5lZWQgYSBnZW5lcmFsIHJlcXVpcmVzICAgICAgICAvLyAgIGNsYXVzZSB0byByZWxhdGUgdGhlIGxvd2VyIGFuZCB1cHBlciB0ZW1wcyAgICAgICAgR1VNQk9fTGlicmFyeTo6QWxsb3dlZF9BbGFybVRlbXBXU3RhdHVzX1Jhbmdlc19zcGVjKGFwaS5sb3dlcl9hbGFybV90ZW1wV3N0YXR1cywgYXBpLnVwcGVyX2FsYXJtX3RlbXBXc3RhdHVzKSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_api_139_144_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/bridge/operator_interface_oip_oit_api.rs",
+      "start_index": 139,
+      "end_index": 144,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgQWxsb3dlZF9Mb3dlckFsYXJtVGVtcFdzdGF0dXMgICAgICAgIC8vICAgVGFibGVfQV8xMl9Mb3dlckFsYXJtVGVtcDogUmFuZ2UgWzk2Li4xMDFdOiAgICAgICAgLy8gICBodHRwczovL3d3dy5mYWEuZ292L3NpdGVzL2ZhYS5nb3YvZmlsZXMvYWlyY3JhZnQvYWlyX2NlcnQvZGVzaWduX2FwcHJvdmFscy9haXJfc29mdHdhcmUvQVItMDgtMzIucGRmI3BhZ2U9MTEyICAgICAgICAgR1VNQk9fTGlicmFyeTo6aXNWYWxpZFRlbXBXc3RhdHVzX3NwZWModmFsdWUpID09PiAgICAgICAgICAoKDk2aTMyIDw9IHZhbHVlLmRlZ3JlZXMpICYmICAgICAgICAgICAgKHZhbHVlLmRlZ3JlZXMgPD0gMTAxaTMyKSks",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_api_162_165_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/bridge/operator_interface_oip_oit_api.rs",
+      "start_index": 162,
+      "end_index": 165,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgQWxsb3dlZF9VcHBlckFsYXJtVGVtcFdzdGF0dXMgICAgICAgIC8vICAgVGFibGVfQV8xMl9VcHBlckFsYXJtVGVtcDogUmFuZ2UgWzk3Li4xMDJdICAgICAgICAvLyAgIGh0dHBzOi8vd3d3LmZhYS5nb3Yvc2l0ZXMvZmFhLmdvdi9maWxlcy9haXJjcmFmdC9haXJfY2VydC9kZXNpZ25fYXBwcm92YWxzL2Fpcl9zb2Z0d2FyZS9BUi0wOC0zMi5wZGYjcGFnZT0xMTIgICAgICAgICBjcmF0ZTo6Y29tcG9uZW50OjpvcGVyYXRvcl9pbnRlcmZhY2Vfb2lwX29pdF9hcHA6OkFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzKHZhbHVlKSw=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_app_109_112_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/component/operator_interface_oip_oit_app.rs",
+      "start_index": 109,
+      "end_index": 112,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Allowed_AlarmTempWStatus_Ranges",
+      "golden_b64": "ICBwdWIgb3BlbiBzcGVjIGZuIEFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzKHVwcGVyOiBJc29sZXR0ZV9EYXRhX01vZGVsOjpUZW1wV3N0YXR1c19pKSAtPiBib29sICB7ICAgIEdVTUJPX0xpYnJhcnk6OkFsbG93ZWRfVXBwZXJBbGFybVRlbXBXU3RhdHVzX3NwZWModXBwZXIpICB9",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_146_150_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/aadl/aadl/packages/Operator_Interface.aadl",
+      "start_index": 146,
+      "end_index": 150,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Desired_Temps_Ordered",
+      "golden_b64": "CQkJCWd1YXJhbnRlZSBEZXNpcmVkX1RlbXBzX09yZGVyZWQJCQkJCSJUaGUgb3BlcmF0b3IgaW50ZXJmYWNlIG9ubHkgZW1pdHMgZGVzaXJlZCB0ZW1wZXJhdHVyZXMgd2hlcmUgdGhlIGxvd2VyCQkJCQl8Ym91bmQgZG9lcyBub3QgZXhjZWVkIHRoZSB1cHBlciBib3VuZCAoZXN0YWJsaXNoZXMgdGhlIHN5c3RlbSBwcm9wZXJ0eQkJCQkJfGxvd2VyX2lzX25vdF9oaWdoZXJfdGhhbl91cHBlciBjb25zdW1lZCBieSB0aGUgcmVndWxhdG9yIHN1YnN5c3RlbSkiOgkJCQkJbG93ZXJfZGVzaXJlZF90ZW1wV3N0YXR1cy5kZWdyZWVzIDw9IHVwcGVyX2Rlc2lyZWRfdGVtcFdzdGF0dXMuZGVncmVlczs=",
+      "golden_ts": "2026-07-07 16:49:00"
+    },
+    "isolette_operator_interface_oip_oit_app_59_63_targ": {
+      "filepath": "/Users/adampetz/Claude_workspace/INSPECTA-models/isolette/hamr/microkit/crates/operator_interface_oip_oit/src/component/operator_interface_oip_oit_app.rs",
+      "start_index": 59,
+      "end_index": 63,
+      "metadata": "Isolette_Single_Sensor_Instance_operator_interface_oip_oit::Desired_Temps_Ordered",
+      "golden_b64": "ICAgICAgICAvLyBndWFyYW50ZWUgRGVzaXJlZF9UZW1wc19PcmRlcmVkICAgICAgICAvLyAgIFRoZSBvcGVyYXRvciBpbnRlcmZhY2Ugb25seSBlbWl0cyBkZXNpcmVkIHRlbXBlcmF0dXJlcyB3aGVyZSB0aGUgbG93ZXIgICAgICAgIC8vICAgYm91bmQgZG9lcyBub3QgZXhjZWVkIHRoZSB1cHBlciBib3VuZCAoZXN0YWJsaXNoZXMgdGhlIHN5c3RlbSBwcm9wZXJ0eSAgICAgICAgLy8gICBsb3dlcl9pc19ub3RfaGlnaGVyX3RoYW5fdXBwZXIgY29uc3VtZWQgYnkgdGhlIHJlZ3VsYXRvciBzdWJzeXN0ZW0pICAgICAgICBhcGkubG93ZXJfZGVzaXJlZF90ZW1wV3N0YXR1cy5kZWdyZWVzIDw9IGFwaS51cHBlcl9kZXNpcmVkX3RlbXBXc3RhdHVzLmRlZ3JlZXMs",
+      "golden_ts": "2026-07-07 16:49:00"
+    }
+  }
+}

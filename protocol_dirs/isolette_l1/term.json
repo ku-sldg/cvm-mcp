@@ -1,0 +1,224 @@
+{
+  "TERM_CONSTRUCTOR": "lseq",
+  "TERM_BODY": [
+    {
+      "TERM_CONSTRUCTOR": "lseq",
+      "TERM_BODY": [
+        {
+          "TERM_CONSTRUCTOR": "bseq",
+          "TERM_BODY": [
+            "both_paths",
+            {
+              "TERM_CONSTRUCTOR": "bseq",
+              "TERM_BODY": [
+                "both_paths",
+                {
+                  "TERM_CONSTRUCTOR": "bseq",
+                  "TERM_BODY": [
+                    "both_paths",
+                    {
+                      "TERM_CONSTRUCTOR": "bseq",
+                      "TERM_BODY": [
+                        "both_paths",
+                        {
+                          "TERM_CONSTRUCTOR": "bseq",
+                          "TERM_BODY": [
+                            "both_paths",
+                            {
+                              "TERM_CONSTRUCTOR": "bseq",
+                              "TERM_BODY": [
+                                "both_paths",
+                                {
+                                  "TERM_CONSTRUCTOR": "bseq",
+                                  "TERM_BODY": [
+                                    "both_paths",
+                                    {
+                                      "TERM_CONSTRUCTOR": "bseq",
+                                      "TERM_BODY": [
+                                        "both_paths",
+                                        {
+                                          "TERM_CONSTRUCTOR": "bseq",
+                                          "TERM_BODY": [
+                                            "both_paths",
+                                            {
+                                              "TERM_CONSTRUCTOR": "bseq",
+                                              "TERM_BODY": [
+                                                "both_paths",
+                                                {
+                                                  "TERM_CONSTRUCTOR": "bseq",
+                                                  "TERM_BODY": [
+                                                    "both_paths",
+                                                    {
+                                                      "TERM_CONSTRUCTOR": "bseq",
+                                                      "TERM_BODY": [
+                                                        "both_paths",
+                                                        {
+                                                          "TERM_CONSTRUCTOR": "asp",
+                                                          "TERM_BODY": {
+                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                            "ASP_BODY": {
+                                                              "ASP_ID": "hashfile",
+                                                              "ASP_TARG_ID": "isolette_regulate_targ"
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "TERM_CONSTRUCTOR": "asp",
+                                                          "TERM_BODY": {
+                                                            "ASP_CONSTRUCTOR": "ASPC",
+                                                            "ASP_BODY": {
+                                                              "ASP_ID": "hashfile",
+                                                              "ASP_TARG_ID": "isolette_thermostat_rt_mri_mri_app_targ"
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "TERM_CONSTRUCTOR": "asp",
+                                                      "TERM_BODY": {
+                                                        "ASP_CONSTRUCTOR": "ASPC",
+                                                        "ASP_BODY": {
+                                                          "ASP_ID": "hashfile",
+                                                          "ASP_TARG_ID": "isolette_thermostat_rt_mhs_mhs_app_targ"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "TERM_CONSTRUCTOR": "asp",
+                                                  "TERM_BODY": {
+                                                    "ASP_CONSTRUCTOR": "ASPC",
+                                                    "ASP_BODY": {
+                                                      "ASP_ID": "hashfile",
+                                                      "ASP_TARG_ID": "isolette_thermostat_rt_mrm_mrm_app_targ"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "TERM_CONSTRUCTOR": "asp",
+                                              "TERM_BODY": {
+                                                "ASP_CONSTRUCTOR": "ASPC",
+                                                "ASP_BODY": {
+                                                  "ASP_ID": "hashfile",
+                                                  "ASP_TARG_ID": "isolette_monitor_targ"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "TERM_CONSTRUCTOR": "asp",
+                                          "TERM_BODY": {
+                                            "ASP_CONSTRUCTOR": "ASPC",
+                                            "ASP_BODY": {
+                                              "ASP_ID": "hashfile",
+                                              "ASP_TARG_ID": "isolette_thermostat_mt_mmi_mmi_app_targ"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "TERM_CONSTRUCTOR": "asp",
+                                      "TERM_BODY": {
+                                        "ASP_CONSTRUCTOR": "ASPC",
+                                        "ASP_BODY": {
+                                          "ASP_ID": "hashfile",
+                                          "ASP_TARG_ID": "isolette_gumbo_library_targ"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "TERM_CONSTRUCTOR": "asp",
+                                  "TERM_BODY": {
+                                    "ASP_CONSTRUCTOR": "ASPC",
+                                    "ASP_BODY": {
+                                      "ASP_ID": "hashfile",
+                                      "ASP_TARG_ID": "isolette_thermostat_mt_mmi_mmi_api_targ"
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "TERM_CONSTRUCTOR": "asp",
+                              "TERM_BODY": {
+                                "ASP_CONSTRUCTOR": "ASPC",
+                                "ASP_BODY": {
+                                  "ASP_ID": "hashfile",
+                                  "ASP_TARG_ID": "isolette_thermostat_mt_ma_ma_app_targ"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "TERM_CONSTRUCTOR": "asp",
+                          "TERM_BODY": {
+                            "ASP_CONSTRUCTOR": "ASPC",
+                            "ASP_BODY": {
+                              "ASP_ID": "hashfile",
+                              "ASP_TARG_ID": "isolette_thermostat_mt_mmm_mmm_app_targ"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "TERM_CONSTRUCTOR": "asp",
+                      "TERM_BODY": {
+                        "ASP_CONSTRUCTOR": "ASPC",
+                        "ASP_BODY": {
+                          "ASP_ID": "hashfile",
+                          "ASP_TARG_ID": "isolette_operator_interface_targ"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "TERM_CONSTRUCTOR": "asp",
+                  "TERM_BODY": {
+                    "ASP_CONSTRUCTOR": "ASPC",
+                    "ASP_BODY": {
+                      "ASP_ID": "hashfile",
+                      "ASP_TARG_ID": "isolette_operator_interface_oip_oit_app_targ"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "TERM_CONSTRUCTOR": "asp",
+              "TERM_BODY": {
+                "ASP_CONSTRUCTOR": "ASPC",
+                "ASP_BODY": {
+                  "ASP_ID": "hashfile",
+                  "ASP_TARG_ID": "isolette_operator_interface_oip_oit_api_targ"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "TERM_CONSTRUCTOR": "asp",
+          "TERM_BODY": {
+            "ASP_CONSTRUCTOR": "SIG"
+          }
+        }
+      ]
+    },
+    {
+      "TERM_CONSTRUCTOR": "asp",
+      "TERM_BODY": {
+        "ASP_CONSTRUCTOR": "APPR"
+      }
+    }
+  ]
+}

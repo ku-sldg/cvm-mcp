@@ -1,0 +1,43 @@
+{
+  "Session_Plc": "P0",
+  "Plc_Mapping": {},
+  "PubKey_Mapping": {},
+  "Session_Context": {
+    "ASP_Types": {
+      "hashfile": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "NONE"
+        },
+        "ATTRS": []
+      },
+      "sig": {
+        "FWD": {
+          "FWD": "EXTEND",
+          "_BODY": 1,
+          "EvInSig": "ALL"
+        },
+        "ATTRS": []
+      },
+      "sig_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      },
+      "goldenbytes_appr": {
+        "FWD": {
+          "FWD": "REPLACE",
+          "_BODY": 1
+        },
+        "ATTRS": []
+      }
+    },
+    "ASP_Comps": {
+      "hashfile": "goldenbytes_appr",
+      "sig": "sig_appr"
+    }
+  }
+}
